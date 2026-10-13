@@ -1,0 +1,22 @@
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N"]
+# Short HTTP-style exception names (NotFound, Forbidden, Conflict …) are deliberate; see app/core/errors.py
+ignore = ["N818"]
+
+[tool.ruff.lint.isort]
+# Vendored packages live next to app/ (see .gitignore), so tell isort explicitly what is what.
+known-first-party = ["app", "function", "tests"]
+known-third-party = ["psycopg", "psycopg_binary", "pydantic", "pydantic_core", "jwt", "bcrypt", "pytest"]
+
+[tool.coverage.run]
+source = ["app", "function"]
+omit = ["tests/*"]

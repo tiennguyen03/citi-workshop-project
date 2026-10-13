@@ -1,0 +1,11 @@
+# bin/start-dev.sh vendors pip packages straight into this folder (pip --target) for
+# LocalStack hot-reload. Ignore everything except our own sources.
+/*
+!/app/
+!/tests/
+!/function.py
+!/requirements.txt
+!/requirements-dev.txt
+!/pyproject.toml
+!/.gitignore
+!/README.md

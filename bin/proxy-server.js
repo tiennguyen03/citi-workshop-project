@@ -101,6 +101,8 @@ const server = http.createServer((req, res) => {
       'accept': headers.accept || 'application/json',
       'content-type': headers['content-type'] || 'application/json',
       'user-agent': headers['user-agent'] || 'proxy-server',
+      // Forward the auth token so JWT-protected endpoints work locally (context/decisions.md D7)
+      ...(headers.authorization ? { authorization: headers.authorization } : {}),
       'host': target.host
     }
   };

@@ -1,0 +1,59 @@
+# CLAUDE.md
+
+## Source of truth
+`/context/*.md` governs requirements, architecture, data model, API contract, security, UI flow,
+coding rules and decisions. Read the relevant file before implementing. If a change would
+conflict with `/context`, stop and explain the conflict — never silently change the architecture.
+Track work in `context/current-task.md`.
+
+## Do NOT modify the initial project files
+Everything that existed in the repository before `context/` was added is workshop boilerplate
+(deploy scripts, Terraform, examples, docs, configs). Changing it can break local and AWS
+deployment. Treat all of the following as **read-only**:
+
+- `bin/`, `infra/`, `docs/`, `data/`, `.github/`
+- `backend/_examples/`, `backend/README.md`
+- `frontend/` config and scaffolding: `vite.config.js`, `eslint.config.js`, `index.html`, `package.json`,
+  `.env.sample`, `README.md` (see exception below)
+- Root files: `README.md`, `LICENSE`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `DCO.md`,
+  `SECURITY.md`, `.gitignore`, `ENVIRONMENT.config`
+
+**If a change to any of these is genuinely unavoidable, ask the user first and wait for an
+explicit yes.** Explain what, why, and the exact diff. This includes "small" one-liners
+(e.g. `bin/proxy-server.js`, `infra/locals.tf`, adding a dependency to `frontend/package.json`).
+
+## Where new code goes
+- Backend: `backend/v1/` (new folder; auto-deployed by the boilerplate as the `/api/v1` Lambda).
+- Frontend: `frontend/src/` only. Replacing the Vite demo content in `src/` (`App.jsx`, `App.css`,
+  `index.css`, `main.jsx`, `assets/`) is allowed — that is application code, not scaffolding.
+- Planning/docs: `context/`.
+
+## Files created by us so far
+- `CLAUDE.md`
+- `context/` — requirements, architecture, data-model, api-contract, security, ui-flow,
+  coding-rules, decisions, current-task
+- `backend/v1/` — the API Lambda (`function.py`, `app/`, `tests/`, `requirements*.txt`,
+  `pyproject.toml`, `.gitignore`). Everything else inside it is vendored by `start-dev.sh`.
+- `frontend/vitest.config.js`, `frontend/src/{auth,components,hooks,pages,services,test,utils}/`,
+  `frontend/src/theme.js`; `App.jsx`, `main.jsx`, `index.css` replaced (Vite demo removed).
+
+## Local tooling (not committed)
+- Backend venv: `backend/v1/.venv` → `.venv/bin/pytest`, `.venv/bin/ruff check .`, `.venv/bin/bandit -q -r app function.py`
+- Frontend: `npx vitest run`, `npm run lint` (from `frontend/`)
+- Known quirk: the `pip` on PATH is Python **3.14**, the Lambda runtime is **3.13**, so
+  `start-dev.sh`'s vendoring step fails silently (`No module named 'psycopg'` in Lambda logs).
+  Vendor with the 3.13 venv instead, whenever `requirements.txt` changes:
+  `backend/v1/.venv/bin/pip install --target backend/v1 -r backend/v1/requirements.txt`
+
+## Boilerplate files modified with explicit approval
+- `frontend/package.json` / `package-lock.json` — 2026-10-14, added MUI, React Router, PropTypes,
+  Vitest + Testing Library, and the two ESLint plugins `eslint.config.js` already imported but
+  never declared (decisions.md D12 note).
+- `bin/proxy-server.js` — 2026-10-14, one line: forward the `Authorization` header (D7).
+
+Keep this list updated as new top-level files/folders are added.
+
+## Working agreement
+- No implementation code until the user approves the plan in `context/current-task.md`.
+- One slice at a time; follow `context/coding-rules.md`.
+- Commit/push only when asked.

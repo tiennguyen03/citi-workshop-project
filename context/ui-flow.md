@@ -1,0 +1,74 @@
+# UI Flow
+
+React 19 + Vite + Material UI + React Router. One layout (`AppShell`: top bar with user name/role,
+left nav that varies by role, content area). Mobile: nav collapses into a drawer. Every page shows
+loading skeleton, empty state, and an error `Alert`; every mutation shows a `Snackbar` on success/failure.
+
+## Route map
+
+| Path | Page | Roles | APIs |
+|---|---|---|---|
+| `/login` | LoginPage | public | `POST /auth/login` |
+| `/` | DashboardPage | all | `GET /projects`, `GET /users/{me}/team` |
+| `/projects` | ProjectsPage | all | `GET /projects` (+`?archived=true` toggle for admin) |
+| `/projects/new` | ProjectFormPage | admin | `GET /users?role=manager`, `POST /projects` |
+| `/projects/:id` | ProjectDetailPage | viewers | `GET /projects/{id}`, `/stats`, `/members`, `/milestones`, `/time-entries` |
+| `/milestones/:id` | MilestoneDetailPage | viewers | `GET /milestones/{id}`, goal endpoints |
+| `/users` | UsersPage | admin, manager | `GET /users`, `POST /users` (admin) |
+| `/users/:id` | UserDetailPage | per rules | `GET /users/{id}`, `PATCH /users/{id}` |
+| `/team` | TeamPage | manager, employee | `GET /users/{me}/team` |
+| `/profile` | ProfilePage | all | `GET /auth/me`, `PATCH /users/{me}` |
+| `/audit-log` | AuditLogPage | admin | `GET /audit-log` |
+| `*` | NotFoundPage | — | — |
+
+Unauthenticated → redirect to `/login`. Wrong role → `403` page. A `401` from any API clears the session and redirects to `/login`.
+
+## Per-role landing (DashboardPage)
+
+- **Admin**: stat cards (active projects, archived, users by role), "Projects needing attention" (over budget / past end date), quick links: New project, New user.
+- **Manager**: cards per managed project (hours completed / capacity bar, budget remaining, open milestones), team list showing each report's current project (or "available") and hours this week.
+- **Employee**: "My current project" card (hours assigned vs logged, current milestone) or an "Available — not assigned to a project" state; "My open goals" with checkboxes; "Log time" button (disabled when available); "Past projects" list.
+
+## Main flows
+
+### F1 Login
+LoginPage form (username, password) → `POST /auth/login` → store token + user → redirect `/`. Error: inline alert "Invalid username or password".
+
+### F2 Admin creates a user
+UsersPage → "New user" `FormDialog`: username, temp password, first/last name, email, job title, salary, role (select), manager (select, shown only when role = employee, options from `GET /users?role=manager`) → `POST /users` → row appended, snackbar. 409 → field error on username/email.
+
+### F3 Admin creates a project
+ProjectFormPage: name, description, budget, start/end (date pickers), manager (select) → `POST /projects` → navigate to detail. Validation inline: end ≥ start, budget ≥ 0.
+
+### F4 Manager staffs a project
+ProjectDetailPage › **Members** tab → "Add member" dialog: employee select fed by `GET /projects/{id}/available-members` (only employees with no active project; the dialog also shows a collapsed "Unavailable" list with each busy report's current project so the manager knows who frees up when), hours assigned (number, max = capacity per member shown as helper text) → `POST /projects/{id}/members`. A `PROJECT_CONFLICT` (race) shows as a field error. Members table has an "Active / Released" chip and a "Show released" toggle. Row actions: edit hours (inline), remove (ConfirmDialog: "X will be released from this project and unassigned from its milestones/goals; their logged hours are kept").
+
+### F5 Manager plans milestones
+ProjectDetailPage › **Milestones** tab: ordered list with status chip, due date, goals done/total progress bar, assignees avatars. "New milestone" dialog: name, description, dates (bounded by project dates), assignees (multi-select fed by `GET /projects/{id}/available-assignees` — members already on an open milestone are listed disabled with the hint "on *<milestone name>*"). A `MILESTONE_CONFLICT` from the server is shown as a field error naming the blocked employees. Click → MilestoneDetailPage: edit header, goal list (add goal with optional assignee, inline rename, delete), "Mark complete" button (ConfirmDialog lists open goals if any and notes that assignees become free for the next milestone), "Reopen" (error toast if an assignee has moved on). Milestones tab also shows, per member, which open milestone they're currently on (or "available").
+
+### F6 Employee works
+When viewing a project they've been released from, the detail page shows an info banner "You were released from this project on <date>" and hides all actions (no goal toggles, no Log time); everything else is readable.
+Dashboard "My open goals" → checkbox → `PATCH /goals/{id} {isDone}` (optimistic, revert on error). ProjectDetailPage for employees is read-mostly: Overview (dates, manager, my hours), Milestones (goals assigned to me are checkable), **Time** tab: "Log time" dialog (date default today, hours, note) → `POST /projects/{id}/time-entries`; list of own entries with edit/delete.
+
+### F7 Manager monitors
+ProjectDetailPage › **Overview** tab: StatCards — Capacity / Assigned / Completed hours, Budget / Consumed / Remaining; per-member table (hours assigned, completed, % of capacity, cost consumed); per-milestone progress. Edit project (dialog, same fields as F3 minus manager). "Mark project complete" enabled only when `milestoneCounts.open === 0`.
+
+### F8 Admin archives / restores
+ProjectsPage: admin sees "Show archived" toggle. Row/detail action "Archive" (ConfirmDialog: "members will be released and become available") → `POST /projects/{id}/archive`. Archived detail page shows an "Archived" banner, all write actions hidden, "Unarchive" for admin; a `PROJECT_CONFLICT` on unarchive shows which members are now elsewhere.
+
+### F9 Admin reassigns an employee's manager / project's manager
+UserDetailPage (admin view) → manager select → `PATCH /users/{id} {managerId}`. ProjectDetailPage overview (admin) → manager select → `PATCH /projects/{id} {managerId}`.
+
+### F11 Admin reviews the audit log
+AuditLogPage (admin nav item "Audit log"): `DataTable` newest-first with columns time, actor (name + role chip), action, entity (link to the project/user/milestone where applicable), summary. Filter bar: actor select, entity type, action, date range → query params. Row expand shows `details` JSON. "Load more" pagination (`offset`). Managers/employees never see the nav item; direct navigation gets the 403 page.
+
+### F10 Profile
+ProfilePage: first/last name, email editable; username, role, title, manager read-only; salary shown to self (read-only).
+
+## Forms & validation (client side mirrors server)
+- Required markers, inline field errors, submit disabled while pending, server `VALIDATION_ERROR.details.field` mapped to the matching field.
+- Dates via MUI `TextField type="date"` (no extra date-picker dependency in MVP).
+- Numbers: hours step 0.25; money 2 decimals.
+
+## Components (reusable, no fetching)
+`AppShell`, `RoleGate`, `DataTable` (sortable columns, empty state), `StatCard`, `ProgressBar` (hours/capacity), `StatusChip` (project/milestone status, archived), `FormDialog`, `ConfirmDialog`, `UserSelect`, `ErrorAlert`, `PageHeader`.

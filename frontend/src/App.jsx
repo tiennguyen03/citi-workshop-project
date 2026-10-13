@@ -1,35 +1,35 @@
-import { useState } from 'react'
-import reactLogo from '/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import CssBaseline from '@mui/material/CssBaseline'
+import { ThemeProvider } from '@mui/material/styles'
+import theme from './theme.js'
+import AuthProvider from './auth/AuthProvider.jsx'
+import RequireAuth from './auth/RequireAuth.jsx'
+import AppShell from './components/AppShell/AppShell.jsx'
+import LoginPage from './pages/LoginPage/LoginPage.jsx'
+import DashboardPage from './pages/DashboardPage/DashboardPage.jsx'
+import ForbiddenPage from './pages/ForbiddenPage/ForbiddenPage.jsx'
+import NotFoundPage from './pages/NotFoundPage/NotFoundPage.jsx'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+/** Route table (ui-flow.md). Feature routes are added slice by slice. */
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route element={<RequireAuth />}>
+              <Route element={<AppShell />}>
+                <Route index element={<DashboardPage />} />
+                <Route path="/403" element={<ForbiddenPage />} />
+                <Route path="/404" element={<NotFoundPage />} />
+                <Route path="*" element={<Navigate to="/404" replace />} />
+              </Route>
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
-
-export default App
