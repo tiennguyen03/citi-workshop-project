@@ -8,6 +8,7 @@ from app.audit_log import handlers as audit_log
 from app.auth import handlers as auth
 from app.auth.middleware import authenticate
 from app.health import handlers as health
+from app.projects import handlers as projects
 from app.router import Router
 from app.users import handlers as users
 
@@ -35,6 +36,21 @@ def build_router() -> Router:
     router.add("GET", "/users/{id}", users.get_user)
     router.add("PATCH", "/users/{id}", users.update_user, audit="user.update")
     router.add("GET", "/users/{id}/team", users.get_team)
+
+    # Projects
+    router.add("GET", "/projects", projects.list_projects)
+    router.add("POST", "/projects", projects.create_project, audit="project.create")
+    router.add("GET", "/projects/{id}", projects.get_project)
+    router.add("PATCH", "/projects/{id}", projects.update_project, audit="project.update")
+    router.add("POST", "/projects/{id}/complete", projects.complete_project, audit="project.complete")
+    router.add("POST", "/projects/{id}/archive", projects.archive_project, audit="project.archive")
+    router.add("POST", "/projects/{id}/unarchive", projects.unarchive_project, audit="project.unarchive")
+    router.add("GET", "/projects/{id}/stats", projects.get_stats)
+    router.add("GET", "/projects/{id}/members", projects.list_members)
+    router.add("GET", "/projects/{id}/available-members", projects.available_members)
+    router.add("POST", "/projects/{id}/members", projects.add_member, audit="project.member_add")
+    router.add("PATCH", "/projects/{id}/members/{userId}", projects.update_member, audit="project.member_update")
+    router.add("DELETE", "/projects/{id}/members/{userId}", projects.remove_member, audit="project.member_remove")
 
     # Audit log (admin)
     router.add("GET", "/audit-log", audit_log.list_entries)

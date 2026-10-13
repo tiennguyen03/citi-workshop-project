@@ -11,21 +11,21 @@
 | 0 | Scaffold `backend/v1` (router + audit hook, http, db, schema, errors, permissions, health) and `frontend` shell (AppShell, routes, client.js, AuthProvider, LoginPage); proxy D7 line; Vite demo removed | 1 AM | **done** |
 | 1 | Auth: `POST /auth/login` (audited), `GET /auth/me`, middleware, LoginPage, route guards | 1 AM | **done** |
 | 2 | Users: CRUD per contract, permissions, UsersPage, UserDetailPage, ProfilePage, TeamPage; `GET /audit-log` + AuditLogPage (admin) so every later slice is verifiable in the log | 1 PM | **done** |
-| 3 | Projects: CRUD, archive/unarchive, members + hours, capacity/stats, ProjectsPage, ProjectFormPage, ProjectDetailPage (Overview + Members tabs) | 2 AM | todo |
+| 3 | Projects: CRUD, archive/unarchive, members + hours, capacity/stats, ProjectsPage, ProjectFormPage, ProjectDetailPage (Overview + Members tabs) | 2 AM | **done** |
 | 4 | Milestones & goals: endpoints, Milestones tab, MilestoneDetailPage, goal toggling, project complete | 2 PM | todo |
 | 5 | Time entries: endpoints, Time tab, dashboard per role, seed data | 3 AM | todo |
 | 6 | Hardening: tests to target, responsive pass, README, deploy to AWS, smoke test, known gaps | 3 PM | todo |
 
-## Current slice: 3 — Projects (not started; waiting for "go")
+## Current slice: 4 — Milestones & goals (not started; waiting for "go")
 
 **Acceptance criteria**
-- Endpoints per api-contract › Projects: list (role-scoped, `archived=` admin-only), create (admin; manager must be a `manager`), get, patch (manager/admin; `managerId` admin-only), complete (409 while milestones open), archive/unarchive (admin; release/re-activate members per D15), members list/add/patch/remove, `available-members`, `stats`. All mutations audited with `project_id`.
-- Capacity/cost math in one module (`projects/capacity.py`, D9) with unit tests; cost fields hidden from employees.
-- One-active-project rule enforced in the service (`PROJECT_CONFLICT`) and proven by an integration test against the partial index.
-- Pages: ProjectsPage (role-filtered, admin archived toggle), ProjectFormPage (admin), ProjectDetailPage with Overview + Members tabs (add member dialog fed by `available-members`, hours inline edit, release with ConfirmDialog, archive/unarchive/complete actions).
-- Tests: service unit (permission matrix + transitions), integration per endpoint, frontend page tests; browser walkthrough extended (admin creates project, manager staffs it, employee sees it).
+- Endpoints per api-contract › Milestones & goals: list/create/get/patch milestones, complete/reopen, `available-assignees`, goals create/patch/delete. One-open-milestone-per-employee rule (M13a/D14) enforced in the service (`MILESTONE_CONFLICT`) and backed by the partial index; `milestone_assignees.is_open` kept in sync on complete/reopen. Milestone dates within project dates. Writes `409` when the project is archived or complete. All mutations audited with `project_id`.
+- Goal `isDone` toggle allowed for the assignee, project manager, admin; title/assignee/delete for manager/admin. Completing a milestone with open goals returns `details.openGoals` (warn, not block).
+- Project "Mark complete" now really depends on milestone status (already wired).
+- Pages: Milestones tab on ProjectDetailPage (ordered list: status, due date, goals done/total, assignees; New milestone dialog with assignee multi-select fed by `available-assignees`), MilestoneDetailPage (edit header, goal list with add/rename/assign/delete, employee checkboxes, Mark complete / Reopen). Dashboard "My open goals" stays for slice 5.
+- Tests: service unit (conflict rule, cascade on member release), integration per endpoint, frontend tests (Milestones tab, MilestoneDetailPage goal toggle), browser walkthrough extended.
 
-**Files involved**: `backend/v1/app/projects/{handlers,service,schemas,repository,capacity}.py`, `app/routes.py`; `frontend/src/services/projects.js`, `pages/{ProjectsPage,ProjectFormPage,ProjectDetailPage}/`, `components/{StatCard,ProgressBar,StatusChip}/`.
+**Files involved**: `backend/v1/app/milestones/{handlers,service,schemas,repository}.py`, `app/routes.py`; `frontend/src/services/milestones.js`, `pages/ProjectDetailPage/MilestonesTab.jsx`, `pages/MilestoneDetailPage/`.
 **Progress**: —
 **Blockers**: none.
 
@@ -41,6 +41,7 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-14 · **Slice 3 done.** 13 project endpoints (CRUD, complete, archive/unarchive with member release/re-claim via `released_reason`, members add/update/release with cascade, `available-members`, `stats`); capacity/cost math in `projects/capacity.py` (weekdays × 8 h, salary/2080) with unit tests; one-active-project rule → `PROJECT_CONFLICT`; costs hidden from employees. Frontend: ProjectsPage (archived toggle), ProjectFormPage, ProjectDetailPage with Overview (StatCards + progress) and Members (add dialog fed by available-members, edit hours, release with confirm) tabs; StatCard/ProgressBar/StatusChip/ProjectFields components. 72 backend tests (96%), 36 frontend tests, browser walkthrough admin→manager→employee passes with zero console errors.
 - 2026-10-14 · **Slice 2 done.** Users CRUD with role field-whitelist, manager/employee team views, admin invariants (last admin, self-deactivate, demoting managers with reports/projects), `currentProject` on user lists; `GET /audit-log` with filters/paging; reusable `DataTable`/`FormDialog`/`ConfirmDialog`/`NoticeSnackbar`/`UserEditForm`; pages Users, UserDetail, Profile, Team, AuditLog. Repositories use psycopg `sql` composition (Bandit-clean). 64 backend tests (96%), 27 frontend tests. Browser walkthrough (Playwright, scratchpad script) passes 8 screens, zero console errors. Fixed on the way: MUI v9 removed system props on `Stack` (moved to `sx`); sign-out now clears the remembered "from" location so the next user isn't bounced to a forbidden page.
 - 2026-10-14 · **Slice 1 done.** `POST /auth/login` + `GET /auth/me`; per-request authenticator reads role/active flag from DB; login success/failure audited with password scrubbed; pydantic DTO base (`core/dto.py`, `extra="forbid"`); users repository/schemas (UserSummary/UserFull). 43 backend tests (95%), 15 frontend tests. Verified live through proxy + LocalStack: login → token → `/auth/me` 200, no token 401, wrong password 401, two audit rows.
 - 2026-10-14 · **Slice 0 done.** Backend: 30 tests (unit + integration against local Postgres), 92% coverage, ruff/bandit clean; schema with both partial unique indexes, bootstrap admin, audit hook in router, `/health`. Frontend: ESLint clean, 10 Vitest tests; MUI shell, role-aware nav, auth context, login form. Verified live: `GET /api/v1/health` → 200 via proxy → LocalStack Lambda → Postgres; 404/405 envelopes correct; Lambda logs show method/path/status/actor.

@@ -128,6 +128,14 @@ forgets the service check — cheaper than a trigger, and Postgres-native.
 same transaction). New endpoint `GET /projects/{id}/available-assignees` for the picker.
 Reopen can now 409. Removing a member from the project still cascades (M15) regardless.
 
+## D16 · 2026-10-14 · `released_reason` on memberships (removed / completed / archived)
+**Decision**: Record *why* a membership ended. Un-archiving an active project re-activates only
+rows released with reason `archived`; completed projects keep counting `completed` members in
+capacity so their numbers don't collapse to zero after completion.
+**Why**: Without it, un-archive can't tell "released by archiving" from "removed by the manager
+weeks earlier", and a finished project would show capacity 0. Added as an idempotent
+`ALTER TABLE … ADD COLUMN IF NOT EXISTS` in `schema.MIGRATIONS` (first use of the D4 path).
+
 ## D15 · 2026-10-14 · One active project per employee; memberships are released, not deleted
 **Decision**: `project_members.is_active` + partial unique index `(user_id) WHERE is_active`.
 "Active" = project `active`, not archived, member not removed. Completing/archiving a project

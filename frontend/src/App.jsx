@@ -8,6 +8,9 @@ import RequireRole from './auth/RequireRole.jsx'
 import AppShell from './components/AppShell/AppShell.jsx'
 import LoginPage from './pages/LoginPage/LoginPage.jsx'
 import DashboardPage from './pages/DashboardPage/DashboardPage.jsx'
+import ProjectsPage from './pages/ProjectsPage/ProjectsPage.jsx'
+import ProjectFormPage from './pages/ProjectFormPage/ProjectFormPage.jsx'
+import ProjectDetailPage from './pages/ProjectDetailPage/ProjectDetailPage.jsx'
 import UsersPage from './pages/UsersPage/UsersPage.jsx'
 import UserDetailPage from './pages/UserDetailPage/UserDetailPage.jsx'
 import ProfilePage from './pages/ProfilePage/ProfilePage.jsx'
@@ -30,7 +33,12 @@ export default function App() {
               <Route element={<AppShell />}>
                 <Route index element={<DashboardPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/projects/:id" element={<ProjectDetailPage />} />
                 <Route path="/users/:id" element={<UserDetailPage />} />
+                <Route element={<RequireRole roles={[ROLES.ADMIN]} />}>
+                  <Route path="/projects/new" element={<ProjectFormPage />} />
+                </Route>
                 <Route element={<RequireRole roles={[ROLES.ADMIN, ROLES.MANAGER]} />}>
                   <Route path="/users" element={<UsersPage />} />
                 </Route>

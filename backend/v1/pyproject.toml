@@ -12,6 +12,10 @@ select = ["E", "F", "I", "B", "UP", "N"]
 # Short HTTP-style exception names (NotFound, Forbidden, Conflict …) are deliberate; see app/core/errors.py
 ignore = ["N818"]
 
+[tool.ruff.lint.per-file-ignores]
+# Integration tests read better as one request per line, even when long.
+"tests/**" = ["E501"]
+
 [tool.ruff.lint.isort]
 # Vendored packages live next to app/ (see .gitignore), so tell isort explicitly what is what.
 known-first-party = ["app", "function", "tests"]

@@ -56,10 +56,15 @@ Rules enforced server-side: `managerId` required iff `role=employee`; `managerId
 Shapes:
 ```
 ProjectSummary  {id, name, status, archived, startDate, endDate, manager: UserSummary, memberCount,
-                 hoursAssigned, hoursCompleted, capacityHours}
-ProjectDetail   ProjectSummary + {description, budget, costConsumed, budgetRemaining, milestoneCounts:{open, complete}}
+                 hoursAssigned, hoursCompleted, capacityHours, capacityHoursPerMember}
+ProjectDetail   ProjectSummary + {description, milestoneCounts:{open, complete},
+                 myMembership: {isActive, hoursAssigned, hoursCompleted, releasedAt, releasedReason} | null,
+                 budget, costConsumed, budgetRemaining}
                  (budget/cost fields present only for admin and the manager)
-Member          {user: UserSummary, hoursAssigned, hoursCompleted, capacityHours, costConsumed?, isActive, addedAt, releasedAt}
+Member          {user: UserSummary, hoursAssigned, hoursCompleted, capacityHours, costConsumed?, isActive, addedAt,
+                 releasedAt, releasedReason}
+GET /projects/{id}: 403 for a non-member/non-manager; 404 for an archived project unless admin.
+hoursAssigned is capped at capacityHoursPerMember (400 VALIDATION_ERROR otherwise).
 UserSummary gains `currentProject: {id, name} | null` when listed via /users or /users/{id}/team (admin/manager views).
 ProjectStats    {capacityHours, hoursAssigned, hoursCompleted, budget?, costConsumed?, budgetRemaining?,
                  perMember: Member[], perMilestone: [{milestoneId, name, status, goalsDone, goalsTotal}]}

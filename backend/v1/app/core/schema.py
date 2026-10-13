@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS project_members (
     is_active      BOOLEAN NOT NULL DEFAULT TRUE,
     added_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
     released_at    TIMESTAMPTZ NULL,
+    released_reason TEXT NULL CHECK (released_reason IN ('removed', 'completed', 'archived')),
     PRIMARY KEY (project_id, user_id)
 );
 -- M8 / D15: one active project per employee
@@ -138,7 +139,11 @@ CREATE INDEX IF NOT EXISTS audit_log_entity_idx ON audit_log (entity_type, entit
 """
 
 # Additive changes after first deploy. Each statement must be idempotent.
-MIGRATIONS: list[str] = []
+MIGRATIONS: list[str] = [
+    # slice 3: why a membership ended, so un-archiving can re-claim exactly the people archiving released
+    "ALTER TABLE project_members ADD COLUMN IF NOT EXISTS released_reason TEXT "
+    "CHECK (released_reason IN ('removed', 'completed', 'archived'))",
+]
 
 TABLES_IN_DEPENDENCY_ORDER = (
     "audit_log",

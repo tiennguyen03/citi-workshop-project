@@ -62,6 +62,7 @@ Ownership: created by admin; info/budget/dates editable by admin or the project'
 | is_active | BOOLEAN NOT NULL DEFAULT true | `true` while the project is `active` and not archived and the member hasn't been removed. Maintained by the service. |
 | added_at | TIMESTAMPTZ | |
 | released_at | TIMESTAMPTZ NULL | Set when `is_active` flips to false (project completed/archived or member removed). |
+| released_reason | TEXT NULL | `removed` \| `completed` \| `archived`. Lets un-archive re-claim exactly the people archiving released; `completed` members still count towards capacity. |
 
 **Invariant (M8, D15): one active project per employee.**
 ```sql
