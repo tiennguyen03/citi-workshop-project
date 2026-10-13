@@ -185,7 +185,7 @@ with the workaround in place so nobody mistakes it for an oversight.
 | Audit log retention / export | Append-only, never pruned, admin-only UI with filters and "load more". No CSV export. | Export endpoint; retention job. |
 | Multiple admins | Supported (the last active admin cannot be deactivated/demoted). No admin audit of other admins' permission changes beyond the normal `user.update` rows. | — |
 | File uploads, comments, RAG status | Not built (stretch items S1–S4 in requirements). `goals.rag_status` column exists but is unused. | — |
-| Browser E2E in CI | The Playwright walkthroughs live in the session scratchpad, not the repo, because adding `@playwright/test` to `frontend/package.json` needs approval (D12). Unit/integration suites run from the repo. | Approve the dependency; move `pw/*.mjs` to `frontend/e2e/`. |
+| Browser E2E in CI | `frontend/e2e/` (Playwright, 12 tests across auth, projects, milestones, time + dashboards) runs locally against the dev stack with `npm run test:e2e`. The workshop CI has no Postgres/LocalStack, so it is not wired into GitHub Actions. | A CI job that starts Postgres + LocalStack, or points the suite at a deployed stack. |
 | Lambda memory | LocalStack reports the full 128 MB used at cold start (pydantic + psycopg). Not yet measured on AWS; deploy deferred by the user. | Measure on first deploy; fallback is hand-written validators instead of pydantic (D3). |
 
 **Why**: Three-day workshop scope; every item above has a documented workaround and none affects the

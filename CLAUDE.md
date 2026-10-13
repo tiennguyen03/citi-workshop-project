@@ -38,6 +38,10 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
   `tests/`, `requirements*.txt`, `pyproject.toml`, `.gitignore`). Everything else inside it is vendored by `start-dev.sh`.
 - `frontend/vitest.config.js`, `frontend/src/{auth,components,hooks,pages,services,test,utils}/`,
   `frontend/src/theme.js`; `App.jsx`, `main.jsx`, `index.css` replaced (Vite demo removed).
+- `frontend/playwright.config.js`, `frontend/e2e/` — browser suite (`npm run test:e2e` with the local stack up).
+  Each spec creates its own manager/employees/projects through the API (`e2e/support/api.js`), so it reruns
+  without reseeding; it adds a few `e2e.*`/`mgr.*`/`emp.*` users each run (reseed to clear). Results go to
+  `node_modules/.cache/e2e-results` (gitignored).
 
 ## Visual system (ui-refresh, 2026-10-13)
 - `src/theme.js` is the only place for colours/typography: ink primary, soft status tints, 1px borders
@@ -65,10 +69,9 @@ the `postgres` database and touch `backend/v1/function.py` (hot-reload re-runs t
   repo root: `backend/v1/.venv/bin/bandit -r ./backend` (reads `backend/.bandit`; must exit 0)
 - Frontend: `npx vitest run`, `npm run lint` (from `frontend/`)
 - Browser checks: no system Chrome and no sudo on the VDI. Playwright's bundled Chromium is in
-  `~/.cache/ms-playwright`; the Playwright MCP server is registered with `--browser chromium`.
-  Scripted walkthroughs live in the session scratchpad (`pw/walkthrough4.mjs` users/projects,
-  `pw/walkthrough5.mjs` milestones, `pw/walkthrough6.mjs` time + dashboards, `pw/walkthrough7.mjs` passwords, `pw/reseed.sh` resets the demo DB
-  first), not in the repo. The Playwright MCP writes its snapshots to `.playwright-mcp/` in the repo root —
+  `~/.cache/ms-playwright` (revision 1194 ↔ playwright 1.56.1, which is why `@playwright/test` is pinned);
+  the Playwright MCP server is registered with `--browser chromium`. The repo suite is `frontend/e2e/`;
+  the older scratchpad walkthroughs (`pw/walkthrough*.mjs`, `pw/reseed.sh`) are superseded by it. The Playwright MCP writes its snapshots to `.playwright-mcp/` in the repo root —
   delete that folder before committing (`.gitignore` is boilerplate, read-only).
 - Icon imports: check `node_modules/@mui/icons-material/<Name>.js` exists before using a name
   (e.g. `PersonOutlined`, `DeleteOutlined` — not `PersonOutline`/`DeleteOutline`); Vitest will not
@@ -88,6 +91,8 @@ the `postgres` database and touch `backend/v1/function.py` (hot-reload re-runs t
   Vitest + Testing Library, and the two ESLint plugins `eslint.config.js` already imported but
   never declared (decisions.md D12 note).
 - `bin/proxy-server.js` — 2026-10-14, one line: forward the `Authorization` header (D7).
+- `frontend/package.json` — 2026-10-13, added `@playwright/test@1.56.1` (dev) and the
+  `test:e2e` script (user approved).
 
 Keep this list updated as new top-level files/folders are added.
 

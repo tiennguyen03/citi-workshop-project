@@ -6,6 +6,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'jsdom',
+      exclude: ['e2e/**', 'node_modules/**'],
       setupFiles: ['./src/test/setup.js'],
       css: false,
       coverage: {

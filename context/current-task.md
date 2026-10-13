@@ -20,10 +20,9 @@
 
 **Done**: responsive + dark-mode pass (96 screens: every page × 3 roles × 390/1360 px × light/dark; no page overflow, no console errors); known gaps recorded as D18.
 **Remaining, each needs a decision**
-- Browser E2E suite into the repo (`frontend/e2e/`) → needs `@playwright/test` in `frontend/package.json` (read-only list, D12).
 - Project README → where it lives (root README is boilerplate).
 - Deploy to AWS + Lambda memory check + smoke test → user said "not yet".
-**Progress**: responsive/dark pass ✔ · known gaps ✔ · password change + admin reset ✔
+**Progress**: responsive/dark pass ✔ · known gaps ✔ · password change + admin reset ✔ · browser suite in repo ✔
 **Blockers**: none.
 
 ## Watch list
@@ -38,6 +37,7 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-13 · **Browser suite in the repo** (`frontend/e2e/`, `@playwright/test@1.56.1` approved by the user). 12 self-contained tests (each spec builds its own office through the API): auth + lockout + audit filter + password change/reset, project form validation, staffing, archive/unarchive, completion gating, milestone life cycle with the one-open-milestone picker, time logging on dashboard and Time tab, manager/admin dashboards, phone width. `npm run test:e2e`.
 - 2026-10-13 · **Password change** (branch `slice-6-hardening`). `POST /auth/change-password` (self; current password required, ≥ 8 chars, must differ) and admin temporary reset via `PATCH /users/{id} {password}`; profile page "Password" card, "Reset password" dialog on the admin's user page. The new test caught the audit sanitiser only stripping a key named exactly `password`, so `currentPassword` would have been stored in plaintext — it now drops any key containing "password" or "secret". 96 backend tests (97%), 54 frontend, 7-step browser walkthrough.
 - 2026-10-13 · **Slice 6 part 1** (branch `slice-6-hardening`): responsive + dark-mode pass over 96 screens. Fixes: project tabs scroll on narrow screens (the Time tab was unreachable at 390 px); `DataTable` columns can declare `nowrap`, applied to date and name columns (milestone rows were 151 px tall on phones because dates wrapped). Known gaps written as decisions.md D18.
 - 2026-10-13 · **Slice 5 done** (branch `slice-5-time-dashboards`). `app/time_entries/` (list scoped to self for members, create for active members only, author-only edit, author/manager/admin delete; hours 0.25–24, date inside project and not in the future; 409 on archived/complete) and `app/dashboard/` (`GET /dashboard`, role-shaped: admin stats + attention list, manager project cards + team with hours this week, employee current project + open goals + hours this week + past projects; added to api-contract). Frontend: Time tab (person filter for managers, edit/delete, stat cards), `TimeEntryDialog`, per-role dashboards (`AdminDashboard`, `ManagerDashboard`, `EmployeeDashboard` with goal ticking and Log time). 94 backend tests (97%), 51 frontend tests, 8-step browser walkthrough green, interactive Playwright MCP pass with PostgreSQL verification.
