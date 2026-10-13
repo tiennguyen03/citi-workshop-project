@@ -37,9 +37,23 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 - `frontend/vitest.config.js`, `frontend/src/{auth,components,hooks,pages,services,test,utils}/`,
   `frontend/src/theme.js`; `App.jsx`, `main.jsx`, `index.css` replaced (Vite demo removed).
 
+## Visual system (ui-refresh, 2026-10-13)
+- `src/theme.js` is the only place for colours/typography: ink primary, soft status tints, 1px borders
+  instead of shadows, `cssVariables` + `colorSchemes` (light/dark, class selector; toggle in the sidebar).
+  Use `(theme.vars || theme).palette…` or `utils/theme.js` `tint()` in components so tests (no provider) pass.
+- Status/role labels use `components/Tag` (`tone` = neutral|primary|accent|success|warning|error|info),
+  not MUI `Chip`. Read-only label/value groups use `components/FieldList`. Page titles use
+  `PageHeader` (`back={{ label, to|onClick }}` for the back link). Brand = `components/BrandMark`.
+- Paper defaults to `variant="outlined"`; tables scroll sideways under 640px; headings use Inter
+  (Google Fonts `@import` in `index.css`, falls back to the system font if offline).
+- In browser scripts, click nav links inside `getByRole('navigation', { name: 'Main navigation' })` —
+  the dashboard shortcut cards are links with the same names.
+
 ## Demo data
 `backend/v1/app/core/seed.py` loads on a database that has only the bootstrap admin
-(skipped when `SEED_DEMO_DATA=false`, which the tests set). Accounts: `admin` / `Admin123!`;
+(skipped when `SEED_DEMO_DATA=false`, which the tests set). Seed IDs are fixed but production-style
+(random-looking, same alphabet as `ids.new_id`); e.g. john.doe = `7NW8G4`, PRJ "Decommission 1,000
+Servers" = `FLZ38Y`. Never use readable prefixes like `EMP001` — they imply a sequence that caps out. Accounts: `admin` / `Admin123!`;
 everyone else / `Password1!` — managers `priya.natarajan`, `marcus.bell`, `elena.vasquez`;
 employees e.g. `john.doe`, `aisha.rahman`, `daniel.kim`. To reload locally: truncate all tables in
 the `postgres` database and touch `backend/v1/function.py` (hot-reload re-runs the seed).

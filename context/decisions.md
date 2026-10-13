@@ -155,3 +155,14 @@ formula counts active members. Seed data must include available employees.
 non-archived projects they were on (their time entries live there; archiving is the hide
 mechanism; cost data is already hidden from employees). The project detail page shows a
 "released on <date>" banner with all actions hidden.
+
+## D17 · 2026-10-13 · Minimal visual system; production-style seed IDs
+**Decision**: One theme file drives the look: ink-coloured primary, soft tinted `Tag` labels instead of
+filled chips, 1px borders instead of shadows, Inter typography, light + dark colour schemes via MUI CSS
+variables (manual toggle, light by default). Sidebar navigation replaces the coloured app bar.
+Demo seed IDs are fixed random-looking values from the same alphabet as `ids.new_id` (no `EMP001`).
+**Why**: User asked for a neat, minimal, sophisticated UI; readable sequential IDs suggested a cap
+(999) that the real generator (32^6 ≈ 1.07 B values) does not have.
+**Consequences**: Components must not hard-code colours; use theme tokens (`theme.vars` with fallback)
+so both schemes and the provider-less tests work. Status semantics: open/active = info, complete =
+success, archived/deactivated = warning, released = neutral.

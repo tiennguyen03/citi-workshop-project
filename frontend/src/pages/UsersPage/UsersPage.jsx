@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
 import AddIcon from '@mui/icons-material/Add'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import NoticeSnackbar from '../../components/NoticeSnackbar/NoticeSnackbar.jsx'
 import PageHeader from '../../components/PageHeader/PageHeader.jsx'
 import RoleChip from '../../components/RoleChip/RoleChip.jsx'
+import Tag from '../../components/Tag/Tag.jsx'
 import useApi from '../../hooks/useApi.js'
 import useNotice from '../../hooks/useNotice.js'
 import useAuth from '../../auth/useAuth.js'
@@ -24,12 +24,12 @@ const COLUMNS = [
     key: 'currentProject',
     label: 'Current project',
     render: (u) =>
-      u.role !== ROLES.EMPLOYEE ? '—' : u.currentProject ? u.currentProject.name : <Chip size="small" label="Available" color="success" variant="outlined" />,
+      u.role !== ROLES.EMPLOYEE ? '—' : u.currentProject ? u.currentProject.name : <Tag label="Available" tone="success" />,
   },
   {
     key: 'isActive',
     label: 'Status',
-    render: (u) => (u.isActive === false ? <Chip size="small" label="Deactivated" /> : 'Active'),
+    render: (u) => (u.isActive === false ? <Tag label="Deactivated" tone="warning" /> : <Tag label="Active" tone="neutral" dot />),
   },
 ]
 

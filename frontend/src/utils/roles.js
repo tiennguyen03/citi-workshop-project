@@ -16,3 +16,9 @@ export function fullName(user) {
   if (!user) return ''
   return `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
 }
+
+/** Up to two initials for an avatar. */
+export function initials(user) {
+  if (!user) return ''
+  return `${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`.toUpperCase()
+}

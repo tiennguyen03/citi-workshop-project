@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -7,7 +7,6 @@ import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import NoticeSnackbar from '../../components/NoticeSnackbar/NoticeSnackbar.jsx'
@@ -19,7 +18,7 @@ import useAuth from '../../auth/useAuth.js'
 import * as projectsApi from '../../services/projects.js'
 import * as usersApi from '../../services/users.js'
 import { formatDate } from '../../utils/format.js'
-import { ROLES } from '../../utils/roles.js'
+import { ROLES, fullName } from '../../utils/roles.js'
 import MembersTab from './MembersTab.jsx'
 import OverviewTab from './OverviewTab.jsx'
 import ProjectEditDialog from './ProjectEditDialog.jsx'
@@ -27,7 +26,6 @@ import ProjectEditDialog from './ProjectEditDialog.jsx'
 /** Project detail with Overview + Members tabs (Milestones/Time arrive in slices 4–5). */
 export default function ProjectDetailPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
   const { user: me } = useAuth()
   const { notice, notify, clear } = useNotice()
   const [tab, setTab] = useState('overview')
@@ -84,16 +82,14 @@ export default function ProjectDetailPage() {
 
   return (
     <>
-      <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/projects')} sx={{ mb: 1 }}>
-        Projects
-      </Button>
       <ErrorAlert error={error} onRetry={refetch} />
       {loading && !project && <Skeleton variant="rounded" height={240} />}
       {project && (
         <>
           <PageHeader
+            back={{ label: 'All projects', to: '/projects' }}
             title={project.name}
-            subtitle={`${formatDate(project.startDate)} – ${formatDate(project.endDate)}`}
+            subtitle={`${formatDate(project.startDate)} – ${formatDate(project.endDate)} · managed by ${fullName(project.manager)}`}
             actions={
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                 <StatusChip status={project.status} archived={project.archived} size="medium" />
@@ -131,7 +127,7 @@ export default function ProjectDetailPage() {
               {project.milestoneCounts.open} open milestone{project.milestoneCounts.open === 1 ? '' : 's'} must be completed before the project can be marked complete.
             </Alert>
           )}
-          <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 2 }}>
+          <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 3 }}>
             <Tab label="Overview" value="overview" />
             <Tab label={`Members (${project.memberCount})`} value="members" />
           </Tabs>

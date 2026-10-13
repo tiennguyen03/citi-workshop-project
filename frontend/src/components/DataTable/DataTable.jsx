@@ -26,11 +26,11 @@ export default function DataTable({
 }) {
   return (
     <TableContainer component={Paper}>
-      <Table size={size}>
+      <Table size={size} sx={{ minWidth: columns.length > 3 ? 640 : 0 }}>
         <TableHead>
           <TableRow>
             {columns.map((col) => (
-              <TableCell key={col.key} align={col.align} sx={{ fontWeight: 600, width: col.width }}>
+              <TableCell key={col.key} align={col.align} sx={{ width: col.width }}>
                 {col.label}
               </TableCell>
             ))}
@@ -49,8 +49,10 @@ export default function DataTable({
             ))}
           {!loading && rows.length === 0 && (
             <TableRow>
-              <TableCell colSpan={columns.length} align="center" sx={{ py: 5 }}>
-                <Typography color="text.secondary">{emptyMessage}</Typography>
+              <TableCell colSpan={columns.length} align="center" sx={{ py: 7 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {emptyMessage}
+                </Typography>
               </TableCell>
             </TableRow>
           )}
@@ -63,7 +65,7 @@ export default function DataTable({
                 sx={onRowClick ? { cursor: 'pointer' } : undefined}
               >
                 {columns.map((col) => (
-                  <TableCell key={col.key} align={col.align}>
+                  <TableCell key={col.key} align={col.align} sx={{ fontVariantNumeric: 'tabular-nums' }}>
                     {col.render ? col.render(row) : row[col.key]}
                   </TableCell>
                 ))}

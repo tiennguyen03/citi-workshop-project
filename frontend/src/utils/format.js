@@ -22,3 +22,11 @@ export function formatHours(value) {
   if (value === null || value === undefined) return '—'
   return `${Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 })} h`
 }
+
+/** Time-of-day greeting for the dashboard. */
+export function greeting(now = new Date()) {
+  const hour = now.getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}

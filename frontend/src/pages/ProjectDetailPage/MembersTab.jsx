@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
-import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import IconButton from '@mui/material/IconButton'
 import MenuItem from '@mui/material/MenuItem'
@@ -18,6 +16,7 @@ import DataTable from '../../components/DataTable/DataTable.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import FormDialog from '../../components/FormDialog/FormDialog.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
+import Tag from '../../components/Tag/Tag.jsx'
 import useApi from '../../hooks/useApi.js'
 import * as projectsApi from '../../services/projects.js'
 import { formatHours, formatMoney } from '../../utils/format.js'
@@ -139,7 +138,7 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
     {
       key: 'isActive',
       label: 'Status',
-      render: (m) => (m.isActive ? <Chip size="small" color="success" label="Active" /> : <Chip size="small" label={`Released (${m.releasedReason})`} />),
+      render: (m) => (m.isActive ? <Tag label="Active" tone="success" dot /> : <Tag label={`Released (${m.releasedReason})`} tone="neutral" />),
     },
     ...(writable
       ? [
@@ -151,12 +150,12 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
               m.isActive ? (
                 <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
                   <Tooltip title="Edit assigned hours">
-                    <IconButton size="small" aria-label={`Edit hours for ${fullName(m.user)}`} onClick={(e) => { e.stopPropagation(); setEditing(m) }}>
+                    <IconButton size="small" sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary' } }} aria-label={`Edit hours for ${fullName(m.user)}`} onClick={(e) => { e.stopPropagation(); setEditing(m) }}>
                       <EditIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Release from project">
-                    <IconButton size="small" color="error" aria-label={`Release ${fullName(m.user)}`} onClick={(e) => { e.stopPropagation(); setReleasing(m) }}>
+                    <IconButton size="small" sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }} aria-label={`Release ${fullName(m.user)}`} onClick={(e) => { e.stopPropagation(); setReleasing(m) }}>
                       <PersonRemoveIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
@@ -240,7 +239,6 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
         onConfirm={confirmRelease}
         onClose={() => setReleasing(null)}
       />
-      <Box />
     </>
   )
 }

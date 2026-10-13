@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types'
-import Chip from '@mui/material/Chip'
+import Tag from '../Tag/Tag.jsx'
 import { ROLE_LABELS } from '../../utils/roles.js'
 
-const COLORS = { admin: 'secondary', manager: 'primary', employee: 'default' }
+const TONES = { admin: 'accent', manager: 'primary', employee: 'neutral' }
 
-/** Small coloured role badge. */
+/** Small role badge. */
 export default function RoleChip({ role, size = 'small' }) {
-  return <Chip size={size} color={COLORS[role] ?? 'default'} label={ROLE_LABELS[role] ?? role} />
+  return <Tag size={size} tone={TONES[role] ?? 'neutral'} label={ROLE_LABELS[role] ?? role} />
 }
 
 RoleChip.propTypes = {

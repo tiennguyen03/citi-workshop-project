@@ -1,7 +1,13 @@
 /* Global resets only; everything else is MUI theme + sx (context/coding-rules.md). */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 html,
 body,
 #root {
   height: 100%;
   margin: 0;
+}
+
+body {
+  text-rendering: optimizeLegibility;
 }

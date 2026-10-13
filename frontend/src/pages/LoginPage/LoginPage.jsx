@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import useAuth from '../../auth/useAuth.js'
+import BrandMark from '../../components/BrandMark/BrandMark.jsx'
 
 /** Username + password sign-in (ui-flow.md F1). */
 export default function LoginPage() {
@@ -46,20 +47,27 @@ export default function LoginPage() {
       sx={{
         minHeight: '100%',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: 'background.default',
         px: 2,
+        py: 6,
       }}
     >
-      <Paper component="form" onSubmit={handleSubmit} sx={{ p: 4, width: '100%', maxWidth: 400 }} noValidate>
-        <Stack spacing={2}>
-          <Typography variant="h5" component="h1">
-            Project Tracker
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Sign in with the account your admin created for you.
-          </Typography>
+      <Box sx={{ mb: 4 }}>
+        <BrandMark size={36} />
+      </Box>
+      <Paper component="form" onSubmit={handleSubmit} noValidate sx={{ p: { xs: 3, sm: 4 }, width: '100%', maxWidth: 400 }}>
+        <Stack spacing={2.5}>
+          <Box>
+            <Typography variant="h4" component="h1">
+              Sign in
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Use the account your admin created for you.
+            </Typography>
+          </Box>
           {error && <Alert severity="error">{error}</Alert>}
           <TextField
             label="Username"
@@ -86,6 +94,9 @@ export default function LoginPage() {
           </Button>
         </Stack>
       </Paper>
+      <Typography variant="caption" color="text.secondary" sx={{ mt: 3 }}>
+        Time · Cost · Resources, in one place.
+      </Typography>
     </Box>
   )
 }

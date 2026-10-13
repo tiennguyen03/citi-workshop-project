@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types'
 import Box from '@mui/material/Box'
+import FieldList from '../../components/FieldList/FieldList.jsx'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
@@ -8,25 +9,13 @@ import StatCard from '../../components/StatCard/StatCard.jsx'
 import { formatDate, formatHours, formatMoney } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 
-function Field({ label, value }) {
-  return (
-    <Box sx={{ minWidth: 160 }}>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography>{value ?? '—'}</Typography>
-    </Box>
-  )
-}
-Field.propTypes = { label: PropTypes.node.isRequired, value: PropTypes.node }
-
 /** The three pillars for one project: time (hours), cost (budget, if allowed), resources (team). */
 export default function OverviewTab({ project }) {
   const hasCosts = project.budget !== undefined
   const overBudget = hasCosts && Number(project.budgetRemaining) < 0
   return (
     <Stack spacing={3}>
-      <Stack direction="row" useFlexGap spacing={2} sx={{ flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' } }}>
         <StatCard label="Capacity" value={formatHours(project.capacityHours)} hint={`${project.memberCount} member${project.memberCount === 1 ? '' : 's'} × working days × 8 h`} />
         <StatCard label="Hours assigned" value={formatHours(project.hoursAssigned)} hint="Sum of allocations" />
         <StatCard label="Hours completed" value={formatHours(project.hoursCompleted)} hint="Sum of logged time" />
@@ -35,9 +24,9 @@ export default function OverviewTab({ project }) {
         {hasCosts && (
           <StatCard label="Budget remaining" value={formatMoney(project.budgetRemaining)} color={overBudget ? 'error.main' : 'success.main'} />
         )}
-      </Stack>
+      </Box>
       <Paper sx={{ p: 3 }}>
-        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
           Progress
         </Typography>
         <ProgressBar
@@ -54,14 +43,21 @@ export default function OverviewTab({ project }) {
         </Box>
       </Paper>
       <Paper sx={{ p: 3 }}>
-        <Stack direction="row" useFlexGap spacing={3} sx={{ flexWrap: 'wrap', mb: project.description ? 2 : 0 }}>
-          <Field label="Manager" value={fullName(project.manager)} />
-          <Field label="Start" value={formatDate(project.startDate)} />
-          <Field label="End" value={formatDate(project.endDate)} />
-          <Field label="Milestones" value={`${project.milestoneCounts.complete} complete · ${project.milestoneCounts.open} open`} />
-          <Field label="Project ID" value={project.id} />
-        </Stack>
-        {project.description && <Typography sx={{ whiteSpace: 'pre-wrap' }}>{project.description}</Typography>}
+        <FieldList
+          columns={5}
+          items={[
+            { label: 'Manager', value: fullName(project.manager) },
+            { label: 'Start', value: formatDate(project.startDate) },
+            { label: 'End', value: formatDate(project.endDate) },
+            { label: 'Milestones', value: `${project.milestoneCounts.complete} complete · ${project.milestoneCounts.open} open` },
+            { label: 'Project ID', value: project.id },
+          ]}
+        />
+        {project.description && (
+          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', mt: 3 }}>
+            {project.description}
+          </Typography>
+        )}
       </Paper>
     </Stack>
   )

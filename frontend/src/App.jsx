@@ -23,7 +23,7 @@ import { ROLES } from './utils/roles.js'
 /** Route table (ui-flow.md). Feature routes are added slice by slice. */
 export default function App() {
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={theme} defaultMode="light" disableTransitionOnChange noSsr>
       <CssBaseline />
       <AuthProvider>
         <BrowserRouter>

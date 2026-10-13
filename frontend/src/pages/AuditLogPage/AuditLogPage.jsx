@@ -2,7 +2,6 @@ import { useState } from 'react'
 import PropTypes from 'prop-types'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
 import Collapse from '@mui/material/Collapse'
 import IconButton from '@mui/material/IconButton'
 import MenuItem from '@mui/material/MenuItem'
@@ -16,6 +15,7 @@ import DataTable from '../../components/DataTable/DataTable.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import PageHeader from '../../components/PageHeader/PageHeader.jsx'
 import RoleChip from '../../components/RoleChip/RoleChip.jsx'
+import Tag from '../../components/Tag/Tag.jsx'
 import useApi from '../../hooks/useApi.js'
 import * as auditApi from '../../services/auditLog.js'
 import { formatDateTime } from '../../utils/format.js'
@@ -37,7 +37,7 @@ function DetailsCell({ entry }) {
         </IconButton>
       </Stack>
       <Collapse in={open}>
-        <Box component="pre" sx={{ m: 0, mt: 1, p: 1, bgcolor: 'grey.100', borderRadius: 1, fontSize: 12, overflowX: 'auto' }}>
+        <Box component="pre" sx={{ m: 0, mt: 1, p: 1.5, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', borderRadius: 2, fontSize: 12, overflowX: 'auto' }}>
           {JSON.stringify(entry.details, null, 2)}
         </Box>
       </Collapse>
@@ -70,13 +70,13 @@ const COLUMNS = [
         </Typography>
       ),
   },
-  { key: 'action', label: 'Action', render: (e) => <Chip size="small" label={e.action} variant="outlined" /> },
+  { key: 'action', label: 'Action', render: (e) => <Box component="code" sx={{ fontSize: '0.75rem', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', color: 'text.secondary' }}>{e.action}</Box> },
   { key: 'summary', label: 'What happened', render: (e) => <DetailsCell entry={e} /> },
   {
     key: 'statusCode',
     label: 'Result',
     align: 'right',
-    render: (e) => <Chip size="small" label={e.statusCode} color={e.statusCode < 400 ? 'success' : 'error'} variant="outlined" />,
+    render: (e) => <Tag label={e.statusCode} tone={e.statusCode < 400 ? 'success' : 'error'} />,
   },
 ]
 
