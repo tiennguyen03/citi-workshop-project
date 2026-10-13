@@ -38,7 +38,7 @@ const COLUMNS = [
     ),
   },
   { key: 'status', label: 'Status', render: (m) => <StatusChip status={m.status} /> },
-  { key: 'dates', label: 'Dates', render: (m) => `${formatDate(m.startDate)} – ${formatDate(m.dueDate)}` },
+  { key: 'dates', label: 'Dates', nowrap: true, render: (m) => `${formatDate(m.startDate)} – ${formatDate(m.dueDate)}` },
   {
     key: 'goals',
     label: 'Goals',

@@ -16,7 +16,7 @@ import { ROLES, fullName } from '../../utils/roles.js'
 import UserCreateDialog from './UserCreateDialog.jsx'
 
 const COLUMNS = [
-  { key: 'name', label: 'Name', render: (u) => fullName(u) },
+  { key: 'name', label: 'Name', nowrap: true, render: (u) => fullName(u) },
   { key: 'role', label: 'Role', render: (u) => <RoleChip role={u.role} /> },
   { key: 'jobTitle', label: 'Job title' },
   { key: 'email', label: 'Email' },

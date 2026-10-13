@@ -53,7 +53,8 @@ const COLUMNS = [
     key: 'occurredAt',
     label: 'When',
     width: 200,
-    render: (e) => <span style={{ whiteSpace: 'nowrap' }}>{formatDateTime(e.occurredAt)}</span>,
+    nowrap: true,
+    render: (e) => formatDateTime(e.occurredAt),
   },
   {
     key: 'actor',

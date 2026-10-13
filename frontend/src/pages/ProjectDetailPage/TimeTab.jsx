@@ -62,7 +62,7 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
   }
 
   const columns = [
-    { key: 'entryDate', label: 'Date', render: (e) => formatDate(e.entryDate), width: 140 },
+    { key: 'entryDate', label: 'Date', nowrap: true, render: (e) => formatDate(e.entryDate), width: 140 },
     ...(canManage ? [{ key: 'user', label: 'Person', render: (e) => fullName(e.user) }] : []),
     { key: 'hours', label: 'Hours', align: 'right', render: (e) => formatHours(e.hours), width: 100 },
     { key: 'note', label: 'Note', render: (e) => e.note || <Typography variant="caption" color="text.secondary">—</Typography> },

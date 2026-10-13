@@ -20,7 +20,7 @@ const COLUMNS = [
   { key: 'name', label: 'Project' },
   { key: 'status', label: 'Status', render: (p) => <StatusChip status={p.status} archived={p.archived} /> },
   { key: 'manager', label: 'Manager', render: (p) => fullName(p.manager) },
-  { key: 'dates', label: 'Dates', render: (p) => `${formatDate(p.startDate)} – ${formatDate(p.endDate)}` },
+  { key: 'dates', label: 'Dates', nowrap: true, render: (p) => `${formatDate(p.startDate)} – ${formatDate(p.endDate)}` },
   { key: 'memberCount', label: 'Team', align: 'right' },
   {
     key: 'hours',

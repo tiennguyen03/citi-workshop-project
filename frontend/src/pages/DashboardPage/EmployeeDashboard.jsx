@@ -21,7 +21,7 @@ import TimeEntryDialog from '../ProjectDetailPage/TimeEntryDialog.jsx'
 const PAST_COLUMNS = [
   { key: 'name', label: 'Project' },
   { key: 'status', label: 'Status', render: (p) => <StatusChip status={p.status} /> },
-  { key: 'dates', label: 'Dates', render: (p) => `${formatDate(p.startDate)} – ${formatDate(p.endDate)}` },
+  { key: 'dates', label: 'Dates', nowrap: true, render: (p) => `${formatDate(p.startDate)} – ${formatDate(p.endDate)}` },
 ]
 
 /** Employee landing: current project, open goals with checkboxes, log time, past projects (ui-flow.md › F6). */

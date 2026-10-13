@@ -65,7 +65,7 @@ export default function DataTable({
                 sx={onRowClick ? { cursor: 'pointer' } : undefined}
               >
                 {columns.map((col) => (
-                  <TableCell key={col.key} align={col.align} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <TableCell key={col.key} align={col.align} sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: col.nowrap ? 'nowrap' : undefined }}>
                     {col.render ? col.render(row) : row[col.key]}
                   </TableCell>
                 ))}
@@ -85,6 +85,7 @@ DataTable.propTypes = {
       render: PropTypes.func,
       align: PropTypes.oneOf(['left', 'right', 'center']),
       width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      nowrap: PropTypes.bool,
     }),
   ).isRequired,
   rows: PropTypes.arrayOf(PropTypes.object).isRequired,

@@ -130,7 +130,7 @@ export default function ProjectDetailPage() {
               {project.milestoneCounts.open} open milestone{project.milestoneCounts.open === 1 ? '' : 's'} must be completed before the project can be marked complete.
             </Alert>
           )}
-          <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 3 }}>
+          <Tabs value={tab} onChange={(_e, v) => setTab(v)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile sx={{ mb: 3 }}>
             <Tab label="Overview" value="overview" />
             <Tab label={`Members (${project.memberCount})`} value="members" />
             <Tab label={`Milestones (${project.milestoneCounts.open + project.milestoneCounts.complete})`} value="milestones" />

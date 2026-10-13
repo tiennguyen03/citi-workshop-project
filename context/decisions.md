@@ -166,3 +166,29 @@ Demo seed IDs are fixed random-looking values from the same alphabet as `ids.new
 **Consequences**: Components must not hard-code colours; use theme tokens (`theme.vars` with fallback)
 so both schemes and the provider-less tests work. Status semantics: open/active = info, complete =
 success, archived/deactivated = warning, released = neutral.
+
+## D18 · 2026-10-13 · Known gaps accepted for the MVP
+**Decision**: The following are consciously out of scope for the workshop deliverable. Each is listed
+with the workaround in place so nobody mistakes it for an oversight.
+
+| Gap | Today | If it mattered |
+|---|---|---|
+| Password change / reset | Admin sets a temporary password at creation and can set a new one via `PATCH /users/{id}`; users cannot change their own. | Add `POST /auth/change-password` (self, old+new) and an admin reset that flags "must change on next login". |
+| Session expiry | JWT lives 8 h; no refresh. A `401` from any call clears the session and sends the user to the login page. | Sliding refresh token or a shorter token with silent renewal. |
+| Email / notifications | Nothing is sent. Email addresses are stored for identification only. | SES on milestone due dates, goal assignment, budget overrun. |
+| Pagination | Only the audit log pages (`limit`/`offset`). Users, projects, milestones, entries are returned whole; fine at workshop scale (tens to low hundreds of rows). | Add `limit`/`offset` to the list endpoints; the `DataTable` already takes rows, not fetches. |
+| Time zones | Dates are calendar dates (`DATE`), no time of day. "Today" and "this week" use the Lambda's clock (UTC) on the server and the browser's clock in the client, so near midnight the two can disagree by a day. | Pass the client's date as a query param, or store the user's time zone. |
+| Hours per day cap | At most 24 h per entry; no cap on the sum of entries per day. | Reject when a day's total would exceed 24 h. |
+| Capacity model | Weekdays × 8 h per member for the whole project, from the day they joined is **not** considered; public holidays and leave are ignored (D9). | Pro-rate by membership dates; a holiday calendar table. |
+| Concurrency | Last write wins on `PATCH`; no `updated_at` check. Unique rules (one active project, one open milestone) are enforced by partial indexes so they hold under races. | Send `If-Unmodified-Since`/version on edits. |
+| Soft delete elsewhere | Projects archive (M11). Goals and time entries are hard-deleted but every deletion is audited with the full payload, so nothing is lost silently. | Add `deleted_at` if restores are ever needed. |
+| Audit log retention / export | Append-only, never pruned, admin-only UI with filters and "load more". No CSV export. | Export endpoint; retention job. |
+| Multiple admins | Supported (the last active admin cannot be deactivated/demoted). No admin audit of other admins' permission changes beyond the normal `user.update` rows. | — |
+| File uploads, comments, RAG status | Not built (stretch items S1–S4 in requirements). `goals.rag_status` column exists but is unused. | — |
+| Browser E2E in CI | The Playwright walkthroughs live in the session scratchpad, not the repo, because adding `@playwright/test` to `frontend/package.json` needs approval (D12). Unit/integration suites run from the repo. | Approve the dependency; move `pw/*.mjs` to `frontend/e2e/`. |
+| Lambda memory | LocalStack reports the full 128 MB used at cold start (pydantic + psycopg). Not yet measured on AWS; deploy deferred by the user. | Measure on first deploy; fallback is hand-written validators instead of pydantic (D3). |
+
+**Why**: Three-day workshop scope; every item above has a documented workaround and none affects the
+three pillars (time, cost, resources) the assignment is graded on.
+**Consequences**: Reviewers should treat these as roadmap, not defects. The table is the checklist for
+a post-workshop hardening pass.

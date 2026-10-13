@@ -13,7 +13,7 @@ import * as usersApi from '../../services/users.js'
 import { ROLES, fullName, initials } from '../../utils/roles.js'
 
 const COLUMNS = [
-  { key: 'name', label: 'Name', render: (u) => fullName(u) },
+  { key: 'name', label: 'Name', nowrap: true, render: (u) => fullName(u) },
   { key: 'jobTitle', label: 'Job title' },
   { key: 'email', label: 'Email' },
   {

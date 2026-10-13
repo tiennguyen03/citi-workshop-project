@@ -14,20 +14,16 @@
 | 3 | Projects: CRUD, archive/unarchive, members + hours, capacity/stats, ProjectsPage, ProjectFormPage, ProjectDetailPage (Overview + Members tabs) | 2 AM | **done** |
 | 4 | Milestones & goals: endpoints, Milestones tab, MilestoneDetailPage, goal toggling, project complete | 2 PM | **done** |
 | 5 | Time entries: endpoints, Time tab, dashboard per role (~~seed data~~ done early) | 3 AM | **done** |
-| 6 | Hardening: tests to target, responsive pass, README, deploy to AWS, smoke test, known gaps | 3 PM | todo |
+| 6 | Hardening: tests to target, responsive pass, README, deploy to AWS, smoke test, known gaps | 3 PM | **in progress** (deploy deferred by user) |
 
-## Current slice: 6 — Hardening & deploy (not started; waiting for "go")
+## Current slice: 6 — Hardening (deploy deferred by the user on 2026-10-13)
 
-**Acceptance criteria**
-- Backend tests ≥ 95% coverage (currently 97%), ruff/bandit clean; frontend tests + ESLint clean.
-- Responsive pass over every page at 390 px; dark-mode pass.
-- `README.md` for the project (what it is, roles, how to run locally, how to deploy, demo accounts) — the root README is boilerplate (read-only), so this goes in `context/README.md` or `docs/`? → ask the user where.
-- Deploy to AWS with the repo scripts (`bin/deploy-backend.sh`, `bin/deploy-frontend.sh`); verify Lambda memory on the first deploy (watch list); smoke test: login → dashboard → log time → audit row.
-- Browser E2E suite moved from the scratchpad into the repo (`frontend/e2e/`), which needs `@playwright/test` in `frontend/package.json` → **ask the user before touching package.json**.
-- Known gaps written into `context/decisions.md`.
-
-**Files involved**: `backend/v1/tests/*`, `frontend/e2e/*`, docs; no new features.
-**Progress**: —
+**Done**: responsive + dark-mode pass (96 screens: every page × 3 roles × 390/1360 px × light/dark; no page overflow, no console errors); known gaps recorded as D18.
+**Remaining, each needs a decision**
+- Browser E2E suite into the repo (`frontend/e2e/`) → needs `@playwright/test` in `frontend/package.json` (read-only list, D12).
+- Project README → where it lives (root README is boilerplate).
+- Deploy to AWS + Lambda memory check + smoke test → user said "not yet".
+**Progress**: responsive/dark pass ✔ · known gaps ✔
 **Blockers**: none.
 
 ## Watch list
@@ -42,6 +38,7 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-13 · **Slice 6 part 1** (branch `slice-6-hardening`): responsive + dark-mode pass over 96 screens. Fixes: project tabs scroll on narrow screens (the Time tab was unreachable at 390 px); `DataTable` columns can declare `nowrap`, applied to date and name columns (milestone rows were 151 px tall on phones because dates wrapped). Known gaps written as decisions.md D18.
 - 2026-10-13 · **Slice 5 done** (branch `slice-5-time-dashboards`). `app/time_entries/` (list scoped to self for members, create for active members only, author-only edit, author/manager/admin delete; hours 0.25–24, date inside project and not in the future; 409 on archived/complete) and `app/dashboard/` (`GET /dashboard`, role-shaped: admin stats + attention list, manager project cards + team with hours this week, employee current project + open goals + hours this week + past projects; added to api-contract). Frontend: Time tab (person filter for managers, edit/delete, stat cards), `TimeEntryDialog`, per-role dashboards (`AdminDashboard`, `ManagerDashboard`, `EmployeeDashboard` with goal ticking and Log time). 94 backend tests (97%), 51 frontend tests, 8-step browser walkthrough green, interactive Playwright MCP pass with PostgreSQL verification.
 - 2026-10-13 · **Slice 4 done** (branch `slice-4-milestones`). Ten milestone/goal endpoints in `app/milestones/` (list/create/get/patch, complete/reopen, available-assignees with a `busy` list, goals create/patch/delete); one-open-milestone rule (`MILESTONE_CONFLICT` naming who is busy where, only for newly added assignees on PATCH, re-checked on reopen); dates inside the project; writes `409` on archived/complete projects and on complete milestones; goal assignee must be a milestone assignee; removing an assignee unassigns their goals; `is_open` kept in sync. Frontend: Milestones tab (progress, avatars, "Who is on what"), New/Edit milestone dialog (busy members disabled, conflicts shown on the field), MilestoneDetailPage with goal checklist (optimistic ticks, add/rename/assign/delete, complete with open-goal warning, reopen). 81 backend tests (97%), 43 frontend tests, 8-step browser walkthrough (create → goals → employee ticks → complete → project unlocks → conflict picker → audit → mobile) green.
 - 2026-10-13 · **UI refresh + seed IDs** (branch `ui-refresh`, D17). New theme (ink primary, soft `Tag` labels, bordered cards, Inter, light/dark toggle), sidebar shell with user block, redesigned login/dashboard/403/404, `FieldList` for read-only details, `PageHeader` back links, stat grid, tables scroll on mobile. Seed IDs switched from `EMP001`-style to fixed random-style values. 36 frontend tests, 76 backend tests, 13-step browser walkthrough and a 15-screen visual pass (light, dark, mobile) all green.

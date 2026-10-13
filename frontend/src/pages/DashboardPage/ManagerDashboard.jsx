@@ -17,7 +17,7 @@ const REASON = {
 }
 
 const TEAM_COLUMNS = [
-  { key: 'name', label: 'Name', render: (t) => fullName(t.user) },
+  { key: 'name', label: 'Name', nowrap: true, render: (t) => fullName(t.user) },
   { key: 'jobTitle', label: 'Job title', render: (t) => t.user.jobTitle },
   {
     key: 'currentProject',

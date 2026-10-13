@@ -126,7 +126,7 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
   }
 
   const columns = [
-    { key: 'name', label: 'Name', render: (m) => fullName(m.user) },
+    { key: 'name', label: 'Name', nowrap: true, render: (m) => fullName(m.user) },
     { key: 'jobTitle', label: 'Job title', render: (m) => m.user.jobTitle },
     { key: 'hoursAssigned', label: 'Assigned', align: 'right', render: (m) => formatHours(m.hoursAssigned) },
     {
