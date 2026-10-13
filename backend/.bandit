@@ -1,0 +1,8 @@
+# Bandit settings picked up by `bandit -r ./backend` (the workshop's "Security Check - Python" workflow
+# runs exactly that from the repo root; bandit looks for a .bandit file inside each target directory).
+#
+# Tests are excluded: they use `assert` by design (B101) and sign in with the documented demo
+# passwords (B105/B107). Application code under backend/v1/app and function.py is scanned in full.
+# The remaining excludes are local-only folders (virtualenv, packages vendored by start-dev.sh).
+[bandit]
+exclude = ./backend/v1/tests,*/tests/*,./backend/v1/.venv,*/.venv/*,*/site-packages/*,*/psycopg*,*/pydantic*,*/jwt/*,*/bcrypt/*,*/annotated_types/*,*/typing_extensions.py,*/typing_inspection/*,*/_pydantic_core*,*/bin/*,*/__pycache__/*

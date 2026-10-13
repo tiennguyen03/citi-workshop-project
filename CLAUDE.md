@@ -32,6 +32,8 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 - `CLAUDE.md`
 - `context/` — requirements, architecture, data-model, api-contract, security, ui-flow,
   coding-rules, decisions, current-task
+- `backend/.bandit` — Bandit settings for the workshop's `Security Check - Python` workflow (excludes `tests/`
+  and local-only folders; app code is scanned in full).
 - `backend/v1/` — the API Lambda (`function.py`, `app/{core,auth,users,projects,milestones,time_entries,dashboard,audit_log,health}`,
   `tests/`, `requirements*.txt`, `pyproject.toml`, `.gitignore`). Everything else inside it is vendored by `start-dev.sh`.
 - `frontend/vitest.config.js`, `frontend/src/{auth,components,hooks,pages,services,test,utils}/`,
@@ -59,7 +61,8 @@ employees e.g. `john.doe`, `aisha.rahman`, `daniel.kim`. To reload locally: trun
 the `postgres` database and touch `backend/v1/function.py` (hot-reload re-runs the seed).
 
 ## Local tooling (not committed)
-- Backend venv: `backend/v1/.venv` → `.venv/bin/pytest`, `.venv/bin/ruff check .`, `.venv/bin/bandit -q -r app function.py`
+- Backend venv: `backend/v1/.venv` → `.venv/bin/pytest`, `.venv/bin/ruff check .`; Bandit exactly as CI runs it, from the
+  repo root: `backend/v1/.venv/bin/bandit -r ./backend` (reads `backend/.bandit`; must exit 0)
 - Frontend: `npx vitest run`, `npm run lint` (from `frontend/`)
 - Browser checks: no system Chrome and no sudo on the VDI. Playwright's bundled Chromium is in
   `~/.cache/ms-playwright`; the Playwright MCP server is registered with `--browser chromium`.
