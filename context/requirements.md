@@ -40,7 +40,7 @@ of resource management: **time** (hours), **cost** (budget), **resources** (peop
 - M13. A project has many milestones. Each has name, description, start date, due date, status (open/complete), many assigned employees (from the project's members).
 - M13a. **One open milestone per employee per project.** Within their project an employee can be assigned to only one milestone whose status is `open`. When that milestone is completed they become available for the next. (Clarified 2026-10-14, D14.)
 - M14. A milestone has many goals (sub-tasks). Employees check goals off; managers mark the milestone complete (UI warns if goals remain open).
-- M15. Removing an employee from a project removes them from all its milestones; removing them from a milestone unassigns their goals.
+- M15. Removing an employee from a project removes them from all its milestones; removing them from a milestone unassigns their goals. A goal can only be assigned to one of its milestone's assignees. Goals of a completed milestone are frozen until it is reopened.
 - M16. Seed data with example projects and milestones (e.g. "Decommission 1,000 servers" with phased milestones).
 
 ### Time

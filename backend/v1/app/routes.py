@@ -8,6 +8,7 @@ from app.audit_log import handlers as audit_log
 from app.auth import handlers as auth
 from app.auth.middleware import authenticate
 from app.health import handlers as health
+from app.milestones import handlers as milestones
 from app.projects import handlers as projects
 from app.router import Router
 from app.users import handlers as users
@@ -51,6 +52,18 @@ def build_router() -> Router:
     router.add("POST", "/projects/{id}/members", projects.add_member, audit="project.member_add")
     router.add("PATCH", "/projects/{id}/members/{userId}", projects.update_member, audit="project.member_update")
     router.add("DELETE", "/projects/{id}/members/{userId}", projects.remove_member, audit="project.member_remove")
+
+    # Milestones & goals
+    router.add("GET", "/projects/{id}/milestones", milestones.list_milestones)
+    router.add("POST", "/projects/{id}/milestones", milestones.create_milestone, audit="milestone.create")
+    router.add("GET", "/projects/{id}/available-assignees", milestones.available_assignees)
+    router.add("GET", "/milestones/{id}", milestones.get_milestone)
+    router.add("PATCH", "/milestones/{id}", milestones.update_milestone, audit="milestone.update")
+    router.add("POST", "/milestones/{id}/complete", milestones.complete_milestone, audit="milestone.complete")
+    router.add("POST", "/milestones/{id}/reopen", milestones.reopen_milestone, audit="milestone.reopen")
+    router.add("POST", "/milestones/{id}/goals", milestones.create_goal, audit="goal.create")
+    router.add("PATCH", "/goals/{id}", milestones.update_goal, audit="goal.update")
+    router.add("DELETE", "/goals/{id}", milestones.delete_goal, audit="goal.delete")
 
     # Audit log (admin)
     router.add("GET", "/audit-log", audit_log.list_entries)

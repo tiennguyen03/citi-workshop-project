@@ -78,6 +78,26 @@ def _membership_for(actor: Actor, project_id: str, repo) -> dict[str, Any] | Non
     }
 
 
+# ---- shared with other features (milestones, time entries) ---------------------
+
+
+def load_project(project_id: str, repo=default_repo) -> dict[str, Any]:
+    """Bare project row or 404."""
+    return _load(project_id, repo)
+
+
+def require_visible(actor: Actor, project_id: str, repo=default_repo) -> dict[str, Any]:
+    """Project the actor may read (404 for archived-and-hidden, 403 for outsiders)."""
+    return _load_visible(actor, project_id, repo)
+
+
+def require_manageable(actor: Actor, project_id: str, repo=default_repo) -> dict[str, Any]:
+    """Project the actor may change: admin or its manager (403 otherwise). Archive/complete checks are the caller's."""
+    project = _load(project_id, repo)
+    permissions.assert_manages_project(actor, project)
+    return project
+
+
 # ---- read ------------------------------------------------------------------------
 
 

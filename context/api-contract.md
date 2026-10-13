@@ -80,9 +80,9 @@ ProjectStats    {capacityHours, hoursAssigned, hoursCompleted, budget?, costCons
 | PATCH | `/milestones/{id}` | `{name?, description?, startDate?, dueDate?, assigneeIds?}` | `200 Milestone` · `409 MILESTONE_CONFLICT` as above (only for *newly added* assignees) | admin; project manager |
 | POST | `/milestones/{id}/complete` | — | `200 Milestone` (`details.openGoals` returned as warning info, not blocking). Frees its assignees for other milestones. | admin; project manager |
 | POST | `/milestones/{id}/reopen` | — | `200 Milestone` · `409` if project complete · `409 MILESTONE_CONFLICT` if an assignee has since joined another open milestone | admin; project manager |
-| GET | `/projects/{id}/available-assignees?milestoneId=` | — | `200 {items: UserSummary[]}` — members with no open milestone in this project (plus current assignees of `milestoneId` if given) | admin; project manager |
-| POST | `/milestones/{id}/goals` | `{title, assigneeId?}` | `201 Goal` | admin; project manager |
-| PATCH | `/goals/{id}` | `{title?, assigneeId?, isDone?}` | `200 Goal` | title/assignee: admin, project manager. `isDone`: additionally the goal's assignee. |
+| GET | `/projects/{id}/available-assignees?milestoneId=` | — | `200 {items: UserSummary[], busy: [{user: UserSummary, milestone: {id, name}}]}` — `items`: active members with no open milestone in this project (plus current assignees of `milestoneId` if given); `busy`: the rest, with the open milestone holding them (for the disabled options in ui-flow F5) | admin; project manager |
+| POST | `/milestones/{id}/goals` | `{title, assigneeId?}` | `201 Goal` · `400` if `assigneeId` is not one of the milestone's assignees · `409` if the milestone is complete | admin; project manager |
+| PATCH | `/goals/{id}` | `{title?, assigneeId?, isDone?}` | `200 Goal` · `409` if the milestone is complete (reopen it first) | title/assignee: admin, project manager. `isDone`: additionally the goal's assignee. |
 | DELETE | `/goals/{id}` | — | `204` | admin; project manager |
 
 ```
@@ -90,7 +90,7 @@ Milestone {id, projectId, name, description, startDate, dueDate, status, complet
            goals: Goal[], goalsDone, goalsTotal}
 Goal      {id, milestoneId, title, assignee: UserSummary|null, isDone, doneAt}
 ```
-All writes `409` when the project is archived.
+All writes `409` when the project is archived or complete. `MILESTONE_CONFLICT.details` also carries `conflicts: [{userId, milestoneId, milestoneName}]` so the UI can name who is busy where.
 
 ## Time entries
 

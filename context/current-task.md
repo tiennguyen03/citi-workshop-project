@@ -12,20 +12,19 @@
 | 1 | Auth: `POST /auth/login` (audited), `GET /auth/me`, middleware, LoginPage, route guards | 1 AM | **done** |
 | 2 | Users: CRUD per contract, permissions, UsersPage, UserDetailPage, ProfilePage, TeamPage; `GET /audit-log` + AuditLogPage (admin) so every later slice is verifiable in the log | 1 PM | **done** |
 | 3 | Projects: CRUD, archive/unarchive, members + hours, capacity/stats, ProjectsPage, ProjectFormPage, ProjectDetailPage (Overview + Members tabs) | 2 AM | **done** |
-| 4 | Milestones & goals: endpoints, Milestones tab, MilestoneDetailPage, goal toggling, project complete | 2 PM | todo |
+| 4 | Milestones & goals: endpoints, Milestones tab, MilestoneDetailPage, goal toggling, project complete | 2 PM | **done** |
 | 5 | Time entries: endpoints, Time tab, dashboard per role (~~seed data~~ done early) | 3 AM | todo |
 | 6 | Hardening: tests to target, responsive pass, README, deploy to AWS, smoke test, known gaps | 3 PM | todo |
 
-## Current slice: 4 — Milestones & goals (not started; waiting for "go")
+## Current slice: 5 — Time entries & dashboards (not started; waiting for "go")
 
 **Acceptance criteria**
-- Endpoints per api-contract › Milestones & goals: list/create/get/patch milestones, complete/reopen, `available-assignees`, goals create/patch/delete. One-open-milestone-per-employee rule (M13a/D14) enforced in the service (`MILESTONE_CONFLICT`) and backed by the partial index; `milestone_assignees.is_open` kept in sync on complete/reopen. Milestone dates within project dates. Writes `409` when the project is archived or complete. All mutations audited with `project_id`.
-- Goal `isDone` toggle allowed for the assignee, project manager, admin; title/assignee/delete for manager/admin. Completing a milestone with open goals returns `details.openGoals` (warn, not block).
-- Project "Mark complete" now really depends on milestone status (already wired).
-- Pages: Milestones tab on ProjectDetailPage (ordered list: status, due date, goals done/total, assignees; New milestone dialog with assignee multi-select fed by `available-assignees`), MilestoneDetailPage (edit header, goal list with add/rename/assign/delete, employee checkboxes, Mark complete / Reopen). Dashboard "My open goals" stays for slice 5.
-- Tests: service unit (conflict rule, cascade on member release), integration per endpoint, frontend tests (Milestones tab, MilestoneDetailPage goal toggle), browser walkthrough extended.
+- Endpoints per api-contract › Time entries: list (members see own only), create (active member, self), patch (author), delete (author/manager/admin); `400` on limits (hours 0.25–24 per entry, date within project dates, not in the future), `409` when the project is archived/complete. Audited with `project_id`.
+- Time tab on ProjectDetailPage: "Log time" dialog (date default today, hours, note), own entries with edit/delete; managers see everyone's entries. Overview/Members hours figures update.
+- DashboardPage per role (ui-flow.md › Per-role landing): admin stat cards + projects needing attention; manager cards per managed project + team availability; employee current project card, "My open goals" with checkboxes, "Log time" shortcut, past projects.
+- Tests: service unit (limits, permissions), integration per endpoint, frontend tests (Time tab, dashboards), browser walkthrough extended.
 
-**Files involved**: `backend/v1/app/milestones/{handlers,service,schemas,repository}.py`, `app/routes.py`; `frontend/src/services/milestones.js`, `pages/ProjectDetailPage/MilestonesTab.jsx`, `pages/MilestoneDetailPage/`.
+**Files involved**: `backend/v1/app/time_entries/{handlers,service,schemas,repository}.py`, `app/routes.py`; `frontend/src/services/timeEntries.js`, `pages/ProjectDetailPage/TimeTab.jsx`, `pages/DashboardPage/*`.
 **Progress**: —
 **Blockers**: none.
 
@@ -41,6 +40,7 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-13 · **Slice 4 done** (branch `slice-4-milestones`). Ten milestone/goal endpoints in `app/milestones/` (list/create/get/patch, complete/reopen, available-assignees with a `busy` list, goals create/patch/delete); one-open-milestone rule (`MILESTONE_CONFLICT` naming who is busy where, only for newly added assignees on PATCH, re-checked on reopen); dates inside the project; writes `409` on archived/complete projects and on complete milestones; goal assignee must be a milestone assignee; removing an assignee unassigns their goals; `is_open` kept in sync. Frontend: Milestones tab (progress, avatars, "Who is on what"), New/Edit milestone dialog (busy members disabled, conflicts shown on the field), MilestoneDetailPage with goal checklist (optimistic ticks, add/rename/assign/delete, complete with open-goal warning, reopen). 81 backend tests (97%), 43 frontend tests, 8-step browser walkthrough (create → goals → employee ticks → complete → project unlocks → conflict picker → audit → mobile) green.
 - 2026-10-13 · **UI refresh + seed IDs** (branch `ui-refresh`, D17). New theme (ink primary, soft `Tag` labels, bordered cards, Inter, light/dark toggle), sidebar shell with user block, redesigned login/dashboard/403/404, `FieldList` for read-only details, `PageHeader` back links, stat grid, tables scroll on mobile. Seed IDs switched from `EMP001`-style to fixed random-style values. 36 frontend tests, 76 backend tests, 13-step browser walkthrough and a 15-screen visual pass (light, dark, mobile) all green.
 - 2026-10-14 · **Seed data + deeper browser coverage** (on `slice-3-projects`). `core/seed.py`: 3 managers, 12 employees with real names, 4 projects (one complete+archived), 11 milestones, 20 goals, 22 time entries, 4 employees left available; loads on a fresh DB, disabled in tests, invariants checked by `test_seed.py`. Login page now shows the API's reason on 401 (deactivated vs bad credentials) — found by the browser run. Extended Playwright walkthrough (13 steps) covers: user edit + deactivate → lockout → reactivate, audit filter, archive/unarchive re-claim, completion gating, edit hours, release + re-add member, edit budget, mobile.
 - 2026-10-14 · **Slice 3 done.** 13 project endpoints (CRUD, complete, archive/unarchive with member release/re-claim via `released_reason`, members add/update/release with cascade, `available-members`, `stats`); capacity/cost math in `projects/capacity.py` (weekdays × 8 h, salary/2080) with unit tests; one-active-project rule → `PROJECT_CONFLICT`; costs hidden from employees. Frontend: ProjectsPage (archived toggle), ProjectFormPage, ProjectDetailPage with Overview (StatCards + progress) and Members (add dialog fed by available-members, edit hours, release with confirm) tabs; StatCard/ProgressBar/StatusChip/ProjectFields components. 72 backend tests (96%), 36 frontend tests, browser walkthrough admin→manager→employee passes with zero console errors.

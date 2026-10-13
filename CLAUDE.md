@@ -32,8 +32,8 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 - `CLAUDE.md`
 - `context/` — requirements, architecture, data-model, api-contract, security, ui-flow,
   coding-rules, decisions, current-task
-- `backend/v1/` — the API Lambda (`function.py`, `app/`, `tests/`, `requirements*.txt`,
-  `pyproject.toml`, `.gitignore`). Everything else inside it is vendored by `start-dev.sh`.
+- `backend/v1/` — the API Lambda (`function.py`, `app/{core,auth,users,projects,milestones,audit_log,health}`,
+  `tests/`, `requirements*.txt`, `pyproject.toml`, `.gitignore`). Everything else inside it is vendored by `start-dev.sh`.
 - `frontend/vitest.config.js`, `frontend/src/{auth,components,hooks,pages,services,test,utils}/`,
   `frontend/src/theme.js`; `App.jsx`, `main.jsx`, `index.css` replaced (Vite demo removed).
 
@@ -63,7 +63,13 @@ the `postgres` database and touch `backend/v1/function.py` (hot-reload re-runs t
 - Frontend: `npx vitest run`, `npm run lint` (from `frontend/`)
 - Browser checks: no system Chrome and no sudo on the VDI. Playwright's bundled Chromium is in
   `~/.cache/ms-playwright`; the Playwright MCP server is registered with `--browser chromium`.
-  A scripted walkthrough lives in the session scratchpad (`pw/walkthrough.mjs`), not in the repo.
+  Scripted walkthroughs live in the session scratchpad (`pw/walkthrough4.mjs` users/projects,
+  `pw/walkthrough5.mjs` milestones, `pw/reseed.sh` resets the demo DB first), not in the repo.
+- Icon imports: check `node_modules/@mui/icons-material/<Name>.js` exists before using a name
+  (e.g. `PersonOutlined`, `DeleteOutlined` — not `PersonOutline`/`DeleteOutline`); Vitest will not
+  catch a bad import in a file no test renders, but Vite fails the whole page.
+- Never run two Bash calls in parallel that both `cd`: the shared working directory races and files
+  land in the wrong tree. Use `( cd dir && … )` subshells or absolute paths.
 - MUI is **v9**: no system props on `Box`/`Stack`/`Typography` (use `sx`), `TextField` uses
   `slotProps.{input,htmlInput,inputLabel,select}`, `<TextField select>` label renders as a `<div>`
   (query selects by `role="combobox"` in tests), Dialog/Snackbar `onClose(event, reason)`.
