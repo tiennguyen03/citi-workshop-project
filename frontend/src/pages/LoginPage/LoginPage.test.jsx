@@ -41,9 +41,9 @@ describe('LoginPage', () => {
     await waitFor(() => expect(screen.getByText('dashboard')).toBeInTheDocument())
   })
 
-  it('shows a friendly message on 401 and re-enables the form', async () => {
+  it('shows the API message on 401 and re-enables the form', async () => {
     const user = userEvent.setup()
-    const login = vi.fn().mockRejectedValue(Object.assign(new Error('nope'), { status: 401 }))
+    const login = vi.fn().mockRejectedValue(Object.assign(new Error('Invalid username or password'), { status: 401 }))
     renderLogin(login)
     await user.type(screen.getByLabelText(/username/i, { selector: 'input' }), 'admin')
     await user.type(screen.getByLabelText(/password/i, { selector: 'input' }), 'wrong')

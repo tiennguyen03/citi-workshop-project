@@ -37,6 +37,13 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 - `frontend/vitest.config.js`, `frontend/src/{auth,components,hooks,pages,services,test,utils}/`,
   `frontend/src/theme.js`; `App.jsx`, `main.jsx`, `index.css` replaced (Vite demo removed).
 
+## Demo data
+`backend/v1/app/core/seed.py` loads on a database that has only the bootstrap admin
+(skipped when `SEED_DEMO_DATA=false`, which the tests set). Accounts: `admin` / `Admin123!`;
+everyone else / `Password1!` — managers `priya.natarajan`, `marcus.bell`, `elena.vasquez`;
+employees e.g. `john.doe`, `aisha.rahman`, `daniel.kim`. To reload locally: truncate all tables in
+the `postgres` database and touch `backend/v1/function.py` (hot-reload re-runs the seed).
+
 ## Local tooling (not committed)
 - Backend venv: `backend/v1/.venv` → `.venv/bin/pytest`, `.venv/bin/ruff check .`, `.venv/bin/bandit -q -r app function.py`
 - Frontend: `npx vitest run`, `npm run lint` (from `frontend/`)

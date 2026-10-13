@@ -9,3 +9,4 @@ os.environ.setdefault("POSTGRES_PORT", "5432")
 os.environ.setdefault("POSTGRES_USER", "postgres")
 os.environ.setdefault("POSTGRES_PASS", "postgres123")
 os.environ.setdefault("POSTGRES_NAME", "tracker_test")
+os.environ.setdefault("SEED_DEMO_DATA", "false")  # tests build their own fixtures; test_seed loads it explicitly

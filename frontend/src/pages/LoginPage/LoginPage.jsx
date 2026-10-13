@@ -34,7 +34,9 @@ export default function LoginPage() {
       await login(username.trim(), password)
       navigate(location.state?.from?.pathname || '/', { replace: true })
     } catch (err) {
-      setError(err.status === 401 ? 'Invalid username or password' : err.message)
+      // The API already distinguishes bad credentials from a deactivated account (security.md);
+      // show its message, falling back to a generic one for anything unexpected.
+      setError(err.message || 'Invalid username or password')
       setPending(false)
     }
   }

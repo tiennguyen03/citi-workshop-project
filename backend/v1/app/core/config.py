@@ -27,6 +27,7 @@ class Settings:
     jwt_ttl_seconds: int
     bcrypt_rounds: int
     bootstrap_admin_password: str
+    seed_demo_data: bool
 
 
 def _resolve_jwt_secret(is_local: bool) -> str:
@@ -62,4 +63,6 @@ def get_settings() -> Settings:
         jwt_ttl_seconds=int(os.getenv("JWT_TTL_SECONDS", str(JWT_TTL_SECONDS))),
         bcrypt_rounds=int(os.getenv("BCRYPT_ROUNDS", "4" if is_local else "12")),
         bootstrap_admin_password=os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "Admin123!"),
+        # Demo data loads on a fresh database unless explicitly disabled (tests disable it).
+        seed_demo_data=os.getenv("SEED_DEMO_DATA", "true").lower() == "true",
     )

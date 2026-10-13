@@ -191,6 +191,10 @@ def ensure() -> None:
         return
     apply()
     ensure_bootstrap_admin()
+    # Imported here: seed depends on db + security, schema must stay importable by both.
+    from app.core import seed
+
+    seed.ensure_demo_data()
     _ensured = True
 
 
