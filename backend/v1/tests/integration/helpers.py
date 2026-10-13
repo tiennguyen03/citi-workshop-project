@@ -11,9 +11,10 @@ def call(method: str, path: str, body: dict | None = None, token: str | None = N
     headers = {"content-type": "application/json"}
     if token:
         headers["authorization"] = f"Bearer {token}"
+    raw_path, _, raw_query = path.partition("?")
     event = {
-        "rawPath": path,
-        "rawQueryString": "",
+        "rawPath": raw_path,
+        "rawQueryString": raw_query,
         "headers": headers,
         "requestContext": {"http": {"method": method}},
         "body": json.dumps(body) if body is not None else "",

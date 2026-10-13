@@ -40,6 +40,12 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 ## Local tooling (not committed)
 - Backend venv: `backend/v1/.venv` → `.venv/bin/pytest`, `.venv/bin/ruff check .`, `.venv/bin/bandit -q -r app function.py`
 - Frontend: `npx vitest run`, `npm run lint` (from `frontend/`)
+- Browser checks: no system Chrome and no sudo on the VDI. Playwright's bundled Chromium is in
+  `~/.cache/ms-playwright`; the Playwright MCP server is registered with `--browser chromium`.
+  A scripted walkthrough lives in the session scratchpad (`pw/walkthrough.mjs`), not in the repo.
+- MUI is **v9**: no system props on `Box`/`Stack`/`Typography` (use `sx`), `TextField` uses
+  `slotProps.{input,htmlInput,inputLabel,select}`, `<TextField select>` label renders as a `<div>`
+  (query selects by `role="combobox"` in tests), Dialog/Snackbar `onClose(event, reason)`.
 - Known quirk: the `pip` on PATH is Python **3.14**, the Lambda runtime is **3.13**, so
   `start-dev.sh`'s vendoring step fails silently (`No module named 'psycopg'` in Lambda logs).
   Vendor with the 3.13 venv instead, whenever `requirements.txt` changes:

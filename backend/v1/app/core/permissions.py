@@ -70,6 +70,21 @@ def can_view_salary(actor: Actor, target: dict[str, Any]) -> bool:
     return actor.is_admin or target["id"] == actor.id or is_direct_report(actor, target)
 
 
+def can_view_user(actor: Actor, target: dict[str, Any]) -> bool:
+    """Admin: anyone. Manager: self + direct reports. Employee: self, teammates (same manager), own manager."""
+    if actor.is_admin or target["id"] == actor.id:
+        return True
+    if actor.is_manager:
+        return is_direct_report(actor, target)
+    same_team = actor.manager_id is not None and target.get("manager_id") == actor.manager_id
+    return same_team or target["id"] == actor.manager_id
+
+
+def assert_can_view_user(actor: Actor, target: dict[str, Any]) -> None:
+    if not can_view_user(actor, target):
+        raise Forbidden("You cannot view this user")
+
+
 def can_toggle_goal(actor: Actor, goal: dict[str, Any], project: dict[str, Any]) -> bool:
     """Project manager/admin, or the goal's assignee."""
     return manages_project(actor, project) or goal.get("assignee_id") == actor.id

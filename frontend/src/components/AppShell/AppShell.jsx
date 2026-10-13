@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { flushSync } from 'react-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
@@ -41,9 +42,18 @@ const NAV_ITEMS = [
 /** Application frame: top bar, role-aware navigation drawer (collapsible on mobile), content outlet. */
 export default function AppShell() {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const [open, setOpen] = useState(false)
+
+  // Sign out, then land on /login with NO remembered "from" location, so the next person to
+  // sign in is not bounced to a page the previous user was on (and may not be allowed to see).
+  // flushSync lets RequireAuth perform its own redirect first; ours then replaces it.
+  const handleLogout = () => {
+    flushSync(() => logout())
+    navigate('/login', { replace: true })
+  }
 
   const items = NAV_ITEMS.filter((item) => item.roles.includes(user?.role))
 
@@ -86,7 +96,7 @@ export default function AppShell() {
           </Typography>
           <Chip size="small" color="secondary" label={ROLE_LABELS[user?.role] ?? user?.role} />
           <Tooltip title="Sign out">
-            <IconButton color="inherit" aria-label="Sign out" onClick={logout}>
+            <IconButton color="inherit" aria-label="Sign out" onClick={handleLogout}>
               <LogoutIcon />
             </IconButton>
           </Tooltip>

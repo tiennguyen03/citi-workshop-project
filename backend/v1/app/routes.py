@@ -4,10 +4,12 @@ The route table. Every endpoint in api-contract.md is registered here and nowher
 Mutating routes MUST declare `audit=` (enforced by tests/unit/test_routes.py).
 """
 
+from app.audit_log import handlers as audit_log
 from app.auth import handlers as auth
 from app.auth.middleware import authenticate
 from app.health import handlers as health
 from app.router import Router
+from app.users import handlers as users
 
 
 def build_router() -> Router:
@@ -26,5 +28,15 @@ def build_router() -> Router:
         audit_on_failure="auth.login_failed",
     )
     router.add("GET", "/auth/me", auth.get_me)
+
+    # Users
+    router.add("GET", "/users", users.list_users)
+    router.add("POST", "/users", users.create_user, audit="user.create")
+    router.add("GET", "/users/{id}", users.get_user)
+    router.add("PATCH", "/users/{id}", users.update_user, audit="user.update")
+    router.add("GET", "/users/{id}/team", users.get_team)
+
+    # Audit log (admin)
+    router.add("GET", "/audit-log", audit_log.list_entries)
 
     return router
