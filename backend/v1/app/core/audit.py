@@ -11,7 +11,9 @@ import psycopg
 
 from app.core.actor import Actor
 
-REDACT_KEYS = frozenset({"password", "token", "authorization", "newPassword", "temporaryPassword"})
+# Dropped from stored request bodies: exact matches plus any key containing one of REDACT_SUBSTRINGS.
+REDACT_KEYS = frozenset({"token", "authorization"})
+REDACT_SUBSTRINGS = ("password", "secret")
 MASK_KEYS = frozenset({"salary"})
 
 # action prefix -> entity_type column value
@@ -29,7 +31,7 @@ def sanitize(body: Any) -> Any:
     if isinstance(body, dict):
         cleaned: dict[str, Any] = {}
         for key, value in body.items():
-            if key in REDACT_KEYS:
+            if key in REDACT_KEYS or any(part in key.lower() for part in REDACT_SUBSTRINGS):
                 continue
             if key in MASK_KEYS:
                 cleaned[key] = "[redacted]"

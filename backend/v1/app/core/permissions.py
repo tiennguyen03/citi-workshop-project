@@ -12,7 +12,7 @@ from app.core.actor import Actor
 from app.core.errors import Forbidden
 
 # Fields on a user that only an admin may change.
-ADMIN_ONLY_USER_FIELDS = frozenset({"job_title", "salary", "role", "manager_id", "is_active"})
+ADMIN_ONLY_USER_FIELDS = frozenset({"job_title", "salary", "role", "manager_id", "is_active", "password"})
 # Fields a manager (for reports) or the user themself may change.
 SELF_EDITABLE_USER_FIELDS = frozenset({"first_name", "last_name", "email"})
 

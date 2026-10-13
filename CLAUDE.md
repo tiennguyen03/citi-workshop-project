@@ -64,7 +64,7 @@ the `postgres` database and touch `backend/v1/function.py` (hot-reload re-runs t
 - Browser checks: no system Chrome and no sudo on the VDI. Playwright's bundled Chromium is in
   `~/.cache/ms-playwright`; the Playwright MCP server is registered with `--browser chromium`.
   Scripted walkthroughs live in the session scratchpad (`pw/walkthrough4.mjs` users/projects,
-  `pw/walkthrough5.mjs` milestones, `pw/walkthrough6.mjs` time + dashboards, `pw/reseed.sh` resets the demo DB
+  `pw/walkthrough5.mjs` milestones, `pw/walkthrough6.mjs` time + dashboards, `pw/walkthrough7.mjs` passwords, `pw/reseed.sh` resets the demo DB
   first), not in the repo. The Playwright MCP writes its snapshots to `.playwright-mcp/` in the repo root —
   delete that folder before committing (`.gitignore` is boilerplate, read-only).
 - Icon imports: check `node_modules/@mui/icons-material/<Name>.js` exists before using a name

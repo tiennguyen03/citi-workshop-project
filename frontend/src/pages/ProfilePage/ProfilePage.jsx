@@ -11,6 +11,7 @@ import useAuth from '../../auth/useAuth.js'
 import * as usersApi from '../../services/users.js'
 import { fullName } from '../../utils/roles.js'
 import { formatMoney } from '../../utils/format.js'
+import PasswordForm from './PasswordForm.jsx'
 
 /** The signed-in user's own profile: name + email editable, everything else read-only (F10). */
 export default function ProfilePage() {
@@ -45,6 +46,16 @@ export default function ProfilePage() {
         </Typography>
         <Divider sx={{ mb: 3 }} />
         <UserEditForm key={user.email} user={user} canEditNameEmail onSave={save} />
+      </Paper>
+      <Paper sx={{ p: 3, mt: 3 }}>
+        <Typography variant="h6" sx={{ mb: 0.5 }}>
+          Password
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Replace the temporary password your admin gave you, or change it any time.
+        </Typography>
+        <Divider sx={{ mb: 3 }} />
+        <PasswordForm onChanged={() => notify('Password changed')} />
       </Paper>
       <NoticeSnackbar notice={notice} onClose={clear} />
     </>

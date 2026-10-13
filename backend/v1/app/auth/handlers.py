@@ -1,7 +1,7 @@
 """Auth endpoints (api-contract.md › Auth)."""
 
 from app.auth import service
-from app.auth.schemas import LoginRequest
+from app.auth.schemas import ChangePasswordRequest, LoginRequest
 from app.core.actor import Actor
 from app.core.dto import parse
 from app.http import Request, Response, ok
@@ -22,6 +22,17 @@ def post_login(request: Request) -> Response:
         audit_summary=f"User '{user['username']}' logged in",
         audit_entity_id=user["id"],
         audit_actor=Actor(id=user["id"], role=user["role"], manager_id=user["manager_id"]),
+    )
+
+
+def post_change_password(request: Request) -> Response:
+    """POST /auth/change-password — the caller changes their own password."""
+    dto = parse(ChangePasswordRequest, request.json())
+    user = service.change_password(request.require_actor, dto.current_password, dto.new_password)
+    return ok(
+        {"changed": True},
+        audit_summary=f"User '{user['username']}' changed their password",
+        audit_entity_id=user["id"],
     )
 
 

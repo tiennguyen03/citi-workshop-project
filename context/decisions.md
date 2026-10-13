@@ -173,7 +173,7 @@ with the workaround in place so nobody mistakes it for an oversight.
 
 | Gap | Today | If it mattered |
 |---|---|---|
-| Password change / reset | Admin sets a temporary password at creation and can set a new one via `PATCH /users/{id}`; users cannot change their own. | Add `POST /auth/change-password` (self, old+new) and an admin reset that flags "must change on next login". |
+| Forced password rotation | Users change their own password on the profile page (`POST /auth/change-password`, current password required) and admins can set a temporary one (`PATCH /users/{id} {password}`). Nothing forces a change on first login. | A `must_change_password` flag set by the admin reset, checked by the login response. |
 | Session expiry | JWT lives 8 h; no refresh. A `401` from any call clears the session and sends the user to the login page. | Sliding refresh token or a shorter token with silent renewal. |
 | Email / notifications | Nothing is sent. Email addresses are stored for identification only. | SES on milestone due dates, goal assignment, budget overrun. |
 | Pagination | Only the audit log pages (`limit`/`offset`). Users, projects, milestones, entries are returned whole; fine at workshop scale (tens to low hundreds of rows). | Add `limit`/`offset` to the list endpoints; the `DataTable` already takes rows, not fetches. |

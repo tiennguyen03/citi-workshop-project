@@ -132,6 +132,8 @@ def update_user(actor: Actor, user_id: str, dto: UpdateUserRequest, repo=default
             _validate_manager_assignment(new_role, manager_id, repo)
             fields["manager_id"] = manager_id
 
+    if "password" in fields:
+        fields["password_hash"] = security.hash_password(fields.pop("password"))
     updated = repo.update(user_id, fields)
     (updated,) = _with_current_project([updated], repo)
     return _present(actor, updated)

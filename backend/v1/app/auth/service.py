@@ -6,7 +6,7 @@ from typing import Any
 
 from app.core import security
 from app.core.actor import Actor
-from app.core.errors import NotFound, Unauthenticated
+from app.core.errors import NotFound, Unauthenticated, ValidationError
 from app.users import repository as users_repo
 
 BAD_CREDENTIALS = "Invalid username or password"
@@ -29,6 +29,17 @@ def login(username: str, password: str, repo=users_repo) -> LoginResult:
     token, expires_at = security.issue_token(row["id"], row["role"])
     user = {k: v for k, v in row.items() if k != "password_hash"}
     return LoginResult(token=token, expires_at=expires_at, user=user)
+
+
+def change_password(actor: Actor, current_password: str, new_password: str, repo=users_repo) -> dict[str, Any]:
+    """Self-service password change: the current password must match. Returns the user row."""
+    row = repo.find_credentials_by_id(actor.id)
+    if row is None:  # pragma: no cover - middleware already verified existence
+        raise NotFound("User not found")
+    if not security.verify_password(current_password, row["password_hash"]):
+        raise ValidationError("Current password is incorrect", field="currentPassword")
+    repo.update_password(actor.id, security.hash_password(new_password))
+    return {k: v for k, v in row.items() if k != "password_hash"}
 
 
 def current_user(actor: Actor, repo=users_repo) -> dict[str, Any]:

@@ -32,6 +32,7 @@ def build_router() -> Router:
         audit_on_failure="auth.login_failed",
     )
     router.add("GET", "/auth/me", auth.get_me)
+    router.add("POST", "/auth/change-password", auth.post_change_password, audit="auth.password_change")
 
     # Users
     router.add("GET", "/users", users.list_users)

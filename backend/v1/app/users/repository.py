@@ -28,7 +28,7 @@ USER_COLUMNS = (
 )
 COLS = sql.SQL(", ").join(sql.Identifier(c) for c in USER_COLUMNS)
 UPDATABLE_COLUMNS = frozenset(
-    {"first_name", "last_name", "email", "job_title", "salary", "role", "manager_id", "is_active"}
+    {"first_name", "last_name", "email", "job_title", "salary", "role", "manager_id", "is_active", "password_hash"}
 )
 
 
@@ -40,6 +40,18 @@ def find_by_id(user_id: str, conn=None) -> dict[str, Any] | None:
 def find_by_username(username: str, conn=None) -> dict[str, Any] | None:
     query = sql.SQL("SELECT {cols} FROM users WHERE username = %s").format(cols=COLS)
     return db.query_one(query, (username,), conn=conn)
+
+
+def find_credentials_by_id(user_id: str, conn=None) -> dict[str, Any] | None:
+    """Password-change lookup — returns password_hash for one user by id."""
+    query = sql.SQL("SELECT {cols}, password_hash FROM users WHERE id = %s").format(cols=COLS)
+    return db.query_one(query, (user_id,), conn=conn)
+
+
+def update_password(user_id: str, password_hash: str, conn=None) -> None:
+    db.execute(
+        "UPDATE users SET password_hash = %s, updated_at = now() WHERE id = %s", (password_hash, user_id), conn=conn
+    )
 
 
 def find_credentials(username: str, conn=None) -> dict[str, Any] | None:

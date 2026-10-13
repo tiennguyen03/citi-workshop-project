@@ -61,7 +61,7 @@ can_toggle_goal(actor, goal, project)  -> manages_project or goal.assignee_id ==
 
 | Data | Handling |
 |---|---|
-| `password_hash` | Never selected into DTOs; repository `SELECT` lists exclude it except in `auth.find_for_login`. |
+| `password_hash` | Never selected into DTOs; repository `SELECT` lists exclude it except in `find_credentials` (login) and `find_credentials_by_id` (password change). Users change their own password with the current one (`POST /auth/change-password`); admins set a temporary one via `PATCH /users/{id} {password}`. Both are audited (`auth.password_change`, `user.update`) with the password stripped from `details`. |
 | `salary` | Returned only to admin / the user's manager / the user. Cost figures derived from salary are returned only to admin and the project manager. |
 | JWT secret, DB password | Env vars only; never in code, logs or git. `ENVIRONMENT.config` is gitignored. |
 | Tokens | Never logged. Frontend clears on logout and on any `401`. |

@@ -22,6 +22,7 @@ JSON. All endpoints except `POST /auth/login` require `Authorization: Bearer <jw
 |---|---|---|---|---|
 | POST | `/auth/login` | `{username, password}` | `200 {token, expiresAt, user: UserFull(self)}` · `401` bad credentials or inactive | public |
 | GET | `/auth/me` | — | `200 UserFull(self)` | any |
+| POST | `/auth/change-password` | `{currentPassword, newPassword}` | `200 {changed: true}` · `400` wrong current password (`details.field = currentPassword`), new password < 8 chars or same as current | any (self) |
 
 ## Users
 
@@ -30,7 +31,7 @@ JSON. All endpoints except `POST /auth/login` require `Authorization: Bearer <jw
 | GET | `/users?role=&managerId=` | — | `200 {items: UserFull[]}` | admin: all. manager: own reports (+self). employee: `403`. |
 | POST | `/users` | `{username, password, firstName, lastName, email, jobTitle, salary, role, managerId?}` | `201 UserFull` · `400` · `409` username/email taken | admin |
 | GET | `/users/{id}` | — | `200 UserFull` (salary only for admin / own manager / self) · `403` not allowed to view · `404` | admin; manager for self + reports; employee for self, teammates (same manager) and own manager |
-| PATCH | `/users/{id}` | any of `{firstName, lastName, email}`; admin additionally `{jobTitle, salary, role, managerId, isActive}` | `200 UserFull` | admin; manager (name/email of reports); employee (name/email of self) |
+| PATCH | `/users/{id}` | any of `{firstName, lastName, email}`; admin additionally `{jobTitle, salary, role, managerId, isActive}` | `200 UserFull` | admin; manager (name/email of reports); employee (name/email of self) | `password` (≥ 8 chars) is admin-only and sets a new temporary password (hash stored, never returned).
 | GET | `/users/{id}/team` | — | `200 {manager: UserSummary, members: UserSummary[]}` | admin; the manager (`id` = self); employee (`id` = self → their manager's team) |
 
 Rules enforced server-side: `managerId` required iff `role=employee`; `managerId` must be a `manager`; changing `role` away from `manager` fails with `409` if they still manage projects or users.

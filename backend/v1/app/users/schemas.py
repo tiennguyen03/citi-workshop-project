@@ -63,6 +63,7 @@ class UpdateUserRequest(RequestModel):
     role: Role | None = None
     manager_id: str | None = Field(default=None, pattern=f"^{ID_PATTERN}$")
     is_active: bool | None = None
+    password: str | None = Field(default=None, min_length=8, max_length=128)
 
     @field_validator("email")
     @classmethod

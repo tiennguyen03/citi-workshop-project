@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
 import Paper from '@mui/material/Paper'
 import Skeleton from '@mui/material/Skeleton'
@@ -18,6 +20,7 @@ import useAuth from '../../auth/useAuth.js'
 import * as usersApi from '../../services/users.js'
 import { ROLES, fullName } from '../../utils/roles.js'
 import { formatMoney } from '../../utils/format.js'
+import ResetPasswordDialog from './ResetPasswordDialog.jsx'
 
 /** View (and, per role, edit) a single user (ui-flow.md F9 / users). */
 export default function UserDetailPage() {
@@ -26,6 +29,7 @@ export default function UserDetailPage() {
   const { user: me, updateUser } = useAuth()
   const { notice, notify, clear } = useNotice()
   const isAdmin = me.role === ROLES.ADMIN
+  const [resetOpen, setResetOpen] = useState(false)
 
   const { data: user, loading, error, refetch } = useApi(() => usersApi.get(id), [id])
   const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER }) : Promise.resolve(null)), [isAdmin])
@@ -55,6 +59,11 @@ export default function UserDetailPage() {
             actions={
               <Stack direction="row" spacing={1}>
                 <RoleChip role={user.role} size="medium" />
+                {isAdmin && !isSelf && (
+                  <Button variant="outlined" onClick={() => setResetOpen(true)}>
+                    Reset password
+                  </Button>
+                )}
                 {user.isActive === false && <Tag label="Deactivated" tone="warning" size="medium" />}
               </Stack>
             }
@@ -87,6 +96,18 @@ export default function UserDetailPage() {
             </Paper>
           )}
         </>
+      )}
+      {user && isAdmin && !isSelf && (
+        <ResetPasswordDialog
+          key={`reset-${resetOpen}`}
+          open={resetOpen}
+          user={user}
+          onClose={() => setResetOpen(false)}
+          onDone={() => {
+            setResetOpen(false)
+            notify(`Temporary password set for ${fullName(user)}`)
+          }}
+        />
       )}
       <NoticeSnackbar notice={notice} onClose={clear} />
     </>
