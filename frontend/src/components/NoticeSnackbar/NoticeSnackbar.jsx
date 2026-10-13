@@ -12,7 +12,7 @@ export default function NoticeSnackbar({ notice, onClose }) {
     <Snackbar
       key={notice?.key}
       open={Boolean(notice)}
-      autoHideDuration={4000}
+      autoHideDuration={notice?.severity === 'error' ? 8000 : 4000}
       onClose={handleClose}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
     >

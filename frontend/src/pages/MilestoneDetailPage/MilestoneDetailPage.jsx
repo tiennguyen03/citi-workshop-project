@@ -77,6 +77,7 @@ export default function MilestoneDetailPage() {
       refetch()
       refetchProject()
     } catch (err) {
+      setConfirm(null)
       notify(err.message, 'error')
     } finally {
       setPending(false)

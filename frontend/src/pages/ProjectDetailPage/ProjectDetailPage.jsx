@@ -75,6 +75,7 @@ export default function ProjectDetailPage() {
       refetch()
     } catch (err) {
       const names = err.details?.members?.map((m) => `${m.userId} (now on ${m.projectName})`).join(', ')
+      setConfirm(null)
       notify(names ? `${err.message}: ${names}` : err.message, 'error')
     } finally {
       setPending(false)
