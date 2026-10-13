@@ -22,9 +22,10 @@ import { ROLES, fullName } from '../../utils/roles.js'
 import MembersTab from './MembersTab.jsx'
 import MilestonesTab from './MilestonesTab.jsx'
 import OverviewTab from './OverviewTab.jsx'
+import TimeTab from './TimeTab.jsx'
 import ProjectEditDialog from './ProjectEditDialog.jsx'
 
-/** Project detail with Overview, Members and Milestones tabs (Time arrives in slice 5). */
+/** Project detail with Overview, Members, Milestones and Time tabs. */
 export default function ProjectDetailPage() {
   const { id } = useParams()
   const { user: me } = useAuth()
@@ -133,11 +134,13 @@ export default function ProjectDetailPage() {
             <Tab label="Overview" value="overview" />
             <Tab label={`Members (${project.memberCount})`} value="members" />
             <Tab label={`Milestones (${project.milestoneCounts.open + project.milestoneCounts.complete})`} value="milestones" />
+            <Tab label="Time" value="time" />
           </Tabs>
           <Box role="tabpanel">
             {tab === 'overview' && <OverviewTab project={project} />}
             {tab === 'members' && <MembersTab project={project} canManage={canManage} onChanged={refetch} notify={notify} />}
             {tab === 'milestones' && <MilestonesTab project={project} canManage={canManage} onChanged={refetch} notify={notify} />}
+            {tab === 'time' && <TimeTab project={project} canManage={canManage} onChanged={refetch} notify={notify} />}
           </Box>
           {writable && (
             <ProjectEditDialog

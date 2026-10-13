@@ -7,10 +7,12 @@ Mutating routes MUST declare `audit=` (enforced by tests/unit/test_routes.py).
 from app.audit_log import handlers as audit_log
 from app.auth import handlers as auth
 from app.auth.middleware import authenticate
+from app.dashboard import handlers as dashboard
 from app.health import handlers as health
 from app.milestones import handlers as milestones
 from app.projects import handlers as projects
 from app.router import Router
+from app.time_entries import handlers as time_entries
 from app.users import handlers as users
 
 
@@ -64,6 +66,15 @@ def build_router() -> Router:
     router.add("POST", "/milestones/{id}/goals", milestones.create_goal, audit="goal.create")
     router.add("PATCH", "/goals/{id}", milestones.update_goal, audit="goal.update")
     router.add("DELETE", "/goals/{id}", milestones.delete_goal, audit="goal.delete")
+
+    # Time entries
+    router.add("GET", "/projects/{id}/time-entries", time_entries.list_entries)
+    router.add("POST", "/projects/{id}/time-entries", time_entries.create_entry, audit="time_entry.create")
+    router.add("PATCH", "/time-entries/{id}", time_entries.update_entry, audit="time_entry.update")
+    router.add("DELETE", "/time-entries/{id}", time_entries.delete_entry, audit="time_entry.delete")
+
+    # Dashboard (role-shaped, read-only)
+    router.add("GET", "/dashboard", dashboard.get_dashboard)
 
     # Audit log (admin)
     router.add("GET", "/audit-log", audit_log.list_entries)

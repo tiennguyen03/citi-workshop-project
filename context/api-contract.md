@@ -97,13 +97,32 @@ All writes `409` when the project is archived or complete. `MILESTONE_CONFLICT.d
 | Method | Path | Body | Response | Who |
 |---|---|---|---|---|
 | GET | `/projects/{id}/time-entries?userId=&from=&to=` | — | `200 {items: TimeEntry[]}` | admin; project manager; member (own only — `userId` forced to self) |
-| POST | `/projects/{id}/time-entries` | `{entryDate, hours, note?}` | `201 TimeEntry` · `403` not an *active* member · `400` limits | active member (self) |
+| POST | `/projects/{id}/time-entries` | `{entryDate, hours, note?}` | `201 TimeEntry` · `403` not an *active* member · `400` limits (hours 0.25–24, date within project dates and not in the future) · `409` project archived/complete | active member (self) |
 | PATCH | `/time-entries/{id}` | `{entryDate?, hours?, note?}` | `200 TimeEntry` | author |
 | DELETE | `/time-entries/{id}` | — | `204` | author; project manager; admin |
 
 ```
 TimeEntry {id, projectId, user: UserSummary, entryDate, hours, note, createdAt}
 ```
+
+## Dashboard
+
+| Method | Path | Body | Response | Who |
+|---|---|---|---|---|
+| GET | `/dashboard` | — | `200` role-shaped payload (below) | any |
+
+```
+Admin    {role:"admin", stats:{activeProjects, completeProjects, archivedProjects, users:{admin, manager, employee},
+          availableEmployees}, attention: [ProjectCard & {reasons: ("over_budget"|"past_end")[]}]}
+Manager  {role:"manager", projects: [ProjectCard & {reasons}], team: [{user: UserSummary, currentProject|null,
+          hoursThisWeek}], week:{start, end}}
+Employee {role:"employee", currentProject: (ProjectCard & {myHoursAssigned, myHoursCompleted,
+          currentMilestone:{id,name}|null}) | null, pastProjects: ProjectCard[], openGoals: [{id, title,
+          milestone:{id,name,dueDate}, project:{id,name}}], hoursThisWeek, week:{start, end}}
+ProjectCard {id, name, status, archived, startDate, endDate, memberCount, hoursAssigned, hoursCompleted,
+          capacityHours, milestoneCounts, budget?, costConsumed?, budgetRemaining?}   (costs: admin/manager only)
+```
+One read per landing page (ui-flow.md › Per-role landing); "this week" is Monday–Sunday of today.
 
 ## Audit log (admin only)
 
