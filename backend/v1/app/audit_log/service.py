@@ -11,7 +11,8 @@ MAX_LIMIT = 200
 DEFAULT_LIMIT = 50
 
 
-def _entry(row: dict[str, Any]) -> dict[str, Any]:
+def entry_shape(row: dict[str, Any]) -> dict[str, Any]:
+    """AuditEntry wire shape from an audit_log row joined with the actor's user columns."""
     actor = None
     if row["actor_id"] and row["first_name"]:
         actor = {
@@ -63,4 +64,4 @@ def list_entries(actor: Actor, query: dict[str, str], repo=default_repo) -> dict
         "to_date": query.get("to"),
     }
     rows, total = repo.list_entries(filters, limit=limit, offset=offset)
-    return {"items": [_entry(r) for r in rows], "total": total, "limit": limit, "offset": offset}
+    return {"items": [entry_shape(r) for r in rows], "total": total, "limit": limit, "offset": offset}

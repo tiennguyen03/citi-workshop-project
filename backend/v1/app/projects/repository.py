@@ -46,7 +46,9 @@ SUMMARY_SELECT = sql.SQL(
              WHERE t.project_id = p.id) AS cost_consumed,
            (SELECT COUNT(*) FROM milestones m WHERE m.project_id = p.id AND m.status = 'open') AS milestones_open,
            (SELECT COUNT(*) FROM milestones m
-             WHERE m.project_id = p.id AND m.status = 'complete') AS milestones_complete
+             WHERE m.project_id = p.id AND m.status = 'complete') AS milestones_complete,
+           (SELECT MIN(m.due_date) FROM milestones m
+             WHERE m.project_id = p.id AND m.status = 'open') AS next_due_date
     FROM projects p JOIN users u ON u.id = p.manager_id
     {where}
     ORDER BY p.archived, p.status, p.start_date DESC, p.name

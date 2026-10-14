@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthContext } from '../../auth/authContext.js'
@@ -26,6 +26,9 @@ const CARD = {
   milestoneCounts: { open: 2, complete: 1 },
 }
 const WEEK = { start: '2026-10-12', end: '2026-10-18' }
+const EVE = { id: 'EMP001', firstName: 'Eve', lastName: 'Employee', jobTitle: 'Engineer', role: 'employee' }
+const MAX = { id: 'EMP002', firstName: 'Max', lastName: 'New', jobTitle: 'Analyst', role: 'employee' }
+const ENTRY = { id: 'TIM001', projectId: 'PRJ001', user: EVE, entryDate: '2026-10-05', hours: 8, note: 'Inventory', createdAt: '2026-10-05T10:00:00Z' }
 
 function renderPage(user) {
   render(
@@ -50,12 +53,26 @@ describe('DashboardPage', () => {
     dashboardApi.get.mockResolvedValue({
       role: 'admin',
       stats: { activeProjects: 3, completeProjects: 1, archivedProjects: 1, users: { admin: 1, manager: 3, employee: 12 }, availableEmployees: 4 },
-      attention: [{ ...CARD, budget: 100, costConsumed: 250, budgetRemaining: -150, reasons: ['over_budget'] }],
+      attention: [
+        { ...CARD, budget: 100, costConsumed: 250, budgetRemaining: -150, reasons: ['over_budget', 'overdue_milestone'] },
+        { ...CARD, id: 'PRJ002', name: 'Empty shell', budget: 1000, costConsumed: 0, budgetRemaining: 1000, reasons: ['no_members', 'no_milestones'] },
+      ],
+      recentActivity: [
+        { id: 1, occurredAt: '2026-10-14T09:00:00Z', actor: EVE, actorRole: 'employee', action: 'time_entry.create', entityType: 'time_entry', entityId: 'TIM001', projectId: 'PRJ001', summary: 'Logged 6 h', details: {}, statusCode: 201 },
+        { id: 2, occurredAt: '2026-10-14T08:00:00Z', actor: null, actorRole: null, action: 'auth.login_failed', entityType: 'user', entityId: null, projectId: null, summary: 'Failed login for ghost', details: {}, statusCode: 401 },
+      ],
     })
     renderPage({ id: 'ADM001', role: 'admin', firstName: 'System' })
     expect(await screen.findByText('12')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Available/ })).toHaveAttribute('href', '/users?available=true')
     expect(screen.getByText('Over budget')).toBeInTheDocument()
+    expect(screen.getByText('Overdue milestone')).toBeInTheDocument()
+    expect(screen.getByText('No members')).toBeInTheDocument()
+    expect(screen.getByText('No milestones')).toBeInTheDocument()
+    expect(screen.getByText('Logged 6 h')).toBeInTheDocument()
+    expect(screen.getByText('time_entry.create')).toBeInTheDocument()
+    expect(screen.getByText('Failed login for ghost')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'View all' })).toBeInTheDocument()
     expect(screen.getByText('-$150')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /new project/i })).toBeInTheDocument()
     await user.click(screen.getByText('Decommission'))
@@ -65,10 +82,15 @@ describe('DashboardPage', () => {
   it('shows project cards and team availability for a manager', async () => {
     dashboardApi.get.mockResolvedValue({
       role: 'manager',
-      projects: [{ ...CARD, budget: 1000, costConsumed: 200, budgetRemaining: 800, reasons: [] }],
+      projects: [{ ...CARD, budget: 1000, costConsumed: 200, budgetRemaining: 800, reasons: [], nextDueDate: '2020-01-01' }],
+      dueSoon: [
+        { id: 'MIL001', name: 'Inventory', dueDate: '2020-01-01', project: { id: 'PRJ001', name: 'Decommission' }, assignees: [EVE] },
+        { id: 'MIL002', name: 'Power-down', dueDate: '2099-12-31', project: { id: 'PRJ001', name: 'Decommission' }, assignees: [] },
+      ],
       team: [
-        { user: { id: 'EMP001', firstName: 'Eve', lastName: 'Employee', jobTitle: 'Engineer' }, currentProject: { id: 'PRJ001', name: 'Decommission' }, hoursThisWeek: 16 },
-        { user: { id: 'EMP002', firstName: 'Max', lastName: 'New', jobTitle: 'Analyst' }, currentProject: null, hoursThisWeek: 0 },
+        { user: EVE, currentProject: { id: 'PRJ001', name: 'Decommission' }, currentMilestone: { id: 'MIL001', name: 'Inventory' }, hoursThisWeek: 16 },
+        { user: MAX, currentProject: null, currentMilestone: null, hoursThisWeek: 0 },
+        { user: { ...EVE, id: 'EMP003', firstName: 'Quiet', lastName: 'One' }, currentProject: { id: 'PRJ001', name: 'Decommission' }, currentMilestone: null, hoursThisWeek: 0 },
       ],
       week: WEEK,
     })
@@ -77,6 +99,14 @@ describe('DashboardPage', () => {
     expect(screen.getByText('40 h completed of 160 h capacity')).toBeInTheDocument()
     expect(screen.getByText('Available')).toBeInTheDocument()
     expect(screen.getByText('16 h')).toBeInTheDocument()
+    // due soon: the overdue one is flagged, the unassigned one says so, both link to the milestone
+    expect(screen.getAllByText('Overdue')).toHaveLength(2) // card "Next due" + the Due soon row
+    expect(screen.getByText('Unassigned')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Power-down' })).toHaveAttribute('href', '/milestones/MIL002')
+    // team: current milestone column and the zero-hour nudge only for someone on a project
+    for (const link of screen.getAllByRole('link', { name: 'Inventory' })) expect(link).toHaveAttribute('href', '/milestones/MIL001') // due-soon row + team row
+    expect(screen.getAllByText('0 h')).toHaveLength(2) // Max (available, plain "0 h") and Quiet (on a project, tagged)
+    expect(within(screen.getByRole('row', { name: /Quiet One/ })).getByText('0 h')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Decommission' })).toHaveAttribute('href', '/projects/PRJ001')
     expect(screen.getByRole('link', { name: '3 members' })).toHaveAttribute('href', '/projects/PRJ001?tab=members')
     expect(screen.getByRole('link', { name: '2 open milestones' })).toHaveAttribute('href', '/projects/PRJ001?tab=milestones')
@@ -88,6 +118,7 @@ describe('DashboardPage', () => {
       currentProject: { ...CARD, myHoursAssigned: 80, myHoursCompleted: 20, currentMilestone: null },
       pastProjects: [],
       openGoals: [{ id: 'GOL001', title: 'Export CMDB', milestone: { id: 'MIL001', name: 'Inventory', dueDate: '2020-01-01' }, project: { id: 'PRJ001', name: 'Decommission' } }],
+      recentEntries: [],
       hoursThisWeek: 42,
       week: WEEK,
     })
@@ -106,17 +137,38 @@ describe('DashboardPage', () => {
     const user = userEvent.setup()
     dashboardApi.get.mockResolvedValue({
       role: 'employee',
-      currentProject: { ...CARD, myHoursAssigned: 80, myHoursCompleted: 20, currentMilestone: { id: 'MIL001', name: 'Inventory' } },
+      currentProject: {
+        ...CARD,
+        myHoursAssigned: 80,
+        myHoursCompleted: 20,
+        currentMilestone: { id: 'MIL001', name: 'Inventory', dueDate: '2099-12-31', assignees: [EVE, MAX] },
+      },
       pastProjects: [{ ...CARD, id: 'PRJ000', name: 'Old one', status: 'complete' }],
       openGoals: [{ id: 'GOL001', title: 'Export CMDB', milestone: { id: 'MIL001', name: 'Inventory', dueDate: '2026-10-16' }, project: { id: 'PRJ001', name: 'Decommission' } }],
+      recentEntries: [ENTRY],
       hoursThisWeek: 12,
       week: WEEK,
     })
     milestonesApi.updateGoal.mockResolvedValue({})
     timeEntriesApi.create.mockResolvedValue({ id: 'TIM001', hours: 3 })
+    timeEntriesApi.update.mockResolvedValue({ ...ENTRY, hours: 7 })
     renderPage({ id: 'EMP001', role: 'employee', firstName: 'Eve' })
     expect(await screen.findByText('20 h logged of 80 h assigned to you')).toBeInTheDocument()
     expect(screen.getByText('Old one')).toBeInTheDocument()
+    expect(screen.getByText('With')).toBeInTheDocument()
+    expect(screen.getByText('Max New')).toBeInTheDocument() // the teammate, not me
+    expect(screen.queryByText('Eve Employee')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'All my time' })).toHaveAttribute('href', '/projects/PRJ001?tab=time')
+    // recent entry can be edited in place
+    await user.click(screen.getByRole('button', { name: 'Edit entry on Oct 5, 2026' }))
+    const editDialog = await screen.findByRole('dialog')
+    const hoursField = within(editDialog).getByLabelText(/hours/i, { selector: 'input' })
+    await user.clear(hoursField)
+    await user.type(hoursField, '7')
+    await user.click(within(editDialog).getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(timeEntriesApi.update).toHaveBeenCalledWith('TIM001', expect.objectContaining({ hours: 7 })))
+    expect(await screen.findByText('Time entry updated')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     await user.click(screen.getByRole('checkbox', { name: 'Complete goal Export CMDB' }))
     await waitFor(() => expect(milestonesApi.updateGoal).toHaveBeenCalledWith('GOL001', { isDone: true }))
     expect(await screen.findByText('Done: Export CMDB')).toBeInTheDocument()
@@ -130,7 +182,7 @@ describe('DashboardPage', () => {
   })
 
   it('shows the available state for an employee without a project', async () => {
-    dashboardApi.get.mockResolvedValue({ role: 'employee', currentProject: null, pastProjects: [], openGoals: [], hoursThisWeek: 0, week: WEEK })
+    dashboardApi.get.mockResolvedValue({ role: 'employee', currentProject: null, pastProjects: [], openGoals: [], recentEntries: [], hoursThisWeek: 0, week: WEEK })
     renderPage({ id: 'EMP002', role: 'employee', firstName: 'Max' })
     expect(await screen.findByText(/not assigned to a project right now/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /log time/i })).not.toBeInTheDocument()

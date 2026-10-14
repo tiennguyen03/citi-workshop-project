@@ -39,6 +39,21 @@ def setup_org():
         token=mgr_token,
     )
     assert status == 201
+    # a second, unassigned milestone due in two days → the manager's "due soon" list
+    status, soon = call(
+        "POST",
+        f"/api/v1/projects/{pid}/milestones",
+        {
+            "name": "Phase 0",
+            "startDate": project["startDate"],
+            "dueDate": (TODAY + timedelta(days=2)).isoformat(),
+            "assigneeIds": [],
+        },
+        token=mgr_token,
+    )
+    assert status == 201
+    # an empty second project for the same manager → "no members" + "no milestones" attention
+    empty = create_project(admin, mgr["id"], name="Empty shell", budget=1000)
     status, goal = call(
         "POST",
         f"/api/v1/milestones/{ms['id']}/goals",
@@ -65,6 +80,8 @@ def setup_org():
         "emp2": emp2,
         "pid": pid,
         "ms": ms,
+        "soon": soon,
+        "empty": empty,
         "goal": goal,
     }
 
@@ -74,29 +91,53 @@ def test_admin_dashboard():
     status, body = call("GET", "/api/v1/dashboard", token=org["admin"])
     assert status == 200 and body["role"] == "admin"
     assert body["stats"] == {
-        "activeProjects": 1,
+        "activeProjects": 2,
         "completeProjects": 0,
         "archivedProjects": 0,
         "users": {"admin": 1, "manager": 1, "employee": 2},
         "availableEmployees": 1,
     }
-    assert [a["id"] for a in body["attention"]] == [org["pid"]]
-    assert body["attention"][0]["reasons"] == ["over_budget"] and body["attention"][0]["budgetRemaining"] == -100
+    attention = {a["id"]: a for a in body["attention"]}
+    assert set(attention) == {org["pid"], org["empty"]["id"]}
+    assert attention[org["pid"]]["reasons"] == ["over_budget"] and attention[org["pid"]]["budgetRemaining"] == -100
+    assert attention[org["pid"]]["nextDueDate"] == (TODAY + timedelta(days=2)).isoformat()
+    assert attention[org["empty"]["id"]]["reasons"] == ["no_members", "no_milestones"]
+    assert attention[org["empty"]["id"]]["nextDueDate"] is None
+    # the admin sees what just happened, newest first, with the actor named
+    recent = body["recentActivity"]
+    assert 0 < len(recent) <= 8
+    assert recent[0]["action"] == "time_entry.create" and recent[0]["actor"]["id"] == org["emp1"]["id"]
+    assert [e["occurredAt"] for e in recent] == sorted((e["occurredAt"] for e in recent), reverse=True)
+    assert "password" not in str(recent)
 
 
 def test_manager_dashboard():
     org = setup_org()
     status, body = call("GET", "/api/v1/dashboard", token=org["mgr_token"])
     assert status == 200 and body["role"] == "manager"
-    (card,) = body["projects"]
-    assert card["id"] == org["pid"] and card["hoursCompleted"] == 6 and card["budgetRemaining"] == -100
-    assert card["milestoneCounts"] == {"open": 1, "complete": 0} and card["reasons"] == ["over_budget"]
+    cards = {c["id"]: c for c in body["projects"]}
+    card = cards[org["pid"]]
+    assert card["hoursCompleted"] == 6 and card["budgetRemaining"] == -100
+    assert card["milestoneCounts"] == {"open": 2, "complete": 0} and card["reasons"] == ["over_budget"]
+    assert cards[org["empty"]["id"]]["reasons"] == ["no_members", "no_milestones"]
     team = {t["user"]["id"]: t for t in body["team"]}
     assert (
         team[org["emp1"]["id"]]["currentProject"]["id"] == org["pid"] and team[org["emp1"]["id"]]["hoursThisWeek"] == 6
     )
+    assert team[org["emp1"]["id"]]["currentMilestone"] == {"id": org["ms"]["id"], "name": "Phase 1"}
     assert team[org["emp2"]["id"]]["currentProject"] is None and team[org["emp2"]["id"]]["hoursThisWeek"] == 0
+    assert team[org["emp2"]["id"]]["currentMilestone"] is None
     assert body["week"]["start"] <= TODAY.isoformat() <= body["week"]["end"]
+    # only Phase 0 (due in 2 days) is due soon; Phase 1 is due in 10 days
+    (soon,) = body["dueSoon"]
+    assert soon["id"] == org["soon"]["id"] and soon["project"] == {"id": org["pid"], "name": soon["project"]["name"]}
+    assert soon["dueDate"] == (TODAY + timedelta(days=2)).isoformat() and soon["assignees"] == []
+    # an overdue milestone is listed too, and flags the project
+    late = (TODAY - timedelta(days=1)).isoformat()
+    assert call("PATCH", f"/api/v1/milestones/{org['soon']['id']}", {"dueDate": late}, token=org["mgr_token"])[0] == 200
+    status, body = call("GET", "/api/v1/dashboard", token=org["mgr_token"])
+    assert [m["id"] for m in body["dueSoon"]] == [org["soon"]["id"]]
+    assert {c["id"]: c["reasons"] for c in body["projects"]}[org["pid"]] == ["over_budget", "overdue_milestone"]
 
 
 def test_employee_dashboard():
@@ -106,7 +147,10 @@ def test_employee_dashboard():
     current = body["currentProject"]
     assert current["id"] == org["pid"] and "budget" not in current
     assert current["myHoursAssigned"] == 40 and current["myHoursCompleted"] == 6
-    assert current["currentMilestone"] == {"id": org["ms"]["id"], "name": "Phase 1"}
+    assert current["currentMilestone"]["id"] == org["ms"]["id"] and current["currentMilestone"]["name"] == "Phase 1"
+    assert current["currentMilestone"]["dueDate"] == (TODAY + timedelta(days=10)).isoformat()
+    assert [a["id"] for a in current["currentMilestone"]["assignees"]] == [org["emp1"]["id"]]
+    assert [e["hours"] for e in body["recentEntries"]] == [6] and body["recentEntries"][0]["projectId"] == org["pid"]
     assert [g["id"] for g in body["openGoals"]] == [org["goal"]["id"]]
     assert (
         body["openGoals"][0]["milestone"]["name"] == "Phase 1" and body["openGoals"][0]["project"]["id"] == org["pid"]
@@ -115,9 +159,10 @@ def test_employee_dashboard():
     # ticking the goal removes it; completing the project moves it to past projects
     assert call("PATCH", f"/api/v1/goals/{org['goal']['id']}", {"isDone": True}, token=org["emp1_token"])[0] == 200
     assert call("POST", f"/api/v1/milestones/{org['ms']['id']}/complete", token=org["mgr_token"])[0] == 200
+    assert call("POST", f"/api/v1/milestones/{org['soon']['id']}/complete", token=org["mgr_token"])[0] == 200
     assert call("POST", f"/api/v1/projects/{org['pid']}/complete", token=org["mgr_token"])[0] == 200
     status, body = call("GET", "/api/v1/dashboard", token=org["emp1_token"])
-    assert body["currentProject"] is None and body["openGoals"] == []
+    assert body["currentProject"] is None and body["openGoals"] == [] and body["recentEntries"] == []
     assert [p["id"] for p in body["pastProjects"]] == [org["pid"]] and body["pastProjects"][0]["status"] == "complete"
     # an employee with nothing at all
     status, body = call("GET", "/api/v1/dashboard", token=login("emp2", "Password1!")[0])

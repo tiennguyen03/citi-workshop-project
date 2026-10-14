@@ -24,6 +24,11 @@ loading skeleton, empty state, and an error `Alert`; every mutation shows a `Sna
 Unauthenticated → redirect to `/login`. Wrong role → `403` page. A `401` from any API clears the session and redirects to `/login`.
 
 ## Per-role landing (DashboardPage)
+Slice 8 additions: manager **Due soon** table (open milestones overdue or due ≤ 7 days across their projects, with
+assignees; rows link to the milestone), team column **Current milestone**, warning tag on `0 h` for anyone on a project;
+admin **Recent activity** (last 8 audit rows, "View all" → `/audit-log`) and wider **Needs attention** reasons;
+employee milestone line shows due date + `DueTag` + teammates, and a **Recent entries** table (last 5, edit in place).
+
 
 - **Admin**: stat cards (active projects, archived, users by role), "Projects needing attention" (over budget / past end date), quick links: New project, New user.
 - **Manager**: cards per managed project (hours completed / capacity bar, budget remaining, open milestones), team list showing each report's current project (or "available") and hours this week.

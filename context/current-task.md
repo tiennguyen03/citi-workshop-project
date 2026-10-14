@@ -2,7 +2,7 @@
 
 > Only one feature is "current" at a time. Update this file when starting, progressing or finishing.
 
-## Status: 🔨 Slice 7 (UX signals) in progress on `slice-7-signals`
+## Status: 🔨 Slice 8 (dashboards) in progress on `slice-8-dashboards`
 
 ## Plan (3 days) — each item is a thin vertical slice
 
@@ -15,11 +15,26 @@
 | 4 | Milestones & goals: endpoints, Milestones tab, MilestoneDetailPage, goal toggling, project complete | 2 PM | **done** |
 | 5 | Time entries: endpoints, Time tab, dashboard per role (~~seed data~~ done early) | 3 AM | **done** |
 | 6 | Hardening: tests to target, responsive pass, README, deploy to AWS, smoke test, known gaps | 3 PM | **paused** (deploy + README location deferred by user) |
-| 7 | UX signals (frontend only): overdue / due-soon / past-end tags, 40 h week bar, clickable dashboard counts, `?tab=` deep links, search + filters on Projects/Users mirrored in the URL, milestone ordering with "Next due", capacity hint when assigning hours, this-week / last-week filter on the Time tab | post-demo prep | **in progress** |
-| 8 | Dashboards: manager "Due soon" + current milestone per report + zero-hour cue; admin recent activity + wider attention reasons; employee teammates + recent entries (`GET /dashboard` grows) | — | planned |
+| 7 | UX signals (frontend only): overdue / due-soon / past-end tags, 40 h week bar, clickable dashboard counts, `?tab=` deep links, search + filters on Projects/Users mirrored in the URL, milestone ordering with "Next due", capacity hint when assigning hours, this-week / last-week filter on the Time tab | pre-demo | **done** |
+| 8 | Dashboards: manager "Due soon" + current milestone per report + zero-hour cue; admin recent activity + wider attention reasons; employee teammates + recent entries (`GET /dashboard` grows) | pre-demo | **in progress** |
 | 9 | People & audit: user page "Reports to" + project history; audit log action/actor pickers (`GET /users/{id}` grows, `GET /audit-log/actions`) | — | planned |
 
-## Current slice: 7 — UX signals (plan: `~/.claude/plans/shiny-singing-simon.md`, approved 2026-10-14)
+## Current slice: 8 — Dashboards (plan: `~/.claude/plans/shiny-singing-simon.md`, approved 2026-10-14)
+
+**Acceptance**: manager sees every open milestone overdue or due within 7 days across their projects, each report's
+current milestone, and a "0 h" nudge for anyone on a project with nothing logged this week; admin sees the last 8
+audit entries and attention reasons widen to overdue milestone / no members / no milestones; employee sees the
+milestone due date, urgency cue and teammates, plus their last 5 entries with in-place edit. One call: `GET /dashboard`.
+**Done**: contract; backend (`next_due_date` in the project summary, `open_assignments_for_users`, `due_soon_milestones`,
+`list_entries(limit=)`, `audit_log.service.entry_shape`, wider `_attention_reasons`); unit test for the reasons matrix;
+integration test grown (second milestone + empty project); 107 backend tests (97 %); three dashboards extended; 83 frontend
+tests; ESLint/ruff/Bandit clean.
+12 e2e green (manager "Due soon" row + team milestone link; employee teammates + recent-entry edit from the dashboard;
+admin recent activity + "View all"); browser walk of the dashboards.
+**Remaining**: commit + push on request.
+**Blockers**: none.
+
+## Slice 7 — UX signals (done 2026-10-14; plan: `~/.claude/plans/shiny-singing-simon.md`)
 
 **Acceptance**: every role sees overdue / due-soon cues wherever a due date is shown; employee week reads "x of 40 h";
 admin "Available" and manager "N members / open milestones" are links; Projects and Users have search + filters
@@ -54,6 +69,7 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-14 · **Slice 8 built** (branch `slice-8-dashboards`). `GET /dashboard` grows: `ProjectCard.nextDueDate`; admin `recentActivity` (last 8 audit rows) and attention reasons `overdue_milestone` / `no_members` / `no_milestones`; manager `dueSoon` (open milestones overdue or due ≤ 7 days across their live projects, with assignees) and `team[].currentMilestone`; employee `currentMilestone.{dueDate, assignees}` and `recentEntries` (last 5 own). Backend: one subquery in the project summary, `milestones.open_assignments_for_users`, `dashboard.due_soon_milestones`, `time_entries.list_entries(limit=)`, public `audit_log.service.entry_shape`; `_attention_reasons` unit-tested as a matrix. Frontend: manager "Due soon" table + "Next due" on cards + current-milestone column + "0 h" nudge; admin "Recent activity" with "View all"; employee milestone due date, cue and teammates, "Recent entries" with in-place edit. 107 backend tests (97 %), 83 frontend, 12 e2e.
 - 2026-10-14 · **Slice 7 built** (branch `slice-7-signals`, D19). Frontend-only: `DueTag` (Overdue / Due today / Due in N days; "Past end date" on projects) on the project list and header, milestones tab and page, and the employee's goal list; employee "Hours this week" measured against the 40-hour week; admin "Available" count and manager "N members" / "open milestones" are links (`?tab=` deep links on the project page); search + status filter on Projects and search + role + "Available only" + "Show deactivated" on Users, mirrored in the URL; milestones ordered open-first by due date with a "Next due" marker; hours dialog shows project capacity so far and warns (not blocks) past it; Time tab This week / Last week / All. 83 frontend tests (+29), 12 e2e, 92-screen walk clean. Demo seed: one overdue and one due-soon milestone.
 - 2026-10-13 · **Browser suite in the repo** (`frontend/e2e/`, `@playwright/test@1.56.1` approved by the user). 12 self-contained tests (each spec builds its own office through the API): auth + lockout + audit filter + password change/reset, project form validation, staffing, archive/unarchive, completion gating, milestone life cycle with the one-open-milestone picker, time logging on dashboard and Time tab, manager/admin dashboards, phone width. `npm run test:e2e`.
 - 2026-10-13 · **Password change** (branch `slice-6-hardening`). `POST /auth/change-password` (self; current password required, ≥ 8 chars, must differ) and admin temporary reset via `PATCH /users/{id} {password}`; profile page "Password" card, "Reset password" dialog on the admin's user page. The new test caught the audit sanitiser only stripping a key named exactly `password`, so `currentPassword` would have been stored in plaintext — it now drops any key containing "password" or "secret". 96 backend tests (97%), 54 frontend, 7-step browser walkthrough.

@@ -142,6 +142,23 @@ def open_assignments(
     )
 
 
+def open_assignments_for_users(user_ids: list[str], conn=None) -> dict[str, dict[str, Any]]:
+    """The open milestone each user is on, across projects (at most one per user: D14 + D15)."""
+    if not user_ids:
+        return {}
+    rows = db.query(
+        """
+        SELECT ma.user_id, ma.milestone_id, m.name AS milestone_name
+        FROM milestone_assignees ma JOIN milestones m ON m.id = ma.milestone_id
+        JOIN projects p ON p.id = ma.project_id
+        WHERE ma.is_open AND ma.user_id = ANY(%s) AND NOT p.archived AND p.status = 'active'
+        """,
+        (user_ids,),
+        conn=conn,
+    )
+    return {r["user_id"]: {"id": r["milestone_id"], "name": r["milestone_name"]} for r in rows}
+
+
 def active_member_ids(project_id: str, conn=None) -> set[str]:
     rows = db.query("SELECT user_id FROM project_members WHERE project_id = %s AND is_active", (project_id,), conn=conn)
     return {r["user_id"] for r in rows}

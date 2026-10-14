@@ -1,5 +1,6 @@
 """Dashboard-only SQL (counts and the employee's open-goal list). Everything else reuses other repositories."""
 
+from datetime import date
 from typing import Any
 
 from app.core import db
@@ -23,6 +24,21 @@ def available_employee_count(conn=None) -> int:
         conn=conn,
     )
     return int(row["n"])
+
+
+def due_soon_milestones(manager_id: str, until: date, conn=None) -> list[dict[str, Any]]:
+    """Open milestones due on or before `until` (overdue included) on the manager's live projects, soonest first."""
+    return db.query(
+        """
+        SELECT m.id, m.name, m.due_date, p.id AS project_id, p.name AS project_name
+        FROM milestones m JOIN projects p ON p.id = m.project_id
+        WHERE p.manager_id = %s AND NOT p.archived AND p.status = 'active'
+          AND m.status = 'open' AND m.due_date <= %s
+        ORDER BY m.due_date, p.name, m.name
+        """,
+        (manager_id, until),
+        conn=conn,
+    )
 
 
 def open_goals_for(user_id: str, conn=None) -> list[dict[str, Any]]:

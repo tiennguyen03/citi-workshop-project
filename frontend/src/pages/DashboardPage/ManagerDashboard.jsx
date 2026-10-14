@@ -6,6 +6,7 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import DataTable from '../../components/DataTable/DataTable.jsx'
+import DueTag from '../../components/DueTag/DueTag.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
@@ -15,7 +16,13 @@ import { fullName } from '../../utils/roles.js'
 const REASON = {
   over_budget: { label: 'Over budget', tone: 'error' },
   past_end: { label: 'Past end date', tone: 'warning' },
+  overdue_milestone: { label: 'Overdue milestone', tone: 'error' },
+  no_members: { label: 'No members', tone: 'warning' },
+  no_milestones: { label: 'No milestones', tone: 'info' },
 }
+
+/** Inner links on a clickable card or row: let the link navigate without the row also firing. */
+const stop = (e) => e.stopPropagation()
 
 const TEAM_COLUMNS = [
   { key: 'name', label: 'Name', nowrap: true, render: (t) => fullName(t.user) },
@@ -25,16 +32,71 @@ const TEAM_COLUMNS = [
     label: 'Current project',
     render: (t) => (t.currentProject ? t.currentProject.name : <Tag label="Available" tone="success" />),
   },
-  { key: 'hoursThisWeek', label: 'Hours this week', align: 'right', render: (t) => formatHours(t.hoursThisWeek) },
+  {
+    key: 'currentMilestone',
+    label: 'Current milestone',
+    render: (t) =>
+      t.currentMilestone ? (
+        <Link component={RouterLink} to={`/milestones/${t.currentMilestone.id}`} underline="hover" color="inherit" onClick={stop}>
+          {t.currentMilestone.name}
+        </Link>
+      ) : (
+        <Typography variant="caption" color="text.secondary">
+          —
+        </Typography>
+      ),
+  },
+  {
+    key: 'hoursThisWeek',
+    label: 'Hours this week',
+    align: 'right',
+    // on a project but nothing logged this week: worth a nudge
+    render: (t) => (t.currentProject && Number(t.hoursThisWeek) === 0 ? <Tag label="0 h" tone="warning" /> : formatHours(t.hoursThisWeek)),
+  },
 ]
 
-/** Inner links on a clickable card: let the link navigate without the card also firing. */
-const stop = (e) => e.stopPropagation()
+const DUE_SOON_COLUMNS = [
+  {
+    key: 'name',
+    label: 'Milestone',
+    render: (m) => (
+      <Link component={RouterLink} to={`/milestones/${m.id}`} underline="hover" color="inherit" sx={{ fontWeight: 500 }} onClick={stop}>
+        {m.name}
+      </Link>
+    ),
+  },
+  { key: 'project', label: 'Project', render: (m) => m.project.name },
+  {
+    key: 'dueDate',
+    label: 'Due',
+    nowrap: true,
+    render: (m) => (
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <span>{formatDate(m.dueDate)}</span>
+        <DueTag dueDate={m.dueDate} />
+      </Stack>
+    ),
+  },
+  {
+    key: 'assignees',
+    label: 'Who',
+    render: (m) =>
+      m.assignees.length === 0 ? (
+        <Tag label="Unassigned" tone="warning" />
+      ) : (
+        <Stack direction="row" useFlexGap spacing={0.75} sx={{ flexWrap: 'wrap' }}>
+          {m.assignees.map((a) => (
+            <Tag key={a.id} label={fullName(a)} />
+          ))}
+        </Stack>
+      ),
+  },
+]
 
 /** Manager landing: one card per managed project and the team's availability (ui-flow.md › Per-role landing). */
 export default function ManagerDashboard({ data }) {
   const navigate = useNavigate()
-  const { projects, team, week } = data
+  const { projects, dueSoon, team, week } = data
   return (
     <Stack spacing={3}>
       <Box>
@@ -48,7 +110,7 @@ export default function ManagerDashboard({ data }) {
             </Typography>
           </Paper>
         ) : (
-          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: projects.length > 1 ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 2fr) 1fr' } }}>
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: projects.length > 1 ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 2fr) minmax(0, 1fr)' } }}>
             {projects.map((p) => (
               <Paper
                 key={p.id}
@@ -57,7 +119,7 @@ export default function ManagerDashboard({ data }) {
               >
                 <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
                   <Box sx={{ minWidth: 0 }}>
-                    <Link component={RouterLink} to={`/projects/${p.id}`} underline="hover" color="inherit" sx={{ fontWeight: 600, display: 'block' }} noWrap onClick={stop}>
+                    <Link component={RouterLink} to={`/projects/${p.id}`} underline="hover" color="inherit" sx={{ fontWeight: 600, display: 'block', overflowWrap: 'anywhere' }} onClick={stop}>
                       {p.name}
                     </Link>
                     <Typography variant="caption" color="text.secondary">
@@ -67,7 +129,7 @@ export default function ManagerDashboard({ data }) {
                       </Link>
                     </Typography>
                   </Box>
-                  <Stack direction="row" spacing={0.75} sx={{ flexShrink: 0 }}>
+                  <Stack direction="row" useFlexGap spacing={0.75} sx={{ flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '60%' }}>
                     <StatusChip status={p.status} />
                     {p.reasons.map((r) => (
                       <Tag key={r} label={REASON[r].label} tone={REASON[r].tone} />
@@ -75,7 +137,7 @@ export default function ManagerDashboard({ data }) {
                   </Stack>
                 </Stack>
                 <ProgressBar value={p.hoursCompleted} max={p.capacityHours} caption={`${formatHours(p.hoursCompleted)} completed of ${formatHours(p.capacityHours)} capacity`} />
-                <Stack direction="row" spacing={3} sx={{ mt: 1.5 }}>
+                <Stack direction="row" useFlexGap spacing={3} sx={{ mt: 1.5, flexWrap: 'wrap' }}>
                   <Box>
                     <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
                       Budget remaining
@@ -98,10 +160,40 @@ export default function ManagerDashboard({ data }) {
                       </Typography>
                     </Typography>
                   </Box>
+                  {p.nextDueDate && (
+                    <Box>
+                      <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
+                        Next due
+                      </Typography>
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        <Typography sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatDate(p.nextDueDate)}</Typography>
+                        <DueTag dueDate={p.nextDueDate} />
+                      </Stack>
+                    </Box>
+                  )}
                 </Stack>
               </Paper>
             ))}
           </Box>
+        )}
+      </Box>
+      <Box>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline', mb: 1.5 }}>
+          <Typography variant="h6" component="h2">
+            Due soon
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Open milestones overdue or due within 7 days
+          </Typography>
+        </Stack>
+        {dueSoon.length === 0 ? (
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              Nothing is overdue or due in the next 7 days.
+            </Typography>
+          </Paper>
+        ) : (
+          <DataTable columns={DUE_SOON_COLUMNS} rows={dueSoon} getRowKey={(m) => m.id} onRowClick={(m) => navigate(`/milestones/${m.id}`)} size="small" />
         )}
       </Box>
       <Box>
@@ -129,6 +221,7 @@ export default function ManagerDashboard({ data }) {
 ManagerDashboard.propTypes = {
   data: PropTypes.shape({
     projects: PropTypes.array.isRequired,
+    dueSoon: PropTypes.array.isRequired,
     team: PropTypes.array.isRequired,
     week: PropTypes.shape({ start: PropTypes.string, end: PropTypes.string }).isRequired,
   }).isRequired,

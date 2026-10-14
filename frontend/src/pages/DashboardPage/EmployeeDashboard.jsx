@@ -4,11 +4,15 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
+import IconButton from '@mui/material/IconButton'
 import Link from '@mui/material/Link'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import Tooltip from '@mui/material/Tooltip'
 import AddIcon from '@mui/icons-material/Add'
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
+import useAuth from '../../auth/useAuth.js'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
@@ -17,6 +21,7 @@ import StatusChip from '../../components/StatusChip/StatusChip.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
 import * as milestonesApi from '../../services/milestones.js'
 import { formatDate, formatHours } from '../../utils/format.js'
+import { fullName } from '../../utils/roles.js'
 import TimeEntryDialog from '../ProjectDetailPage/TimeEntryDialog.jsx'
 
 /** The working week every employee is measured against (requirements.md: 40-hour week). */
@@ -31,9 +36,32 @@ const PAST_COLUMNS = [
 /** Employee landing: current project, open goals with checkboxes, log time, past projects (ui-flow.md › F6). */
 export default function EmployeeDashboard({ data, onChanged, notify }) {
   const navigate = useNavigate()
+  const { user: me } = useAuth()
   const [logging, setLogging] = useState(false)
+  const [editing, setEditing] = useState(null)
   const [ticked, setTicked] = useState({})
-  const { currentProject: current, openGoals, pastProjects, hoursThisWeek, week } = data
+  const { currentProject: current, openGoals, pastProjects, recentEntries, hoursThisWeek, week } = data
+  const milestone = current?.currentMilestone
+  const teammates = milestone ? milestone.assignees.filter((a) => a.id !== me.id) : []
+
+  const ENTRY_COLUMNS = [
+    { key: 'entryDate', label: 'Date', nowrap: true, render: (e) => formatDate(e.entryDate), width: 140 },
+    { key: 'hours', label: 'Hours', align: 'right', render: (e) => formatHours(e.hours), width: 90 },
+    { key: 'note', label: 'Note', render: (e) => e.note || <Typography variant="caption" color="text.secondary">—</Typography> },
+    {
+      key: 'actions',
+      label: '',
+      align: 'right',
+      width: 56,
+      render: (e) => (
+        <Tooltip title="Edit entry">
+          <IconButton size="small" aria-label={`Edit entry on ${formatDate(e.entryDate)}`} onClick={() => setEditing(e)} sx={{ color: 'text.secondary' }}>
+            <EditOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      ),
+    },
+  ]
   const weekHours = Number(hoursThisWeek)
   const overWeek = weekHours > HOURS_PER_WEEK
 
@@ -64,19 +92,31 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
                 </Link>
                 <StatusChip status={current.status} />
               </Stack>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: milestone ? 1 : 2 }}>
                 {formatDate(current.startDate)} – {formatDate(current.endDate)}
-                {current.currentMilestone ? (
+                {milestone ? (
                   <>
                     {' · now on '}
-                    <Link component={RouterLink} to={`/milestones/${current.currentMilestone.id}`} underline="hover">
-                      {current.currentMilestone.name}
+                    <Link component={RouterLink} to={`/milestones/${milestone.id}`} underline="hover">
+                      {milestone.name}
                     </Link>
+                    {milestone.dueDate && ` · due ${formatDate(milestone.dueDate)}`}
                   </>
                 ) : (
                   ' · no open milestone assigned'
                 )}
               </Typography>
+              {milestone && (
+                <Stack direction="row" useFlexGap spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap', mb: 2 }}>
+                  <DueTag dueDate={milestone.dueDate} />
+                  <Typography variant="caption" color="text.secondary">
+                    {teammates.length === 0 ? 'Just you on this milestone' : 'With'}
+                  </Typography>
+                  {teammates.map((a) => (
+                    <Tag key={a.id} label={fullName(a)} />
+                  ))}
+                </Stack>
+              )}
               <ProgressBar
                 value={current.myHoursCompleted}
                 max={current.myHoursAssigned}
@@ -163,6 +203,20 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
         )}
       </Paper>
 
+      {current && (
+        <Box>
+          <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline', mb: 1.5 }}>
+            <Typography variant="h6" component="h2">
+              Recent entries
+            </Typography>
+            <Link component={RouterLink} to={`/projects/${current.id}?tab=time`} underline="hover" variant="body2">
+              All my time
+            </Link>
+          </Stack>
+          <DataTable columns={ENTRY_COLUMNS} rows={recentEntries} getRowKey={(e) => e.id} emptyMessage="Nothing logged yet on this project." size="small" />
+        </Box>
+      )}
+
       {pastProjects.length > 0 && (
         <Box>
           <Typography variant="h6" component="h2" sx={{ mb: 1.5 }}>
@@ -172,6 +226,19 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
         </Box>
       )}
 
+      {current && editing && (
+        <TimeEntryDialog
+          open
+          project={current}
+          entry={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null)
+            notify('Time entry updated')
+            onChanged()
+          }}
+        />
+      )}
       {current && (
         <TimeEntryDialog
           key={`log-${logging}`}
@@ -194,6 +261,7 @@ EmployeeDashboard.propTypes = {
     currentProject: PropTypes.object,
     openGoals: PropTypes.array.isRequired,
     pastProjects: PropTypes.array.isRequired,
+    recentEntries: PropTypes.array.isRequired,
     hoursThisWeek: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
     week: PropTypes.shape({ start: PropTypes.string, end: PropTypes.string }).isRequired,
   }).isRequired,

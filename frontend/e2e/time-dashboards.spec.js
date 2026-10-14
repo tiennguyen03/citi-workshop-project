@@ -22,6 +22,8 @@ test('employee: dashboard shows the project, ticks a goal, logs time; Time tab e
   await expect(page.getByRole('link', { name: project.name }).first()).toBeVisible()
   await expect(page.getByText(/now on Phase 1/)).toBeVisible()
   await expect(page.getByText('Overdue').first()).toBeVisible()
+  await expect(page.getByText('Just you on this milestone')).toBeVisible()
+  await expect(page.getByText('Nothing logged yet on this project.')).toBeVisible()
 
   await page.getByRole('checkbox', { name: 'Complete goal Ship the thing' }).click()
   await toast(page, 'Done: Ship the thing')
@@ -34,10 +36,18 @@ test('employee: dashboard shows the project, ticks a goal, logs time; Time tab e
   await dialog.getByRole('button', { name: 'Log time' }).click()
   await toast(page, `Logged 6 h on ${project.name}`)
   await expect(page.getByText('6 h logged of 160 h assigned to you')).toBeVisible()
+  // the new entry appears under "Recent entries" and can be edited right there
+  await expect(page.getByRole('cell', { name: 'Rack audit' })).toBeVisible()
+  await page.getByRole('button', { name: /Edit entry on/ }).click()
+  dialog = page.getByRole('dialog')
+  await dialog.getByLabel('Note').fill('Rack audit (dashboard edit)')
+  await dialog.getByRole('button', { name: 'Save' }).click()
+  await toast(page, 'Time entry updated')
+  await expect(page.getByRole('cell', { name: 'Rack audit (dashboard edit)' })).toBeVisible()
 
   await openProject(page, project.id, project.name)
   await page.getByRole('tab', { name: 'Time' }).click()
-  await expect(page.getByRole('cell', { name: 'Rack audit' })).toBeVisible()
+  await expect(page.getByRole('cell', { name: 'Rack audit (dashboard edit)' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Person' })).toHaveCount(0)
   await page.getByRole('row', { name: /Rack audit/ }).getByRole('button', { name: /Edit entry/ }).click()
   dialog = page.getByRole('dialog')
@@ -53,8 +63,14 @@ test('manager: dashboard cards and team hours; Time tab shows everyone, filters,
   await expect(page.getByText('Your projects')).toBeVisible()
   await expect(page.getByRole('link', { name: new RegExp(project.name) }).first()).toBeVisible()
   await expect(page.getByText('Over budget').first()).toBeVisible()
-  const teamRow = page.getByRole('row', { name: new RegExp(fullName(emp1)) })
+  // "Due soon": Phase 1 is overdue, assigned to emp1, and links to the milestone
+  const dueRow = page.getByRole('row', { name: /^Phase 1 / }) // the team row also mentions Phase 1, but not first
+  await expect(dueRow.getByText('Overdue')).toBeVisible()
+  await expect(dueRow.getByText(fullName(emp1))).toBeVisible()
+  await expect(dueRow.getByRole('link', { name: 'Phase 1' })).toBeVisible()
+  const teamRow = page.getByRole('row', { name: new RegExp(`^${fullName(emp1)} `) }) // the Due soon row names emp1 too, later in the row
   await expect(teamRow.getByRole('cell', { name: '7 h', exact: true })).toBeVisible()
+  await expect(teamRow.getByRole('link', { name: 'Phase 1' })).toBeVisible()
   await expect(page.getByRole('row', { name: new RegExp(fullName(emp2)) }).getByText('Available')).toBeVisible()
 
   // the member count on the card is a deep link into the Members tab
@@ -83,6 +99,12 @@ test('admin: dashboard stats and the attention list link to the project', async 
   await signIn(page, ADMIN.username, ADMIN.password)
   await expect(page.getByText('Active projects')).toBeVisible()
   await expect(page.getByText('Needs attention')).toBeVisible()
+  await expect(page.getByText('Recent activity')).toBeVisible()
+  // the admin's own sign-in is always among the last eight entries
+  await expect(page.getByRole('row', { name: /User 'admin' logged in/ }).first()).toBeVisible()
+  await page.getByRole('button', { name: 'View all' }).click()
+  await expect(page.getByRole('heading', { name: 'Audit log' })).toBeVisible()
+  await nav(page).getByRole('link', { name: 'Dashboard' }).click()
   await nav(page).getByRole('link', { name: 'Audit log' }).click()
   await expect(page.getByRole('heading', { name: 'Audit log' })).toBeVisible()
   await signOut(page)

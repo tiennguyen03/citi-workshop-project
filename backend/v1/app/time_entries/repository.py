@@ -15,6 +15,7 @@ ENTRY_SELECT = sql.SQL(
     FROM time_entries t JOIN users u ON u.id = t.user_id
     {where}
     ORDER BY t.entry_date DESC, t.created_at DESC
+    {limit}
     """
 )
 UPDATABLE_COLUMNS = frozenset({"entry_date", "hours", "note"})
@@ -26,6 +27,7 @@ def list_entries(
     user_id: str | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    limit: int | None = None,
     conn=None,
 ) -> list[dict[str, Any]]:
     clauses = [sql.SQL("t.project_id = %(pid)s")]
@@ -40,11 +42,17 @@ def list_entries(
         clauses.append(sql.SQL("t.entry_date <= %(date_to)s"))
         params["date_to"] = date_to
     where = sql.SQL("WHERE ") + sql.SQL(" AND ").join(clauses)
-    return db.query(ENTRY_SELECT.format(where=where), params, conn=conn)
+    limit_sql = sql.SQL("")
+    if limit is not None:
+        limit_sql = sql.SQL("LIMIT %(limit)s")
+        params["limit"] = limit
+    return db.query(ENTRY_SELECT.format(where=where, limit=limit_sql), params, conn=conn)
 
 
 def find_by_id(entry_id: str, conn=None) -> dict[str, Any] | None:
-    rows = db.query(ENTRY_SELECT.format(where=sql.SQL("WHERE t.id = %(id)s")), {"id": entry_id}, conn=conn)
+    rows = db.query(
+        ENTRY_SELECT.format(where=sql.SQL("WHERE t.id = %(id)s"), limit=sql.SQL("")), {"id": entry_id}, conn=conn
+    )
     return rows[0] if rows else None
 
 
