@@ -94,6 +94,15 @@ the `postgres` database, touch `backend/v1/function.py`, then **call `/api/v1/he
 reload only re-runs the schema init + seed on the next invocation, so without a request the database
 stays empty (polling `SELECT count(*)` alone can wait forever). Seeded ~10 s after the call.
 
+## AWS deployment (done 2026-10-14)
+- `./bin/deploy-backend.sh aws` (refreshes `ENVIRONMENT.config` credentials via the workshop API, Terraform
+  apply, ≈ 4 min for a Lambda change) then `./bin/deploy-frontend.sh aws` (Vite build, S3 sync, CloudFront
+  invalidation, ≈ 2 min). Site: https://d2f2rff70xkxny.cloudfront.net · API: same host + `/api/v1`.
+  Lambda `coding-workshop-v1-ae7479c0`, region **us-east-2** (`export AWS_REGION=us-east-2` for `aws logs tail
+  /aws/lambda/coding-workshop-v1-ae7479c0 --since 10m` after `source ENVIRONMENT.config`).
+- Aurora pauses after 5 idle minutes; the first request then takes 15–30 s (D18). Before a demo, hit the
+  site once a few minutes early. `ENVIRONMENT.config` holds temporary credentials and is gitignored — never commit it.
+
 ## Local tooling (not committed)
 - Backend venv: `backend/v1/.venv` → `.venv/bin/pytest`, `.venv/bin/ruff check .`; Bandit exactly as CI runs it, from the
   repo root: `backend/v1/.venv/bin/bandit -r ./backend` (reads `backend/.bandit`; must exit 0)

@@ -54,7 +54,8 @@ def get_settings() -> Settings:
         f"user={os.getenv('POSTGRES_USER', 'postgres')} "
         f"password={os.getenv('POSTGRES_PASS', 'postgres123')} "
         f"dbname={os.getenv('POSTGRES_NAME', 'postgres')} "
-        f"connect_timeout=10" + ("" if is_local else " sslmode=require")
+        # Aurora Serverless v2 pauses after 5 idle minutes and takes ~15-30 s to wake, so the cloud waits longer.
+        f"connect_timeout={5 if is_local else 45}" + ("" if is_local else " sslmode=require")
     )
     return Settings(
         is_local=is_local,

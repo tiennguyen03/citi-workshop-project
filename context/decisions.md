@@ -186,7 +186,8 @@ with the workaround in place so nobody mistakes it for an oversight.
 | Multiple admins | Supported (the last active admin cannot be deactivated/demoted). No admin audit of other admins' permission changes beyond the normal `user.update` rows. | — |
 | File uploads, comments, RAG status | Not built (stretch items S1–S4 in requirements). `goals.rag_status` column exists but is unused. | — |
 | Browser E2E in CI | `frontend/e2e/` (Playwright, 12 tests across auth, projects, milestones, time + dashboards) runs locally against the dev stack with `npm run test:e2e`. The workshop CI has no Postgres/LocalStack, so it is not wired into GitHub Actions. | A CI job that starts Postgres + LocalStack, or points the suite at a deployed stack. |
-| Lambda memory | LocalStack reports the full 128 MB used at cold start (pydantic + psycopg). Not yet measured on AWS; deploy deferred by the user. | Measure on first deploy; fallback is hand-written validators instead of pydantic (D3). |
+| Lambda memory | Measured on AWS 2026-10-14: 96 MB of 128 MB at cold start, init ≈ 1 s. Fits; no headroom for heavier libraries. | Raise `memory_size` in `infra/lambda.tf` (boilerplate, needs approval) or drop pydantic (D3). |
+| Aurora auto-pause | The workshop's Aurora Serverless v2 cluster scales to zero after 5 idle minutes and takes 15–30 s to wake. The cloud connection timeout is 45 s with one retry (`core/db.py`), so the first request after a pause is slow rather than a 502. | A keep-warm ping, or `min_capacity > 0` in `infra/rds.tf` (boilerplate). |
 
 **Why**: Three-day workshop scope; every item above has a documented workaround and none affects the
 three pillars (time, cost, resources) the assignment is graded on.

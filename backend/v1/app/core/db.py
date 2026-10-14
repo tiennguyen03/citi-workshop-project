@@ -7,6 +7,7 @@ transaction per mutating request so services and the audit insert commit togethe
 """
 
 import logging
+import time
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from typing import Any
@@ -21,11 +22,22 @@ logger = logging.getLogger(__name__)
 _conn: psycopg.Connection | None = None
 
 
+CONNECT_ATTEMPTS = 2  # a paused Aurora Serverless cluster can refuse the very first attempt while it wakes
+
+
 def get_conn() -> psycopg.Connection:
-    """Return the shared connection, (re)connecting if needed."""
+    """Return the shared connection, (re)connecting if needed (one retry for a database that is still waking up)."""
     global _conn
     if _conn is None or _conn.closed:
-        _conn = psycopg.connect(get_settings().pg_dsn, autocommit=True, row_factory=dict_row)
+        for attempt in range(1, CONNECT_ATTEMPTS + 1):
+            try:
+                _conn = psycopg.connect(get_settings().pg_dsn, autocommit=True, row_factory=dict_row)
+                break
+            except psycopg.OperationalError:
+                if attempt == CONNECT_ATTEMPTS:
+                    raise
+                logger.warning("Database connection attempt %d failed; retrying once", attempt)
+                time.sleep(2)
     return _conn
 
 
