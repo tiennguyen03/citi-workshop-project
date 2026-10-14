@@ -225,6 +225,11 @@ export default function GoalList({ milestone, canManage, canTick, onChanged, not
           </Button>
         </Stack>
       )}
+      {canManage && milestone.assignees.length === 0 && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+          Goals can only be given to people on this milestone. Add assignees with Edit, above, and they will appear here.
+        </Typography>
+      )}
       {editing && (
         <GoalEditDialog
           goal={editing}

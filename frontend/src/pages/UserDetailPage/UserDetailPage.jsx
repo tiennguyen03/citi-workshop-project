@@ -76,7 +76,7 @@ export default function UserDetailPage() {
       {user && (
         <>
           <PageHeader
-            back={{ label: 'Back', onClick: () => navigate(-1) }}
+            back={isAdmin ? { label: 'All users', to: '/users' } : { label: 'My team', to: me.role === ROLES.MANAGER ? '/users' : '/team' }}
             title={fullName(user)}
             subtitle={user.jobTitle}
             actions={

@@ -73,6 +73,7 @@ describe('UserDetailPage', () => {
     usersApi.get.mockResolvedValue(EVE)
     renderPage({ id: 'ADM001', role: 'admin' })
     await screen.findByRole('heading', { name: 'Eve Employee' })
+    expect(screen.getByRole('link', { name: 'All users' })).toHaveAttribute('href', '/users')
     await user.click(screen.getByRole('button', { name: 'View activity' }))
     expect(await screen.findByText('at /audit-log?actorId=EMP001')).toBeInTheDocument()
   })

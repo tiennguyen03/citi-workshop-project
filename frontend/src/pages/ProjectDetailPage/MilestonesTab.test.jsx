@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import * as milestonesApi from '../../services/milestones.js'
 import { addDays, todayISO } from '../../utils/dates.js'
+import { defaultMilestoneStart } from '../../utils/milestoneForm.js'
 import MilestonesTab from './MilestonesTab.jsx'
 
 vi.mock('../../services/milestones.js')
@@ -106,7 +107,7 @@ describe('MilestonesTab', () => {
       expect(milestonesApi.create).toHaveBeenCalledWith('PRJ001', {
         name: 'Power-down',
         description: '',
-        startDate: '2026-10-05',
+        startDate: defaultMilestoneStart(PROJECT),
         dueDate: '2026-10-23',
         assigneeIds: ['EMP002'],
       }),

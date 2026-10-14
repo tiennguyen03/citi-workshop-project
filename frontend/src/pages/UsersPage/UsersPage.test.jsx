@@ -17,6 +17,7 @@ const EMPLOYEE = {
   jobTitle: 'Engineer',
   email: 'eve@x.com',
   isActive: true,
+  managerId: 'MGR001',
   currentProject: null,
 }
 
@@ -44,8 +45,9 @@ describe('UsersPage', () => {
   it('lists users for an admin with a create button', async () => {
     usersApi.list.mockResolvedValue({ items: [MANAGER, EMPLOYEE], total: 2 })
     renderPage('admin')
-    expect(await screen.findByText('Mia Manager')).toBeInTheDocument()
-    expect(screen.getByText('Eve Employee')).toBeInTheDocument()
+    expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
+    expect(screen.getAllByText('Mia Manager')).toHaveLength(2) // her own row + Eve's Manager column
+    expect(screen.getByRole('columnheader', { name: 'Manager' })).toBeInTheDocument()
     expect(screen.getByText('Available')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /new user/i })).toBeInTheDocument()
   })
@@ -55,6 +57,7 @@ describe('UsersPage', () => {
     renderPage('manager')
     expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /new user/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'Manager' })).not.toBeInTheDocument()
   })
 
   it('hides deactivated accounts until asked, and searches by email', async () => {
@@ -76,7 +79,7 @@ describe('UsersPage', () => {
     renderPage('admin', '/users?available=true')
     expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
     expect(screen.queryByText('Max New')).not.toBeInTheDocument()
-    expect(screen.queryByText('Mia Manager')).not.toBeInTheDocument()
+    expect(screen.queryByText('mia@x.com')).not.toBeInTheDocument() // the manager's own row is gone; her name still shows in Eve's Manager column
     expect(screen.getByLabelText(/available only/i)).toBeChecked()
   })
 

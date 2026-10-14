@@ -20,6 +20,7 @@ import useApi from '../../hooks/useApi.js'
 import useUrlFilters from '../../hooks/useUrlFilters.js'
 import * as auditApi from '../../services/auditLog.js'
 import * as usersApi from '../../services/users.js'
+import { actionLabel } from '../../utils/auditActions.js'
 import { formatDateTime } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 
@@ -62,6 +63,7 @@ const COLUMNS = [
   {
     key: 'actor',
     label: 'Who',
+    nowrap: true,
     render: (e) =>
       e.actor ? (
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -74,7 +76,19 @@ const COLUMNS = [
         </Typography>
       ),
   },
-  { key: 'action', label: 'Action', render: (e) => <Box component="code" sx={{ fontSize: '0.75rem', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', color: 'text.secondary' }}>{e.action}</Box> },
+  {
+    key: 'action',
+    label: 'Action',
+    nowrap: true,
+    render: (e) => (
+      <Box>
+        <Typography variant="body2">{actionLabel(e.action)}</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          {e.action}
+        </Typography>
+      </Box>
+    ),
+  },
   { key: 'summary', label: 'What happened', render: (e) => <DetailsCell entry={e} /> },
   {
     key: 'statusCode',
@@ -134,7 +148,12 @@ export default function AuditLogPage() {
             <MenuItem value="">All actions</MenuItem>
             {actions.map((a) => (
               <MenuItem key={a} value={a}>
-                {a}
+                <Box>
+                  <Typography variant="body2">{actionLabel(a)}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    {a}
+                  </Typography>
+                </Box>
               </MenuItem>
             ))}
           </TextField>

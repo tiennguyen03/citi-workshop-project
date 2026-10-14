@@ -78,7 +78,7 @@ describe('AuditLogPage', () => {
     expect(auditApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 50, limit: 50 }))
 
     await user.click(screen.getByRole('combobox', { name: /action/i }))
-    await user.click(await screen.findByRole('option', { name: 'project.archive' }))
+    await user.click(await screen.findByRole('option', { name: /project\.archive/ }))
     await user.click(screen.getByRole('combobox', { name: /actor/i }))
     await user.click(await screen.findByRole('option', { name: 'Eve Employee' }))
     await user.click(screen.getByRole('button', { name: /apply/i }))

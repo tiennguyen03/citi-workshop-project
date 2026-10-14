@@ -2,7 +2,7 @@
 
 > Only one feature is "current" at a time. Update this file when starting, progressing or finishing.
 
-## Status: 🔨 Slice 10 (visual identity) in progress on `slice-10-identity`
+## Status: 🔨 Slice 11 (polish) in progress on `slice-11-polish`
 
 ## Plan (3 days) — each item is a thin vertical slice
 
@@ -18,9 +18,18 @@
 | 7 | UX signals (frontend only): overdue / due-soon / past-end tags, 40 h week bar, clickable dashboard counts, `?tab=` deep links, search + filters on Projects/Users mirrored in the URL, milestone ordering with "Next due", capacity hint when assigning hours, this-week / last-week filter on the Time tab | pre-demo | **done** |
 | 8 | Dashboards: manager "Due soon" + current milestone per report + zero-hour cue; admin recent activity + wider attention reasons; employee teammates + recent entries (`GET /dashboard` grows) | pre-demo | **done** |
 | 9 | People & audit: user page "Reports to" + project history; audit log action/actor pickers (`GET /users/{id}` grows, `GET /audit-log/actions`) | pre-demo | **done** |
-| 10 | Visual identity (D20): serif display face for titles and figures, self-hosted fonts, sentence-case labels, no middle-dot strings, tile/section/table hierarchy, ink neutrals, two-part login, two copy fixes | pre-demo | **in progress** |
+| 10 | Visual identity (D20): serif display face for titles and figures, self-hosted fonts, sentence-case labels, no middle-dot strings, tile/section/table hierarchy, ink neutrals, two-part login, two copy fixes | pre-demo | **done** |
+| 11 | Polish from a role-by-role walkthrough: goal-assignee hint, "not your project" message, one people page per role, Manager column for admins, non-assignee hint on milestones, milestone start defaults to today, empty hours on add member, project name in Log time, fixed back links, readable audit actions | pre-demo | **in progress** |
 
-## Current slice: 10 — Visual identity (user approved all seven recommendations from the frontend-design evaluation, 2026-10-14)
+## Current slice: 11 — Polish (ten findings from a 31-screen walkthrough as each role, all approved 2026-10-14)
+
+**Done**: all ten applied (frontend only); `utils/auditActions.js` names every audit code in plain words (AuditLogPage, admin
+dashboard); `defaultMilestoneStart` in `utils/milestoneForm.js`; nav has one people entry per role; 92 frontend tests
+(+3), ESLint clean.
+**Remaining**: e2e, screenshot pass, commit + push on request.
+**Blockers**: none.
+
+## Slice 10 — Visual identity (done 2026-10-14)
 
 **Acceptance**: D20 holds on every screen; no external font request; 89 frontend tests, 12 e2e, walk clean at 390/1360 light/dark.
 **Done**: fonts self-hosted; theme (display face, sentence-case overline + table head, ink neutrals); StatCard as a tile;
@@ -92,6 +101,7 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-14 · **Slice 11 built** (branch `slice-11-polish`). From a scripted walkthrough of 31 screens as admin, manager and employee: (1) empty goal-assignee picker explains that assignees are set with Edit; (2) a manager opening a project they don't manage sees why, with an "All projects" button instead of Retry; (3) managers get one "My team" nav entry (the searchable users page) instead of "My team" + "Users"; (4) admin user list gains a Manager column; (5) a non-assignee on a milestone is told why goals are disabled; (6) new milestones start today (clamped to the project); (7) Add member starts with empty hours instead of 0; (8) the Log time dialog names the project; (9) the user page's back link is a fixed destination per role; (10) audit actions read as sentences with the code beneath. 92 frontend tests, 12 e2e.
 - 2026-10-14 · **Slice 10 built** (branch `slice-10-identity`, D20). Evaluation against the `frontend-design` skill → all seven recommendations applied: IBM Plex Serif for titles and headline figures (Inter for the rest), both self-hosted from `src/assets/fonts`; overline + table-header tokens to sentence case; neutrals shifted to a blue-black ink and a navy dark ground; `StatCard` is a flat tile on a tinted ground (sections and tables keep borders); login is a two-part screen with the three pillars set as type; 17 " · " strings rewritten as sentences or stacked lines; "Something went wrong" → a specific message; dashboard subtitle is the date. 89 frontend tests, 12 e2e, 28-screen walk clean.
 - 2026-10-14 · **Slice 9 built** (branch `slice-9-people-audit`). `GET /users/{id}` gains `manager {id, firstName, lastName}|null` and `projects: MembershipHistory[]` (every project the person has been on, with their own assigned/logged hours, membership state, joined/released dates; archived ones only for admins) via `users.repository.membership_history`. New `GET /audit-log/actions` backed by `core.audit.ACTIONS`, which `tests/unit/test_routes.py` keeps equal to the route table. Frontend: user page shows "Reports to" (link), a Projects history table and, for admins, "View activity" → `/audit-log?actorId=…`; the audit log's Action and Actor are dropdowns and all its filters live in the URL (`useUrlFilters` gained `setFilters` for multi-key updates — React Router's functional `setSearchParams` reads the current render's params, so sequential single-key calls clobber each other). New `UserDetailPage.test.jsx`; audit page tests cover deep link, clear and error. 111 backend tests (97 %), 89 frontend, 12 e2e.
 - 2026-10-14 · **Slice 8 built** (branch `slice-8-dashboards`). `GET /dashboard` grows: `ProjectCard.nextDueDate`; admin `recentActivity` (last 8 audit rows) and attention reasons `overdue_milestone` / `no_members` / `no_milestones`; manager `dueSoon` (open milestones overdue or due ≤ 7 days across their live projects, with assignees) and `team[].currentMilestone`; employee `currentMilestone.{dueDate, assignees}` and `recentEntries` (last 5 own). Backend: one subquery in the project summary, `milestones.open_assignments_for_users`, `dashboard.due_soon_milestones`, `time_entries.list_entries(limit=)`, public `audit_log.service.entry_shape`; `_attention_reasons` unit-tested as a matrix. Frontend: manager "Due soon" table + "Next due" on cards + current-milestone column + "0 h" nudge; admin "Recent activity" with "View all"; employee milestone due date, cue and teammates, "Recent entries" with in-place edit. 107 backend tests (97 %), 83 frontend, 12 e2e.

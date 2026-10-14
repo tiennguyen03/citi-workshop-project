@@ -111,6 +111,20 @@ describe('MilestoneDetailPage', () => {
     expect(screen.queryByText('Overdue')).not.toBeInTheDocument()
   })
 
+  it('explains an empty assignee picker to the manager, and disabled goals to a non-assignee', async () => {
+    projectsApi.get.mockResolvedValue(PROJECT)
+    milestonesApi.get.mockResolvedValue({ ...MILESTONE, assignees: [], goals: [] })
+    const { unmount } = renderPage({ id: 'MGR001', role: 'manager' })
+    await screen.findByRole('heading', { name: 'Inventory' })
+    expect(await screen.findByText(/Goals can only be given to people on this milestone/)).toBeInTheDocument()
+    unmount()
+    projectsApi.get.mockResolvedValue({ ...PROJECT, myMembership: { isActive: true, hoursAssigned: 80 } })
+    milestonesApi.get.mockResolvedValue(MILESTONE)
+    renderPage({ id: 'EMP002', role: 'employee' })
+    await screen.findByRole('heading', { name: 'Inventory' })
+    expect(await screen.findByText('Only people assigned to this milestone can tick its goals.')).toBeInTheDocument()
+  })
+
   it('is read-only on an archived project', async () => {
     projectsApi.get.mockResolvedValue({ ...PROJECT, archived: true })
     renderPage({ id: 'ADM001', role: 'admin' })

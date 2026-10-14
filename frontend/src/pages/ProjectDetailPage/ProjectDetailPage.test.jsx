@@ -146,6 +146,25 @@ describe('ProjectDetailPage', () => {
     await waitFor(() => expect(projectsApi.addMember).toHaveBeenCalledWith('PRJ001', { userId: 'EMP002', hoursAssigned: 40 }))
   })
 
+  it('tells a manager why a project they do not manage is hidden, with a way out', async () => {
+    const user = userEvent.setup()
+    projectsApi.get.mockRejectedValue(Object.assign(new Error('You are not on this project'), { status: 403 }))
+    render(
+      <AuthContext.Provider value={{ status: 'authed', user: { id: 'MGR002', role: 'manager' }, login: vi.fn(), logout: vi.fn(), updateUser: vi.fn() }}>
+        <MemoryRouter initialEntries={['/projects/PRJ001']}>
+          <Routes>
+            <Route path="/projects/:id" element={<ProjectDetailPage />} />
+            <Route path="/projects" element={<p>projects list</p>} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    )
+    expect(await screen.findByText(/You don't manage this project/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'All projects' }))
+    expect(await screen.findByText('projects list')).toBeInTheDocument()
+  })
+
   it('rejects hours above capacity before calling the API', async () => {
     const user = userEvent.setup()
     projectsApi.get.mockResolvedValue(WITH_COSTS)

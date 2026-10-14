@@ -26,7 +26,7 @@ import { fullName } from '../../utils/roles.js'
 
 function HoursDialog({ open, title, submitLabel, initialHours, capacity, assignedSoFar, projectCapacity, options, onClose, onSubmit }) {
   const [userId, setUserId] = useState('')
-  const [hours, setHours] = useState(String(initialHours ?? 0))
+  const [hours, setHours] = useState(initialHours === undefined ? '' : String(initialHours))
   const [error, setError] = useState(null)
   const [fieldError, setFieldError] = useState(null)
   const [pending, setPending] = useState(false)

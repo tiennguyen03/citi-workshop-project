@@ -55,6 +55,15 @@ export default function UsersPage() {
   const items = data?.items ?? []
   const rows = filterUsers(items, filters)
   const managers = items.filter((u) => u.role === ROLES.MANAGER && u.isActive !== false)
+  const byId = new Map(items.map((u) => [u.id, u]))
+  const managerColumn = {
+    key: 'manager',
+    label: 'Manager',
+    nowrap: true,
+    render: (u) => (u.role === ROLES.EMPLOYEE && byId.get(u.managerId) ? fullName(byId.get(u.managerId)) : '—'),
+  }
+  // Reporting lines matter to the admin who moves people between managers; a manager's list is all their own.
+  const columns = isAdmin ? [...COLUMNS.slice(0, 3), managerColumn, ...COLUMNS.slice(3)] : COLUMNS
   const total = data?.total ?? '…'
 
   return (
@@ -92,7 +101,7 @@ export default function UsersPage() {
       </ListToolbar>
       <ErrorAlert error={error} onRetry={refetch} />
       <DataTable
-        columns={COLUMNS}
+        columns={columns}
         rows={rows}
         getRowKey={(u) => u.id}
         loading={loading}

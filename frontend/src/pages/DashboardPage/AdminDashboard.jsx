@@ -9,6 +9,7 @@ import DataTable from '../../components/DataTable/DataTable.jsx'
 import RoleChip from '../../components/RoleChip/RoleChip.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
+import { actionLabel } from '../../utils/auditActions.js'
 import { formatDate, formatDateTime, formatMoney } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 
@@ -38,7 +39,7 @@ const ACTIVITY_COLUMNS = [
         </Typography>
       ),
   },
-  { key: 'action', label: 'Action', nowrap: true, render: (e) => <Tag label={e.action} tone={e.statusCode < 400 ? 'neutral' : 'error'} /> },
+  { key: 'action', label: 'Action', nowrap: true, render: (e) => <Tag label={actionLabel(e.action)} tone={e.statusCode < 400 ? 'neutral' : 'error'} /> },
   { key: 'summary', label: 'Summary' },
 ]
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -31,6 +31,7 @@ const TABS = ['overview', 'members', 'milestones', 'time']
 /** Project detail with Overview, Members, Milestones and Time tabs. The tab lives in `?tab=` so it can be linked to. */
 export default function ProjectDetailPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { user: me } = useAuth()
   const { notice, notify, clear } = useNotice()
   const [params, setParams] = useSearchParams()
@@ -99,7 +100,21 @@ export default function ProjectDetailPage() {
 
   return (
     <>
-      <ErrorAlert error={error} onRetry={refetch} />
+      {error?.status === 403 ? (
+        <Alert
+          severity="info"
+          sx={{ mb: 2 }}
+          action={
+            <Button color="inherit" size="small" onClick={() => navigate('/projects')}>
+              All projects
+            </Button>
+          }
+        >
+          {me.role === ROLES.MANAGER ? "You don't manage this project, so it is not shown to you." : 'You are not on this project, so it is not shown to you.'}
+        </Alert>
+      ) : (
+        <ErrorAlert error={error} onRetry={refetch} />
+      )}
       {loading && !project && <Skeleton variant="rounded" height={240} />}
       {project && (
         <>

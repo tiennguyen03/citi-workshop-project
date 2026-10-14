@@ -149,6 +149,11 @@ export default function MilestoneDetailPage() {
                 <Tag key={a.id} label={fullName(a)} tone={a.id === me.id ? 'primary' : 'neutral'} size="medium" />
               ))}
             </Stack>
+            {project && !canManage && projectWritable && isOpen && !milestone.assignees.some((a) => a.id === me.id) && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>
+                Only people assigned to this milestone can tick its goals.
+              </Typography>
+            )}
             {milestone.description && (
               <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', mt: 2.5 }}>
                 {milestone.description}

@@ -70,7 +70,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('No members')).toBeInTheDocument()
     expect(screen.getByText('No milestones')).toBeInTheDocument()
     expect(screen.getByText('Logged 6 h')).toBeInTheDocument()
-    expect(screen.getByText('time_entry.create')).toBeInTheDocument()
+    expect(screen.getByText('Logged time')).toBeInTheDocument()
     expect(screen.getByText('Failed login for ghost')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'View all' })).toBeInTheDocument()
     expect(screen.getByText('-$150')).toBeInTheDocument()

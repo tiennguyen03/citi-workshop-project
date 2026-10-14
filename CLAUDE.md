@@ -61,7 +61,10 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
   `PageHeader` (`back={{ label, to|onClick }}` for the back link). Brand = `components/BrandMark`.
 - Paper defaults to `variant="outlined"`; tables scroll sideways under 640px.
 - In browser scripts, click nav links inside `getByRole('navigation', { name: 'Main navigation' })` —
-  the dashboard shortcut cards are links with the same names.
+  the dashboard shortcut cards are links with the same names. Nav has one people entry per role:
+  employees "My team" → `/team`, managers "My team" → `/users` (searchable), admins "Users" → `/users`.
+- Audit action codes are shown through `utils/auditActions.js` (`actionLabel`); add a label there whenever a
+  route gains a new `audit=` name, and keep the code visible as a caption so tests/e2e can still match it.
 - Urgency cues come from `components/DueTag` (`dueDate`, `isOpen`, `soonDays` — `null` for overdue-only,
   `overdueLabel`/`overdueTone` for "Past end date"); never compare dates inline. Date math only through
   `utils/dates.js` (`todayISO`, `addDays`, `daysUntil`, `dueStatus`, `weekRange`), never `new Date('YYYY-MM-DD')`.

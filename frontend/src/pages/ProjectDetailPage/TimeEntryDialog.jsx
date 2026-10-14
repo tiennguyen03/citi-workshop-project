@@ -40,7 +40,7 @@ export default function TimeEntryDialog({ open, project, entry = null, onClose, 
   return (
     <FormDialog
       open={open}
-      title={entry ? 'Edit time entry' : 'Log time'}
+      title={entry ? 'Edit time entry' : `Log time on ${project.name}`}
       onClose={onClose}
       onSubmit={submit}
       submitLabel={entry ? 'Save' : 'Log time'}

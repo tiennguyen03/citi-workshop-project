@@ -1,3 +1,12 @@
+import { todayISO } from './dates.js'
+
+/** Default start for a new milestone: today, kept inside the project's dates (the project start if today is outside). */
+export function defaultMilestoneStart(project, today = todayISO()) {
+  const start = String(project.startDate).slice(0, 10)
+  const end = String(project.endDate).slice(0, 10)
+  return today >= start && today <= end ? today : start
+}
+
 /** Client-side checks mirroring the API contract for milestone create/edit. Returns {field: message}. */
 export function validateMilestone(values, project) {
   const errors = {}

@@ -10,7 +10,7 @@ import FormDialog from '../../components/FormDialog/FormDialog.jsx'
 import useApi from '../../hooks/useApi.js'
 import useFormState from '../../hooks/useFormState.js'
 import * as milestonesApi from '../../services/milestones.js'
-import { conflictMessage, milestoneChanges, toMilestoneValues, validateMilestone } from '../../utils/milestoneForm.js'
+import { conflictMessage, defaultMilestoneStart, milestoneChanges, toMilestoneValues, validateMilestone } from '../../utils/milestoneForm.js'
 import { fullName } from '../../utils/roles.js'
 
 const EMPTY = { name: '', description: '', startDate: '', dueDate: '', assigneeIds: [] }
@@ -20,7 +20,7 @@ const EMPTY = { name: '', description: '', startDate: '', dueDate: '', assigneeI
  * free members are selectable, busy ones are listed disabled with the milestone holding them.
  */
 export default function MilestoneDialog({ open, project, milestone = null, onClose, onSaved }) {
-  const initial = milestone ? toMilestoneValues(milestone) : { ...EMPTY, startDate: String(project.startDate).slice(0, 10) }
+  const initial = milestone ? toMilestoneValues(milestone) : { ...EMPTY, startDate: defaultMilestoneStart(project) }
   const { values, errors, setField, setErrors, applyServerError } = useFormState(initial)
   const [pending, setPending] = useState(false)
   const [formError, setFormError] = useState(null)

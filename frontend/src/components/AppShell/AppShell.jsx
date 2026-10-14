@@ -35,8 +35,10 @@ const SIDEBAR_WIDTH = 248
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: <GridViewOutlinedIcon />, roles: Object.values(ROLES), end: true },
   { to: '/projects', label: 'Projects', icon: <FolderOutlinedIcon />, roles: Object.values(ROLES) },
-  { to: '/team', label: 'My team', icon: <GroupsOutlinedIcon />, roles: [ROLES.MANAGER, ROLES.EMPLOYEE] },
-  { to: '/users', label: 'Users', icon: <PeopleOutlinedIcon />, roles: [ROLES.ADMIN, ROLES.MANAGER] },
+  // One "people" entry per role: employees see their team, managers their reports (with search), admins everyone.
+  { to: '/team', label: 'My team', icon: <GroupsOutlinedIcon />, roles: [ROLES.EMPLOYEE] },
+  { to: '/users', label: 'My team', icon: <GroupsOutlinedIcon />, roles: [ROLES.MANAGER] },
+  { to: '/users', label: 'Users', icon: <PeopleOutlinedIcon />, roles: [ROLES.ADMIN] },
   { to: '/audit-log', label: 'Audit log', icon: <HistoryOutlinedIcon />, roles: [ROLES.ADMIN] },
   { to: '/profile', label: 'Profile', icon: <PersonOutlineIcon />, roles: Object.values(ROLES) },
 ]
@@ -74,7 +76,7 @@ export default function AppShell() {
       </Typography>
       <List component="nav" aria-label="Main navigation" sx={{ px: 1.5, py: 0 }}>
         {items.map((item) => (
-          <ListItemButton key={item.to} component={NavLink} to={item.to} end={item.end} onClick={() => setOpen(false)} sx={{ mb: 0.25 }}>
+          <ListItemButton key={`${item.to}-${item.label}`} component={NavLink} to={item.to} end={item.end} onClick={() => setOpen(false)} sx={{ mb: 0.25 }}>
             <ListItemIcon>{item.icon}</ListItemIcon>
             <ListItemText primary={item.label} />
           </ListItemButton>

@@ -43,9 +43,10 @@ test('admin deactivates a user, who is locked out until reactivated; the audit l
 
   await nav(page).getByRole('link', { name: 'Audit log' }).click()
   await page.getByRole('combobox', { name: 'Action' }).click()
-  await page.getByRole('option', { name: 'user.update' }).click()
+  await page.getByRole('option', { name: /user\.update/ }).click()
+  const me = await api('GET', '/auth/me', undefined, office.admin) // the admin may have renamed themselves in the UI
   await page.getByRole('combobox', { name: 'Actor' }).click()
-  await page.getByRole('option', { name: 'System Admin' }).click()
+  await page.getByRole('option', { name: fullName(me) }).click()
   await page.getByRole('button', { name: 'Apply' }).click()
   await expect(page).toHaveURL(/action=user\.update&actorId=/)
   await expect(page.getByText(new RegExp(`Updated user '${emp2.username}'`)).first()).toBeVisible()
