@@ -9,7 +9,6 @@ import AppShell from './components/AppShell/AppShell.jsx'
 import LoginPage from './pages/LoginPage/LoginPage.jsx'
 import DashboardPage from './pages/DashboardPage/DashboardPage.jsx'
 import ProjectsPage from './pages/ProjectsPage/ProjectsPage.jsx'
-import ProjectFormPage from './pages/ProjectFormPage/ProjectFormPage.jsx'
 import ProjectDetailPage from './pages/ProjectDetailPage/ProjectDetailPage.jsx'
 import MilestoneDetailPage from './pages/MilestoneDetailPage/MilestoneDetailPage.jsx'
 import UsersPage from './pages/UsersPage/UsersPage.jsx'
@@ -38,9 +37,6 @@ export default function App() {
                 <Route path="/projects/:id" element={<ProjectDetailPage />} />
                 <Route path="/milestones/:id" element={<MilestoneDetailPage />} />
                 <Route path="/users/:id" element={<UserDetailPage />} />
-                <Route element={<RequireRole roles={[ROLES.ADMIN]} />}>
-                  <Route path="/projects/new" element={<ProjectFormPage />} />
-                </Route>
                 <Route element={<RequireRole roles={[ROLES.ADMIN, ROLES.MANAGER]} />}>
                   <Route path="/users" element={<UsersPage />} />
                 </Route>

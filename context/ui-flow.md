@@ -11,7 +11,7 @@ loading skeleton, empty state, and an error `Alert`; every mutation shows a `Sna
 | `/login` | LoginPage | public | `POST /auth/login` |
 | `/` | DashboardPage | all | `GET /projects`, `GET /users/{me}/team` |
 | `/projects` | ProjectsPage | all | `GET /projects` (+`?archived=true` toggle for admin) |
-| `/projects/new` | ProjectFormPage | admin | `GET /users?role=manager`, `POST /projects` |
+| (dialog on `/projects` and `/`) | ProjectDialog, create mode | admin | `GET /users?role=manager`, `POST /projects` |
 | `/projects/:id` | ProjectDetailPage | viewers | `GET /projects/{id}`, `/stats`, `/members`, `/milestones`, `/time-entries` |
 | `/milestones/:id` | MilestoneDetailPage | viewers | `GET /milestones/{id}`, goal endpoints |
 | `/users` | UsersPage | admin, manager | `GET /users`, `POST /users` (admin) |
@@ -43,7 +43,7 @@ LoginPage form (username, password) → `POST /auth/login` → store token + use
 UsersPage → "New user" `FormDialog`: username, temp password, first/last name, email, job title, salary, role (select), manager (select, shown only when role = employee, options from `GET /users?role=manager`) → `POST /users` → row appended, snackbar. 409 → field error on username/email.
 
 ### F3 Admin creates a project
-ProjectFormPage: name, description, budget, start/end (date pickers), manager (select) → `POST /projects` → navigate to detail. Validation inline: end ≥ start, budget ≥ 0.
+ProjectDialog (create mode, opened by "New project" on the Projects page or the admin dashboard — a dialog like every other "new …" action): name, description, budget, start/end (date pickers), manager (select) → `POST /projects` → navigate to detail. The same dialog edits a project from its page. Validation inline: end ≥ start, budget ≥ 0.
 
 ### F4 Manager staffs a project
 ProjectDetailPage › **Members** tab → "Add member" dialog: employee select fed by `GET /projects/{id}/available-members` (only employees with no active project; the dialog also shows a collapsed "Unavailable" list with each busy report's current project so the manager knows who frees up when), hours assigned (number, max = capacity per member shown as helper text) → `POST /projects/{id}/members`. A `PROJECT_CONFLICT` (race) shows as a field error. Members table has an "Active / Released" chip and a "Show released" toggle. Row actions: edit hours (inline), remove (ConfirmDialog: "X will be released from this project and unassigned from its milestones/goals; their logged hours are kept").

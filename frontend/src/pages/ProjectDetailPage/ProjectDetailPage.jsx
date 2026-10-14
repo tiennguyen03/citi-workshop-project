@@ -24,7 +24,7 @@ import MembersTab from './MembersTab.jsx'
 import MilestonesTab from './MilestonesTab.jsx'
 import OverviewTab from './OverviewTab.jsx'
 import TimeTab from './TimeTab.jsx'
-import ProjectEditDialog from './ProjectEditDialog.jsx'
+import ProjectDialog from '../ProjectsPage/ProjectDialog.jsx'
 
 const TABS = ['overview', 'members', 'milestones', 'time']
 
@@ -173,7 +173,7 @@ export default function ProjectDetailPage() {
             {tab === 'time' && <TimeTab project={project} canManage={canManage} onChanged={refetch} notify={notify} />}
           </Box>
           {writable && (
-            <ProjectEditDialog
+            <ProjectDialog
               key={project.id + String(editOpen)}
               open={editOpen}
               project={project}

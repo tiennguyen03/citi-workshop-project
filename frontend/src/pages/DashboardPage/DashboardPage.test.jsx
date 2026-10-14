@@ -6,11 +6,14 @@ import { AuthContext } from '../../auth/authContext.js'
 import * as dashboardApi from '../../services/dashboard.js'
 import * as milestonesApi from '../../services/milestones.js'
 import * as timeEntriesApi from '../../services/timeEntries.js'
+import * as usersApi from '../../services/users.js'
 import DashboardPage from './DashboardPage.jsx'
 
 vi.mock('../../services/dashboard.js')
 vi.mock('../../services/milestones.js')
 vi.mock('../../services/timeEntries.js')
+vi.mock('../../services/users.js')
+vi.mock('../../services/projects.js')
 
 const CARD = {
   id: 'PRJ001',
@@ -46,6 +49,7 @@ function renderPage(user) {
 describe('DashboardPage', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    usersApi.list.mockResolvedValue({ items: [], total: 0 })
   })
 
   it('shows office stats and the attention list for an admin', async () => {
@@ -74,7 +78,10 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Failed login for ghost')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'View all' })).toBeInTheDocument()
     expect(screen.getByText('-$150')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /new project/i })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /new project/i }))
+    expect(await screen.findByRole('dialog')).toHaveTextContent('New project')
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     await user.click(screen.getByText('Decommission'))
     expect(await screen.findByText('project page')).toBeInTheDocument()
   })

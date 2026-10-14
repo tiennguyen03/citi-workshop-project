@@ -18,9 +18,11 @@ import useApi from '../../hooks/useApi.js'
 import useAuth from '../../auth/useAuth.js'
 import useUrlFilters from '../../hooks/useUrlFilters.js'
 import * as projectsApi from '../../services/projects.js'
+import * as usersApi from '../../services/users.js'
 import { formatDate, formatHours } from '../../utils/format.js'
 import { filterProjects } from '../../utils/listFilters.js'
 import { ROLES, fullName } from '../../utils/roles.js'
+import ProjectDialog from './ProjectDialog.jsx'
 
 const FILTER_DEFAULTS = { q: '', status: '' }
 
@@ -60,7 +62,10 @@ export default function ProjectsPage() {
   const navigate = useNavigate()
   const isAdmin = me.role === ROLES.ADMIN
   const [showArchived, setShowArchived] = useState(false)
+  const [creating, setCreating] = useState(false)
   const { filters, setFilter, isFiltered } = useUrlFilters(FILTER_DEFAULTS)
+  const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER }) : Promise.resolve(null)), [isAdmin])
+  const managers = (managersData?.items ?? []).filter((m) => m.isActive !== false)
 
   const { data, loading, error, refetch } = useApi(
     () => projectsApi.list({ archived: showArchived ? 'true' : undefined }),
@@ -84,7 +89,7 @@ export default function ProjectsPage() {
         subtitle={SUBTITLES[me.role]}
         actions={
           isAdmin ? (
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/projects/new')}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)}>
               New project
             </Button>
           ) : null
@@ -113,6 +118,16 @@ export default function ProjectsPage() {
         onRowClick={(p) => navigate(`/projects/${p.id}`)}
         size="small"
       />
+      {isAdmin && (
+        <ProjectDialog
+          key={`new-${creating}`}
+          open={creating}
+          isAdmin
+          managers={managers}
+          onClose={() => setCreating(false)}
+          onSaved={(created) => navigate(`/projects/${created.id}`)}
+        />
+      )}
     </>
   )
 }

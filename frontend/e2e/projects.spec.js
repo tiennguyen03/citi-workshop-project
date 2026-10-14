@@ -11,7 +11,7 @@ test.beforeAll(async () => {
 test('admin creates a project through the form, with validation', async ({ page }) => {
   const name = `E2E ${unique('form')}`
   await signIn(page, ADMIN.username, ADMIN.password)
-  await page.goto('/projects/new')
+  await page.getByRole('button', { name: 'New project' }).click() // right from the dashboard, as a dialog
   await page.getByLabel(/project name/i).fill(name)
   await page.getByLabel(/budget/i).fill('25000')
   await page.getByRole('combobox', { name: /manager/i }).click()

@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthContext } from '../../auth/authContext.js'
 import * as projectsApi from '../../services/projects.js'
+import * as usersApi from '../../services/users.js'
 import { addDays, todayISO } from '../../utils/dates.js'
 import ProjectsPage from './ProjectsPage.jsx'
 
 vi.mock('../../services/projects.js')
+vi.mock('../../services/users.js')
 
 const PROJECT = {
   id: 'PRJ001',
@@ -29,7 +31,6 @@ function renderPage(role, url = '/projects') {
       <MemoryRouter initialEntries={[url]}>
         <Routes>
           <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/projects/new" element={<p>new project form</p>} />
           <Route path="/projects/:id" element={<p>project detail</p>} />
         </Routes>
       </MemoryRouter>
@@ -38,7 +39,10 @@ function renderPage(role, url = '/projects') {
 }
 
 describe('ProjectsPage', () => {
-  beforeEach(() => vi.resetAllMocks())
+  beforeEach(() => {
+    vi.resetAllMocks()
+    usersApi.list.mockResolvedValue({ items: [{ id: 'MGR001', firstName: 'Mia', lastName: 'Manager', isActive: true }], total: 1 })
+  })
 
   it('lists projects with hours progress and opens the detail page', async () => {
     projectsApi.list.mockResolvedValue({ items: [PROJECT], total: 1 })
@@ -61,7 +65,45 @@ describe('ProjectsPage', () => {
     await waitFor(() => expect(projectsApi.list).toHaveBeenLastCalledWith({ archived: 'true' }))
     expect(await screen.findByText('No archived projects.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /new project/i }))
-    expect(screen.getByText('new project form')).toBeInTheDocument()
+    expect(await screen.findByRole('dialog')).toHaveTextContent('New project')
+  })
+
+  it('creates a project from the dialog, validating first, and opens it', async () => {
+    const user = userEvent.setup()
+    projectsApi.list.mockResolvedValue({ items: [], total: 0 })
+    projectsApi.create.mockResolvedValue({ id: 'PRJ009' })
+    renderPage('admin')
+    await user.click(await screen.findByRole('button', { name: /new project/i }))
+    const dialog = await screen.findByRole('dialog')
+    await user.click(within(dialog).getByRole('button', { name: /create project/i }))
+    expect(await within(dialog).findAllByText('Required')).not.toHaveLength(0)
+    expect(within(dialog).getByText('Choose a manager')).toBeInTheDocument()
+    expect(projectsApi.create).not.toHaveBeenCalled()
+
+    await user.type(within(dialog).getByLabelText(/project name/i, { selector: 'input' }), 'Portal Redesign')
+    await user.type(within(dialog).getByLabelText(/budget/i, { selector: 'input' }), '50000')
+    await user.type(within(dialog).getByLabelText(/start date/i, { selector: 'input' }), '2026-11-02')
+    await user.type(within(dialog).getByLabelText(/end date/i, { selector: 'input' }), '2026-11-01')
+    await user.click(within(dialog).getByRole('combobox', { name: /manager/i }))
+    await user.click(await screen.findByRole('option', { name: 'Mia Manager' }))
+    await user.click(within(dialog).getByRole('button', { name: /create project/i }))
+    expect(await within(dialog).findByText('Must be on or after the start date')).toBeInTheDocument()
+
+    const end = within(dialog).getByLabelText(/end date/i, { selector: 'input' })
+    await user.clear(end)
+    await user.type(end, '2026-11-27')
+    await user.click(within(dialog).getByRole('button', { name: /create project/i }))
+    await waitFor(() =>
+      expect(projectsApi.create).toHaveBeenCalledWith({
+        name: 'Portal Redesign',
+        description: '',
+        budget: 50000,
+        startDate: '2026-11-02',
+        endDate: '2026-11-27',
+        managerId: 'MGR001',
+      }),
+    )
+    expect(await screen.findByText('project detail')).toBeInTheDocument()
   })
 
   it('flags an active project past its end date', async () => {

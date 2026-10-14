@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '@mui/material/Button'
 import Skeleton from '@mui/material/Skeleton'
@@ -10,8 +11,10 @@ import useApi from '../../hooks/useApi.js'
 import useNotice from '../../hooks/useNotice.js'
 import useAuth from '../../auth/useAuth.js'
 import * as dashboardApi from '../../services/dashboard.js'
+import * as usersApi from '../../services/users.js'
 import { greeting } from '../../utils/format.js'
 import { ROLES } from '../../utils/roles.js'
+import ProjectDialog from '../ProjectsPage/ProjectDialog.jsx'
 import AdminDashboard from './AdminDashboard.jsx'
 import EmployeeDashboard from './EmployeeDashboard.jsx'
 import ManagerDashboard from './ManagerDashboard.jsx'
@@ -22,6 +25,10 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const { notice, notify, clear } = useNotice()
   const { data, loading, error, refetch } = useApi(() => dashboardApi.get(), [user.id])
+  const isAdmin = user.role === ROLES.ADMIN
+  const [creating, setCreating] = useState(false)
+  const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER }) : Promise.resolve(null)), [isAdmin])
+  const managers = (managersData?.items ?? []).filter((m) => m.isActive !== false)
 
   return (
     <>
@@ -34,7 +41,7 @@ export default function DashboardPage() {
               <Button variant="outlined" onClick={() => navigate('/users')}>
                 Users
               </Button>
-              <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/projects/new')}>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)}>
                 New project
               </Button>
             </Stack>
@@ -51,6 +58,16 @@ export default function DashboardPage() {
       {data?.role === 'admin' && <AdminDashboard data={data} />}
       {data?.role === 'manager' && <ManagerDashboard data={data} />}
       {data?.role === 'employee' && <EmployeeDashboard data={data} onChanged={refetch} notify={notify} />}
+      {isAdmin && (
+        <ProjectDialog
+          key={`new-${creating}`}
+          open={creating}
+          isAdmin
+          managers={managers}
+          onClose={() => setCreating(false)}
+          onSaved={(created) => navigate(`/projects/${created.id}`)}
+        />
+      )}
       <NoticeSnackbar notice={notice} onClose={clear} />
     </>
   )
