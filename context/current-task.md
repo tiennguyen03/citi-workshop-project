@@ -2,7 +2,7 @@
 
 > Only one feature is "current" at a time. Update this file when starting, progressing or finishing.
 
-## Status: ✅ Slice 13 (pagination) built on `slice-13-pagination`; redeploy to AWS pending
+## Status: ✅ Slice 13 (pagination) built and deployed to AWS 2026-10-14 (`slice-13-pagination`)
 
 ## Plan (3 days) — each item is a thin vertical slice
 
@@ -30,7 +30,7 @@ SQL with `q` search, users `summary` counts, audit log on the shared parser; con
 `pagination` prop (MUI `TablePagination`), `useDebouncedValue`, Users/Projects/Time tab/Audit log paged with
 `page` in the URL, `listFilters.js` removed; tests updated, `e2e/lists.spec.js` added; docs D18/D23/ui-flow.
 133 backend tests (97 %), 93 frontend, 13 e2e; screenshot pass with 144 users / 333 audit rows, no console errors.
-**Remaining**: redeploy to AWS (API shape changed).
+**Remaining**: nothing; hosted site redeployed (backend + frontend) and smoke-tested.
 **Blockers**: none.
 
 ## Slice 11 — Polish (done 2026-10-14)
