@@ -4,12 +4,11 @@ import Typography from '@mui/material/Typography'
 import FieldList from '../../components/FieldList/FieldList.jsx'
 import NoticeSnackbar from '../../components/NoticeSnackbar/NoticeSnackbar.jsx'
 import PageHeader from '../../components/PageHeader/PageHeader.jsx'
-import RoleChip from '../../components/RoleChip/RoleChip.jsx'
 import UserEditForm from '../../components/UserEditForm/UserEditForm.jsx'
 import useNotice from '../../hooks/useNotice.js'
 import useAuth from '../../auth/useAuth.js'
 import * as usersApi from '../../services/users.js'
-import { fullName } from '../../utils/roles.js'
+import { ROLE_LABELS, fullName } from '../../utils/roles.js'
 import { formatMoney } from '../../utils/format.js'
 import PasswordForm from './PasswordForm.jsx'
 
@@ -26,10 +25,11 @@ export default function ProfilePage() {
 
   return (
     <>
-      <PageHeader title="My profile" subtitle={fullName(user)} actions={<RoleChip role={user.role} size="medium" />} />
+      <PageHeader title="My profile" subtitle={fullName(user)} />
       <Paper sx={{ p: 3, mb: 3 }}>
         <FieldList
           items={[
+            { label: 'Role', value: ROLE_LABELS[user.role] ?? user.role },
             { label: 'User ID', value: user.id },
             { label: 'Username', value: user.username },
             { label: 'Job title', value: user.jobTitle },

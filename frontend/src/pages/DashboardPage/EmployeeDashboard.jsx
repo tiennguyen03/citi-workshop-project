@@ -12,6 +12,11 @@ import Typography from '@mui/material/Typography'
 import Tooltip from '@mui/material/Tooltip'
 import AddIcon from '@mui/icons-material/Add'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined'
+import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
+import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import useAuth from '../../auth/useAuth.js'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
@@ -141,6 +146,7 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
           )}
         </Paper>
         <StatCard
+          icon={<ScheduleOutlinedIcon />}
           label="Hours this week"
           value={formatHours(weekHours)}
           color={overWeek ? 'warning.main' : 'text.primary'}
@@ -157,14 +163,16 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
       </Box>
 
       <Paper sx={{ p: 3 }}>
-        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
-          <Typography variant="h6" component="h2">
-            My open goals
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {openGoals.length === 0 ? 'All clear' : `${openGoals.length} open`}
-          </Typography>
-        </Stack>
+        <SectionHeading
+          icon={<TaskAltOutlinedIcon />}
+          title="My open goals"
+          sx={{ mb: 1 }}
+          aside={
+            <Typography variant="body2" color="text.secondary">
+              {openGoals.length === 0 ? 'All clear' : `${openGoals.length} open`}
+            </Typography>
+          }
+        />
         {openGoals.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
             Nothing assigned to you on an open milestone.
@@ -205,23 +213,22 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
 
       {current && (
         <Box>
-          <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline', mb: 1.5 }}>
-            <Typography variant="h6" component="h2">
-              Recent entries
-            </Typography>
-            <Link component={RouterLink} to={`/projects/${current.id}?tab=time`} underline="hover" variant="body2">
-              All my time
-            </Link>
-          </Stack>
+          <SectionHeading
+            icon={<ReceiptLongOutlinedIcon />}
+            title="Recent entries"
+            aside={
+              <Link component={RouterLink} to={`/projects/${current.id}?tab=time`} underline="hover" variant="body2">
+                All my time
+              </Link>
+            }
+          />
           <DataTable columns={ENTRY_COLUMNS} rows={recentEntries} getRowKey={(e) => e.id} emptyMessage="Nothing logged yet on this project." size="small" />
         </Box>
       )}
 
       {pastProjects.length > 0 && (
         <Box>
-          <Typography variant="h6" component="h2" sx={{ mb: 1.5 }}>
-            Past projects
-          </Typography>
+          <SectionHeading icon={<HistoryOutlinedIcon />} title="Past projects" />
           <DataTable columns={PAST_COLUMNS} rows={pastProjects} getRowKey={(p) => p.id} onRowClick={(p) => navigate(`/projects/${p.id}`)} size="small" />
         </Box>
       )}

@@ -10,13 +10,16 @@ import Typography from '@mui/material/Typography'
  * `to` turns the tile into a link (the number is a shortcut to the list behind it); `footer` sits under
  * the hint, e.g. a ProgressBar.
  */
-export default function StatCard({ label, value, hint, color = 'text.primary', to, footer }) {
+export default function StatCard({ label, value, hint, color = 'text.primary', to, footer, icon }) {
   const linkProps = to ? { component: RouterLink, to, sx: { textDecoration: 'none', color: 'inherit', '&:hover': { bgcolor: 'action.selected' } } } : {}
   return (
     <Paper {...linkProps} variant="elevation" elevation={0} sx={{ p: 2.5, minWidth: 0, display: 'block', bgcolor: 'background.default', ...linkProps.sx }}>
-      <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
-        {label}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+        <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
+          {label}
+        </Typography>
+        {icon && <Box sx={{ display: 'flex', color: 'text.secondary', '& svg': { fontSize: 20 } }}>{icon}</Box>}
+      </Box>
       <Typography variant="h4" component="p" sx={{ color, mt: 0.5 }} noWrap>
         {value}
       </Typography>
@@ -37,4 +40,5 @@ StatCard.propTypes = {
   color: PropTypes.string,
   to: PropTypes.string,
   footer: PropTypes.node,
+  icon: PropTypes.node,
 }

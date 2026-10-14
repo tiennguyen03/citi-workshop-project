@@ -14,7 +14,6 @@ import FieldList from '../../components/FieldList/FieldList.jsx'
 import NoticeSnackbar from '../../components/NoticeSnackbar/NoticeSnackbar.jsx'
 import PageHeader from '../../components/PageHeader/PageHeader.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
-import RoleChip from '../../components/RoleChip/RoleChip.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
 import UserEditForm from '../../components/UserEditForm/UserEditForm.jsx'
@@ -22,7 +21,7 @@ import useApi from '../../hooks/useApi.js'
 import useNotice from '../../hooks/useNotice.js'
 import useAuth from '../../auth/useAuth.js'
 import * as usersApi from '../../services/users.js'
-import { ROLES, fullName } from '../../utils/roles.js'
+import { ROLES, ROLE_LABELS, fullName } from '../../utils/roles.js'
 import { formatDate, formatHours, formatMoney } from '../../utils/format.js'
 import ResetPasswordDialog from './ResetPasswordDialog.jsx'
 
@@ -81,7 +80,6 @@ export default function UserDetailPage() {
             subtitle={user.jobTitle}
             actions={
               <Stack direction="row" spacing={1}>
-                <RoleChip role={user.role} size="medium" />
                 {isAdmin && (
                   <Button variant="outlined" onClick={() => navigate(`/audit-log?actorId=${user.id}`)}>
                     View activity
@@ -99,6 +97,7 @@ export default function UserDetailPage() {
           <Paper sx={{ p: 3, mb: 3 }}>
             <FieldList
               items={[
+                { label: 'Role', value: ROLE_LABELS[user.role] ?? user.role },
                 { label: 'User ID', value: <Box component="code" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '0.875rem' }}>{user.id}</Box> },
                 ...(user.username ? [{ label: 'Username', value: user.username }] : []),
                 { label: 'Email', value: user.email },

@@ -4,6 +4,12 @@ import FieldList from '../../components/FieldList/FieldList.jsx'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined'
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
+import SavingsOutlinedIcon from '@mui/icons-material/SavingsOutlined'
+import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
+import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import { formatDate, formatHours, formatMoney } from '../../utils/format.js'
@@ -16,13 +22,13 @@ export default function OverviewTab({ project }) {
   return (
     <Stack spacing={3}>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' } }}>
-        <StatCard label="Capacity" value={formatHours(project.capacityHours)} hint={`${project.memberCount} member${project.memberCount === 1 ? '' : 's'} × working days × 8 h`} />
-        <StatCard label="Hours assigned" value={formatHours(project.hoursAssigned)} hint="Sum of allocations" />
-        <StatCard label="Hours completed" value={formatHours(project.hoursCompleted)} hint="Sum of logged time" />
-        {hasCosts && <StatCard label="Budget" value={formatMoney(project.budget)} />}
-        {hasCosts && <StatCard label="Cost consumed" value={formatMoney(project.costConsumed)} hint="Logged hours × hourly cost" />}
+        <StatCard icon={<TimerOutlinedIcon />} label="Capacity" value={formatHours(project.capacityHours)} hint={`${project.memberCount} member${project.memberCount === 1 ? '' : 's'} × working days × 8 h`} />
+        <StatCard icon={<ScheduleOutlinedIcon />} label="Hours assigned" value={formatHours(project.hoursAssigned)} hint="Sum of allocations" />
+        <StatCard icon={<TaskAltOutlinedIcon />} label="Hours completed" value={formatHours(project.hoursCompleted)} hint="Sum of logged time" />
+        {hasCosts && <StatCard icon={<AccountBalanceWalletOutlinedIcon />} label="Budget" value={formatMoney(project.budget)} />}
+        {hasCosts && <StatCard icon={<PaymentsOutlinedIcon />} label="Cost consumed" value={formatMoney(project.costConsumed)} hint="Logged hours × hourly cost" />}
         {hasCosts && (
-          <StatCard label="Budget remaining" value={formatMoney(project.budgetRemaining)} color={overBudget ? 'error.main' : 'success.main'} />
+          <StatCard icon={<SavingsOutlinedIcon />} label="Budget remaining" value={formatMoney(project.budgetRemaining)} color={overBudget ? 'error.main' : 'success.main'} />
         )}
       </Box>
       <Paper sx={{ p: 3 }}>

@@ -7,6 +7,10 @@ import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined'
+import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined'
+import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
@@ -161,10 +165,10 @@ export default function ProjectDetailPage() {
             </Alert>
           )}
           <Tabs value={tab} onChange={(_e, v) => setTab(v)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile sx={{ mb: 3 }}>
-            <Tab label="Overview" value="overview" />
-            <Tab label={`Members (${project.memberCount})`} value="members" />
-            <Tab label={`Milestones (${project.milestoneCounts.open + project.milestoneCounts.complete})`} value="milestones" />
-            <Tab label="Time" value="time" />
+            <Tab icon={<DashboardOutlinedIcon />} iconPosition="start" label="Overview" value="overview" />
+            <Tab icon={<PeopleOutlinedIcon />} iconPosition="start" label={`Members (${project.memberCount})`} value="members" />
+            <Tab icon={<FlagOutlinedIcon />} iconPosition="start" label={`Milestones (${project.milestoneCounts.open + project.milestoneCounts.complete})`} value="milestones" />
+            <Tab icon={<ScheduleOutlinedIcon />} iconPosition="start" label="Time" value="time" />
           </Tabs>
           <Box role="tabpanel">
             {tab === 'overview' && <OverviewTab project={project} />}

@@ -13,6 +13,9 @@ import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined'
+import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
+import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined'
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
@@ -141,14 +144,15 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
       </Stack>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, mb: 2 }}>
         <StatCard
+          icon={<ScheduleOutlinedIcon />}
           label="Hours logged"
           value={formatHours(sumHours(rows))}
           hint={`${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}${range !== 'all' ? ` ${RANGE_LABELS[range]}` : ''}${canManage && userId ? ' for this person' : ''}`}
         />
         {!canManage && project.myMembership && (
-          <StatCard label="Assigned to you" value={formatHours(project.myMembership.hoursAssigned)} hint={`${formatHours(project.myMembership.hoursCompleted)} completed`} />
+          <StatCard icon={<FlagOutlinedIcon />} label="Assigned to you" value={formatHours(project.myMembership.hoursAssigned)} hint={`${formatHours(project.myMembership.hoursCompleted)} completed`} />
         )}
-        {canManage && <StatCard label="Project total" value={formatHours(project.hoursCompleted)} hint={`of ${formatHours(project.capacityHours)} capacity`} />}
+        {canManage && <StatCard icon={<TimerOutlinedIcon />} label="Project total" value={formatHours(project.hoursCompleted)} hint={`of ${formatHours(project.capacityHours)} capacity`} />}
       </Box>
       <ErrorAlert error={error} onRetry={refetch} />
       <DataTable

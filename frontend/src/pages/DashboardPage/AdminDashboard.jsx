@@ -5,7 +5,15 @@ import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined'
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
+import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
+import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined'
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined'
 import DataTable from '../../components/DataTable/DataTable.jsx'
+import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import RoleChip from '../../components/RoleChip/RoleChip.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
@@ -67,10 +75,11 @@ export default function AdminDashboard({ data }) {
   return (
     <Stack spacing={3}>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' } }}>
-        <StatCard label="Active projects" value={stats.activeProjects} hint={`${stats.completeProjects} complete, ${stats.archivedProjects} archived`} />
-        <StatCard label="Managers" value={stats.users.manager} hint={`${stats.users.admin} admin${stats.users.admin === 1 ? '' : 's'}`} />
-        <StatCard label="Employees" value={stats.users.employee} hint="Active accounts" />
+        <StatCard icon={<FolderOutlinedIcon />} label="Active projects" value={stats.activeProjects} hint={`${stats.completeProjects} complete, ${stats.archivedProjects} archived`} />
+        <StatCard icon={<BadgeOutlinedIcon />} label="Managers" value={stats.users.manager} hint={`${stats.users.admin} admin${stats.users.admin === 1 ? '' : 's'}`} />
+        <StatCard icon={<PeopleOutlinedIcon />} label="Employees" value={stats.users.employee} hint="Active accounts" />
         <StatCard
+          icon={<EventAvailableOutlinedIcon />}
           label="Available"
           value={stats.availableEmployees}
           hint="Employees not on a project. Open the list"
@@ -79,11 +88,10 @@ export default function AdminDashboard({ data }) {
         />
       </Box>
       <Box>
-        <Typography variant="h6" component="h2" sx={{ mb: 1.5 }}>
-          Needs attention
-        </Typography>
+        <SectionHeading icon={<WarningAmberOutlinedIcon />} title="Needs attention" />
         {attention.length === 0 ? (
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <CheckCircleOutlinedIcon sx={{ color: 'success.main' }} />
             <Typography variant="body2" color="text.secondary">
               Every active project is within budget and on schedule.
             </Typography>
@@ -93,14 +101,15 @@ export default function AdminDashboard({ data }) {
         )}
       </Box>
       <Box>
-        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline', mb: 1.5 }}>
-          <Typography variant="h6" component="h2">
-            Recent activity
-          </Typography>
-          <Button size="small" onClick={() => navigate('/audit-log')}>
-            View all
-          </Button>
-        </Stack>
+        <SectionHeading
+          icon={<HistoryOutlinedIcon />}
+          title="Recent activity"
+          aside={
+            <Button size="small" onClick={() => navigate('/audit-log')}>
+              View all
+            </Button>
+          }
+        />
         <DataTable columns={ACTIVITY_COLUMNS} rows={recentActivity} getRowKey={(e) => e.id} emptyMessage="Nothing recorded yet." size="small" />
       </Box>
     </Stack>

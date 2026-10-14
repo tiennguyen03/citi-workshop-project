@@ -5,7 +5,12 @@ import Link from '@mui/material/Link'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
+import EventOutlinedIcon from '@mui/icons-material/EventOutlined'
+import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined'
 import DataTable from '../../components/DataTable/DataTable.jsx'
+import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
@@ -100,9 +105,7 @@ export default function ManagerDashboard({ data }) {
   return (
     <Stack spacing={3}>
       <Box>
-        <Typography variant="h6" component="h2" sx={{ mb: 1.5 }}>
-          Your projects
-        </Typography>
+        <SectionHeading icon={<FolderOutlinedIcon />} title="Your projects" />
         {projects.length === 0 ? (
           <Paper sx={{ p: 3 }}>
             <Typography variant="body2" color="text.secondary">
@@ -177,16 +180,18 @@ export default function ManagerDashboard({ data }) {
         )}
       </Box>
       <Box>
-        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline', mb: 1.5 }}>
-          <Typography variant="h6" component="h2">
-            Due soon
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Open milestones overdue or due within 7 days
-          </Typography>
-        </Stack>
+        <SectionHeading
+          icon={<EventOutlinedIcon />}
+          title="Due soon"
+          aside={
+            <Typography variant="caption" color="text.secondary">
+              Open milestones overdue or due within 7 days
+            </Typography>
+          }
+        />
         {dueSoon.length === 0 ? (
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <CheckCircleOutlinedIcon sx={{ color: 'success.main' }} />
             <Typography variant="body2" color="text.secondary">
               Nothing is overdue or due in the next 7 days.
             </Typography>
@@ -196,14 +201,15 @@ export default function ManagerDashboard({ data }) {
         )}
       </Box>
       <Box>
-        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline', mb: 1.5 }}>
-          <Typography variant="h6" component="h2">
-            Your team
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Week of {formatDate(week.start)} – {formatDate(week.end)}
-          </Typography>
-        </Stack>
+        <SectionHeading
+          icon={<GroupsOutlinedIcon />}
+          title="Your team"
+          aside={
+            <Typography variant="caption" color="text.secondary">
+              Week of {formatDate(week.start)} – {formatDate(week.end)}
+            </Typography>
+          }
+        />
         <DataTable
           columns={TEAM_COLUMNS}
           rows={team}
