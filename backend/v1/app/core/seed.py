@@ -77,13 +77,13 @@ PROJECTS = [
     (
         "56WSAB",
         "Legacy VPN Retirement",
-        "Replaced the legacy VPN concentrators with zero-trust access. Delivered and archived.",
+        "Replaced the legacy VPN concentrators with zero-trust access. Delivered, awaiting archive.",
         90000,
         date(2026, 6, 1),
         date(2026, 8, 28),
         "WHCV59",
         "complete",
-        True,
+        False,  # finished but not yet archived: the admin dashboard's "Done, not archived" row
     ),
 ]
 

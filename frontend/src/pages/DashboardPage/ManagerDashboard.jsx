@@ -12,19 +12,16 @@ import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
+import HealthTag from '../../components/HealthTag/HealthTag.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
 import { formatDate, formatHours, formatMoney } from '../../utils/format.js'
+import { REASON } from '../../utils/projectHealth.js'
 import { fullName } from '../../utils/roles.js'
 
-const REASON = {
-  over_budget: { label: 'Over budget', tone: 'error' },
-  past_end: { label: 'Past end date', tone: 'warning' },
-  overdue_milestone: { label: 'Overdue milestone', tone: 'error' },
-  no_members: { label: 'No members', tone: 'warning' },
-  no_milestones: { label: 'No milestones', tone: 'info' },
-}
+/** The 40-hour week each report is measured against (requirements.md). */
+const HOURS_PER_WEEK = 40
 
 /** Inner links on a clickable card or row: let the link navigate without the row also firing. */
 const stop = (e) => e.stopPropagation()
@@ -102,6 +99,8 @@ const DUE_SOON_COLUMNS = [
 export default function ManagerDashboard({ data }) {
   const navigate = useNavigate()
   const { projects, dueSoon, team, week } = data
+  const onProject = team.filter((t) => t.currentProject)
+  const teamHours = onProject.reduce((total, t) => total + Number(t.hoursThisWeek), 0)
   return (
     <Stack spacing={3}>
       <Box>
@@ -134,6 +133,7 @@ export default function ManagerDashboard({ data }) {
                   </Box>
                   <Stack direction="row" useFlexGap spacing={0.75} sx={{ flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '60%' }}>
                     <StatusChip status={p.status} />
+                    {p.health && p.health !== 'to_close' && <HealthTag health={p.health} />}
                     {p.reasons.map((r) => (
                       <Tag key={r} label={REASON[r].label} tone={REASON[r].tone} />
                     ))}
@@ -205,9 +205,16 @@ export default function ManagerDashboard({ data }) {
           icon={<GroupsOutlinedIcon />}
           title="Your team"
           aside={
-            <Typography variant="caption" color="text.secondary">
-              Week of {formatDate(week.start)} – {formatDate(week.end)}
-            </Typography>
+            <Box sx={{ textAlign: 'right' }}>
+              {onProject.length > 0 && (
+                <Typography variant="body2" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {formatHours(teamHours)} of {formatHours(onProject.length * HOURS_PER_WEEK)} logged this week
+                </Typography>
+              )}
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Week of {formatDate(week.start)} – {formatDate(week.end)}
+              </Typography>
+            </Box>
           }
         />
         <DataTable

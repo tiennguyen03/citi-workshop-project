@@ -90,21 +90,36 @@ def test_admin_dashboard():
     org = setup_org()
     status, body = call("GET", "/api/v1/dashboard", token=org["admin"])
     assert status == 200 and body["role"] == "admin"
-    assert body["stats"] == {
-        "activeProjects": 2,
-        "completeProjects": 0,
-        "archivedProjects": 0,
-        "users": {"admin": 1, "manager": 1, "employee": 2},
-        "availableEmployees": 1,
+    # every live project, worst first: the over-budget one is at risk, the empty one needs setup
+    assert [p["id"] for p in body["projects"]] == [org["pid"], org["empty"]["id"]]
+    risky, empty = body["projects"]
+    assert risky["health"] == "at_risk" and risky["reasons"] == ["over_budget"] and risky["budgetRemaining"] == -100
+    assert risky["nextDueDate"] == (TODAY + timedelta(days=2)).isoformat()
+    assert risky["manager"] == {
+        "id": org["mgr"]["id"],
+        "firstName": org["mgr"]["firstName"],
+        "lastName": org["mgr"]["lastName"],
     }
-    attention = {a["id"]: a for a in body["attention"]}
-    assert set(attention) == {org["pid"], org["empty"]["id"]}
-    assert attention[org["pid"]]["reasons"] == ["over_budget"] and attention[org["pid"]]["budgetRemaining"] == -100
-    assert attention[org["pid"]]["nextDueDate"] == (TODAY + timedelta(days=2)).isoformat()
-    assert attention[org["empty"]["id"]]["reasons"] == ["no_members", "no_milestones"]
-    assert attention[org["empty"]["id"]]["nextDueDate"] is None
+    assert empty["health"] == "needs_setup" and empty["reasons"] == ["no_members", "no_milestones"]
+    assert empty["nextDueDate"] is None
+    summary = body["summary"]
+    assert summary["projects"] == {"late": 0, "atRisk": 1, "needsSetup": 1, "toClose": 0, "onTrack": 0}
+    assert summary["budget"] == 1500 and summary["costConsumed"] == 600 and summary["hoursCompleted"] == 6
+    assert summary["capacityHours"] == sum(p["capacityHours"] for p in body["projects"])  # weekday-dependent
+    assert body["people"] == {"employees": 2, "onProject": 1, "available": 1}
+    first = body
+    # a finished project waits to be closed; archiving it takes it off the board and out of the sums
+    done = create_project(org["admin"], org["mgr"]["id"], name="Done deal", budget=777)
+    assert call("POST", f"/api/v1/projects/{done['id']}/complete", token=org["mgr_token"])[0] == 200
+    body = call("GET", "/api/v1/dashboard", token=org["admin"])[1]
+    assert [p["id"] for p in body["projects"]][-1] == done["id"]
+    assert body["projects"][-1]["health"] == "to_close" and body["summary"]["projects"]["toClose"] == 1
+    assert body["summary"]["budget"] == 1500
+    assert call("POST", f"/api/v1/projects/{done['id']}/archive", token=org["admin"])[0] == 200
+    body = call("GET", "/api/v1/dashboard", token=org["admin"])[1]
+    assert done["id"] not in [p["id"] for p in body["projects"]] and body["summary"]["projects"]["toClose"] == 0
     # the admin sees what just happened, newest first, with the actor named
-    recent = body["recentActivity"]
+    recent = first["recentActivity"]
     assert 0 < len(recent) <= 8
     assert recent[0]["action"] == "time_entry.create" and recent[0]["actor"]["id"] == org["emp1"]["id"]
     assert [e["occurredAt"] for e in recent] == sorted((e["occurredAt"] for e in recent), reverse=True)
@@ -119,7 +134,9 @@ def test_manager_dashboard():
     card = cards[org["pid"]]
     assert card["hoursCompleted"] == 6 and card["budgetRemaining"] == -100
     assert card["milestoneCounts"] == {"open": 2, "complete": 0} and card["reasons"] == ["over_budget"]
+    assert card["health"] == "at_risk"
     assert cards[org["empty"]["id"]]["reasons"] == ["no_members", "no_milestones"]
+    assert cards[org["empty"]["id"]]["health"] == "needs_setup"
     team = {t["user"]["id"]: t for t in body["team"]}
     assert (
         team[org["emp1"]["id"]]["currentProject"]["id"] == org["pid"] and team[org["emp1"]["id"]]["hoursThisWeek"] == 6

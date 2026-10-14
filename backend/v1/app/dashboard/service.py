@@ -18,6 +18,8 @@ from app.users import repository as users_repo
 from app.users.schemas import user_summary
 
 DUE_SOON_DAYS = 7  # a milestone due within this many days is "due soon" (matches the client-side cue, D19)
+# Project health, worst first (decisions.md D21). The board is sorted by this order; the UI mirrors the labels.
+HEALTH_ORDER = ("late", "at_risk", "needs_setup", "to_close", "on_track")
 RECENT_ACTIVITY = 8
 RECENT_ENTRIES = 5
 
@@ -43,6 +45,11 @@ def _project_card(row: dict[str, Any], *, include_costs: bool) -> dict[str, Any]
         "capacityHours": row["capacity_hours"],
         "milestoneCounts": {"open": row["milestones_open"], "complete": row["milestones_complete"]},
         "nextDueDate": row["next_due_date"],
+        "manager": {
+            "id": row["manager_id"],
+            "firstName": row["manager_first_name"],
+            "lastName": row["manager_last_name"],
+        },
     }
     if include_costs:
         card.update(
@@ -73,38 +80,71 @@ def _attention_reasons(card: dict[str, Any], today: date) -> list[str]:
     return reasons
 
 
+def _health(status: str, archived: bool, reasons: list[str]) -> str:
+    """One word for how a project is doing (D21), derived from the same reasons the cues use so they never disagree.
+
+    Archived projects are never classified: `archive_project` leaves `status` untouched, so "active" must always
+    mean active *and* not archived.
+    """
+    if archived:
+        raise ValueError("archived projects have no health")
+    if status != STATUS_ACTIVE:
+        return "to_close"
+    if "past_end" in reasons:
+        return "late"
+    if "overdue_milestone" in reasons or "over_budget" in reasons:
+        return "at_risk"
+    if "no_members" in reasons or "no_milestones" in reasons:
+        return "needs_setup"
+    return "on_track"
+
+
+def _with_health(card: dict[str, Any], today: date) -> dict[str, Any]:
+    reasons = _attention_reasons(card, today)
+    return {**card, "reasons": reasons, "health": _health(card["status"], card["archived"], reasons)}
+
+
+def _sum(cards: list[dict[str, Any]], key: str) -> Decimal:
+    return sum((Decimal(str(c[key])) for c in cards), Decimal(0))
+
+
 # ---- per role --------------------------------------------------------------------
 
 
 def _admin(today: date, repo) -> dict[str, Any]:
-    rows = projects_repo.list_summaries(archived=None, status=None)
-    cards = [_project_card(r, include_costs=True) for r in rows]
-    live = [c for c in cards if not c["archived"]]
-    attention = []
-    for card in live:
-        reasons = _attention_reasons(card, today)
-        if reasons:
-            attention.append({**card, "reasons": reasons})
+    """The portfolio: every live project with its health, sums over the active ones, and who is free."""
+    rows = projects_repo.list_summaries(archived=False, status=None)
+    cards = [_with_health(_project_card(r, include_costs=True), today) for r in rows]
+    cards.sort(key=lambda c: (HEALTH_ORDER.index(c["health"]), c["name"].lower()))
+    active = [c for c in cards if c["status"] == STATUS_ACTIVE]
+    counts = {h: sum(1 for c in cards if c["health"] == h) for h in HEALTH_ORDER}
+    employees = repo.user_counts_by_role()["employee"]
+    available = repo.available_employee_count()
     recent, _total = audit_repo.list_entries({}, limit=RECENT_ACTIVITY, offset=0)
     return {
         "role": "admin",
-        "recentActivity": [entry_shape(r) for r in recent],
-        "stats": {
-            "activeProjects": sum(1 for c in live if c["status"] == STATUS_ACTIVE),
-            "completeProjects": sum(1 for c in live if c["status"] != STATUS_ACTIVE),
-            "archivedProjects": sum(1 for c in cards if c["archived"]),
-            "users": repo.user_counts_by_role(),
-            "availableEmployees": repo.available_employee_count(),
+        "projects": cards,
+        "summary": {
+            "projects": {
+                "late": counts["late"],
+                "atRisk": counts["at_risk"],
+                "needsSetup": counts["needs_setup"],
+                "toClose": counts["to_close"],
+                "onTrack": counts["on_track"],
+            },
+            "hoursCompleted": _sum(active, "hoursCompleted"),
+            "capacityHours": _sum(active, "capacityHours"),
+            "budget": _sum(active, "budget"),
+            "costConsumed": _sum(active, "costConsumed"),
         },
-        "attention": attention,
+        "people": {"employees": employees, "onProject": employees - available, "available": available},
+        "recentActivity": [entry_shape(r) for r in recent],
     }
 
 
 def _manager(actor: Actor, today: date, repo) -> dict[str, Any]:
     rows = projects_repo.list_summaries(archived=False, status=None, manager_id=actor.id)
-    cards = [{**_project_card(r, include_costs=True)} for r in rows]
-    for card in cards:
-        card["reasons"] = _attention_reasons(card, today)
+    cards = [_with_health(_project_card(r, include_costs=True), today) for r in rows]
     reports = users_repo.list_reports(actor.id, active_only=True)
     report_ids = [r["id"] for r in reports]
     current = users_repo.current_projects(report_ids)

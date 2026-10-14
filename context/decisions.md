@@ -229,3 +229,22 @@ font family in a component. New labels are sentence case by default (the `overli
 Do not reintroduce " · " joins; write a sentence or stack two lines. Adding a font means adding a
 `.woff2` under `src/assets/fonts` and an `@font-face` in `index.css`, nothing in `package.json`.
 
+## D21 · 2026-10-14 · Project health: one word, computed once
+**Decision**: Every non-archived project gets a health word from the API, derived from the same reasons
+the dashboard cues already use, with a fixed precedence: `late` (active, past its end date) → `at_risk`
+(active, overdue milestone or over budget) → `needs_setup` (active, no members or no milestones) →
+`to_close` (complete, not archived) → `on_track`. Archived projects are never classified; because
+archiving leaves `status` untouched, "active" always means `status = active` *and* not archived. The
+admin dashboard is a board of every live project sorted by that order, with portfolio sums (hours, budget)
+over active projects only; the manager's cards show the same word (hidden for `to_close`, where the
+status chip already says Complete and the manager cannot archive).
+**Why**: The business brief asks "what is the status of each active project", "which are at risk", and
+"budget consumed versus planned". A list of only the troubled projects answered none of them at a glance,
+and counts of managers and employees answered nothing an admin acts on. One word per project, computed
+server-side, keeps the admin board and the manager cards from ever disagreeing, and gives the admin's
+own job — closing finished projects — a place on the landing page.
+**Consequences**: `HEALTH_ORDER` in `dashboard/service.py` is the single source of the ordering; the
+client mirrors labels in `utils/projectHealth.js` and never re-sorts. Adding a reason means deciding
+which word it maps to, in `_health`, with a row in the unit matrix. The seed keeps one finished,
+unarchived project so the demo shows the "Done, not archived" row and can archive it live.
+

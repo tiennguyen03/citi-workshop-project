@@ -2,7 +2,7 @@
 
 > Only one feature is "current" at a time. Update this file when starting, progressing or finishing.
 
-## Status: 🔨 Slice 11 (polish) in progress on `slice-11-polish`
+## Status: 🔨 Slice 12 (dashboard) in progress on `slice-12-dashboard`
 
 ## Plan (3 days) — each item is a thin vertical slice
 
@@ -19,9 +19,19 @@
 | 8 | Dashboards: manager "Due soon" + current milestone per report + zero-hour cue; admin recent activity + wider attention reasons; employee teammates + recent entries (`GET /dashboard` grows) | pre-demo | **done** |
 | 9 | People & audit: user page "Reports to" + project history; audit log action/actor pickers (`GET /users/{id}` grows, `GET /audit-log/actions`) | pre-demo | **done** |
 | 10 | Visual identity (D20): serif display face for titles and figures, self-hosted fonts, sentence-case labels, no middle-dot strings, tile/section/table hierarchy, ink neutrals, two-part login, two copy fixes | pre-demo | **done** |
-| 11 | Polish from a role-by-role walkthrough: goal-assignee hint, "not your project" message, one people page per role, Manager column for admins, non-assignee hint on milestones, milestone start defaults to today, empty hours on add member, project name in Log time, fixed back links, readable audit actions | pre-demo | **in progress** |
+| 11 | Polish from a role-by-role walkthrough: goal-assignee hint, "not your project" message, one people page per role, Manager column for admins, non-assignee hint on milestones, milestone start defaults to today, empty hours on add member, project name in Log time, fixed back links, readable audit actions; "who is on what" moved to the Members tab; New project is a dialog; icons; role as a fact | pre-demo | **done** |
+| 12 | Admin dashboard rebuilt around project health (D21): pillar tiles, health board worst-first, recent activity; manager cards get the health word and a team weekly total; seed keeps one finished unarchived project | pre-demo | **in progress** |
 
-## Current slice: 11 — Polish (ten findings from a 31-screen walkthrough as each role, all approved 2026-10-14)
+## Current slice: 12 — Dashboard (plan `~/.claude/plans/ethereal-cooking-blossom.md`, approved 2026-10-14)
+
+**Done**: `_health` + `HEALTH_ORDER` in `dashboard/service.py`, cards carry `manager`, admin payload is
+`projects/summary/people/recentActivity` (`stats`/`attention` gone), unit matrix + rewritten integration tests, seed
+(Legacy VPN complete, not archived) + seed test; `utils/projectHealth.js`, `HealthTag`, AdminDashboard rebuilt,
+ManagerDashboard health word + team total, Users page subtitle with people counts; 96 frontend tests, 113 backend (97 %).
+**Remaining**: e2e, screenshot walk incl. archiving Legacy VPN live, commit + push on request.
+**Blockers**: none.
+
+## Slice 11 — Polish (done 2026-10-14)
 
 **Done**: all ten applied (frontend only); `utils/auditActions.js` names every audit code in plain words (AuditLogPage, admin
 dashboard); `defaultMilestoneStart` in `utils/milestoneForm.js`; nav has one people entry per role; 92 frontend tests

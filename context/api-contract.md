@@ -117,10 +117,11 @@ TimeEntry {id, projectId, user: UserSummary, entryDate, hours, note, createdAt}
 | GET | `/dashboard` | — | `200` role-shaped payload (below) | any |
 
 ```
-Admin    {role:"admin", stats:{activeProjects, completeProjects, archivedProjects, users:{admin, manager, employee},
-          availableEmployees}, attention: [ProjectCard & {reasons: Reason[]}],
-          recentActivity: AuditEntry[]}                                   (≤ 8, newest first)
-Manager  {role:"manager", projects: [ProjectCard & {reasons: Reason[]}],
+Admin    {role:"admin", projects: [ProjectCard & {reasons: Reason[], health: Health}]   (every non-archived project,
+          worst health first, then name), summary: {projects: {late, atRisk, needsSetup, toClose, onTrack},
+          hoursCompleted, capacityHours, budget, costConsumed}   (sums over ACTIVE non-archived projects only),
+          people: {employees, onProject, available}, recentActivity: AuditEntry[]}   (≤ 8, newest first)
+Manager  {role:"manager", projects: [ProjectCard & {reasons: Reason[], health: Health}],
           dueSoon: [{id, name, dueDate, project:{id,name}, assignees: UserSummary[]}],
           team: [{user: UserSummary, currentProject|null, currentMilestone:{id,name}|null, hoursThisWeek}],
           week:{start, end}}
@@ -129,10 +130,14 @@ Employee {role:"employee", currentProject: (ProjectCard & {myHoursAssigned, myHo
           pastProjects: ProjectCard[], openGoals: [{id, title, milestone:{id,name,dueDate}, project:{id,name}}],
           recentEntries: TimeEntry[], hoursThisWeek, week:{start, end}}   (recentEntries: ≤ 5 own, newest first)
 ProjectCard {id, name, status, archived, startDate, endDate, memberCount, hoursAssigned, hoursCompleted,
-          capacityHours, milestoneCounts, nextDueDate|null, budget?, costConsumed?, budgetRemaining?}
+          capacityHours, milestoneCounts, nextDueDate|null, manager:{id, firstName, lastName},
+          budget?, costConsumed?, budgetRemaining?}
           (costs: admin/manager only; nextDueDate = earliest due date among open milestones)
 Reason   "over_budget" | "past_end" | "overdue_milestone" | "no_members" | "no_milestones"
-          (the last three only for active projects; attention lists every non-archived project with ≥ 1 reason)
+          (the last four only for active projects)
+Health   "late" | "at_risk" | "needs_setup" | "to_close" | "on_track"   (D21; precedence in that order:
+          late = active & past_end; at_risk = active & (overdue_milestone | over_budget); needs_setup = active &
+          (no_members | no_milestones); to_close = complete & not archived; archived projects are never classified)
 ```
 One read per landing page (ui-flow.md › Per-role landing); "this week" is Monday–Sunday of today.
 `dueSoon` = open milestones on the manager's active, non-archived projects with dueDate ≤ today + 7 days

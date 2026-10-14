@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from app.dashboard.service import _attention_reasons, _week_bounds
+from app.dashboard.service import HEALTH_ORDER, _attention_reasons, _health, _week_bounds
 
 TODAY = date(2026, 10, 14)
 
@@ -49,6 +49,33 @@ def card(**overrides):
 )
 def test_attention_reasons(overrides, expected):
     assert _attention_reasons(card(**overrides), TODAY) == expected
+
+
+@pytest.mark.parametrize(
+    ("status", "archived", "reasons", "expected"),
+    [
+        ("active", False, [], "on_track"),
+        ("active", False, ["past_end"], "late"),
+        ("active", False, ["overdue_milestone"], "at_risk"),
+        ("active", False, ["over_budget"], "at_risk"),
+        ("active", False, ["no_members"], "needs_setup"),
+        ("active", False, ["no_milestones"], "needs_setup"),
+        # precedence: the worst word wins
+        ("active", False, ["over_budget", "past_end", "no_members"], "late"),
+        ("active", False, ["no_milestones", "overdue_milestone"], "at_risk"),
+        # a finished project is "to close" even when it is over budget
+        ("complete", False, ["over_budget"], "to_close"),
+        ("complete", False, [], "to_close"),
+    ],
+)
+def test_health(status, archived, reasons, expected):
+    assert _health(status, archived, reasons) == expected
+    assert expected in HEALTH_ORDER
+
+
+def test_archived_projects_are_never_classified():
+    with pytest.raises(ValueError):
+        _health("active", True, [])  # archive_project leaves status alone, so this combination exists
 
 
 def test_week_bounds_are_monday_to_sunday():

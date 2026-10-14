@@ -9,7 +9,7 @@ loading skeleton, empty state, and an error `Alert`; every mutation shows a `Sna
 | Path | Page | Roles | APIs |
 |---|---|---|---|
 | `/login` | LoginPage | public | `POST /auth/login` |
-| `/` | DashboardPage | all | `GET /projects`, `GET /users/{me}/team` |
+| `/` | DashboardPage | all | `GET /dashboard` (role-shaped) |
 | `/projects` | ProjectsPage | all | `GET /projects` (+`?archived=true` toggle for admin) |
 | (dialog on `/projects` and `/`) | ProjectDialog, create mode | admin | `GET /users?role=manager`, `POST /projects` |
 | `/projects/:id` | ProjectDetailPage | viewers | `GET /projects/{id}`, `/stats`, `/members`, `/milestones`, `/time-entries` |
@@ -30,8 +30,8 @@ admin **Recent activity** (last 8 audit rows, "View all" → `/audit-log`) and w
 employee milestone line shows due date + `DueTag` + teammates, and a **Recent entries** table (last 5, edit in place).
 
 
-- **Admin**: stat cards (active projects, archived, users by role), "Projects needing attention" (over budget / past end date), quick links: New project, New user.
-- **Manager**: cards per managed project (hours completed / capacity bar, budget remaining, open milestones), team list showing each report's current project (or "available") and hours this week.
+- **Admin** (slice 12, D21): three pillar tiles — hours logged of capacity, budget consumed of planned (both over active projects, with bars), people available (links to `/users?available=true`); the **Project health** board: every non-archived project, worst first, with a health word (Late, At risk, Needs setup, Done not archived, On track) plus the specific reason tags, progress, budget left, next due and end date with cues; **Recent activity**. Quick links: Users, New project (dialog). People counts live on the Users page subtitle.
+- **Manager**: cards per managed project (health word beside the status chip except for finished ones, hours completed / capacity bar, budget remaining, open milestones, next due), **Due soon**, team list showing each report's current project (or "available"), current milestone, hours this week, and the team total against 40 h per person on a project.
 - **Employee**: "My current project" card (hours assigned vs logged, current milestone) or an "Available — not assigned to a project" state; "My open goals" with checkboxes; "Log time" button (disabled when available); "Past projects" list.
 
 ## Main flows

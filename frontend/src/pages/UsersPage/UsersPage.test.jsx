@@ -46,6 +46,7 @@ describe('UsersPage', () => {
     usersApi.list.mockResolvedValue({ items: [MANAGER, EMPLOYEE], total: 2 })
     renderPage('admin')
     expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
+    expect(screen.getByText('2 people: 1 manager, 1 employee, 1 available')).toBeInTheDocument()
     expect(screen.getAllByText('Mia Manager')).toHaveLength(2) // her own row + Eve's Manager column
     expect(screen.getByRole('columnheader', { name: 'Manager' })).toBeInTheDocument()
     expect(screen.getByText('Available')).toBeInTheDocument()

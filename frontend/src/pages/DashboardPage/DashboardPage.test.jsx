@@ -52,23 +52,35 @@ describe('DashboardPage', () => {
     usersApi.list.mockResolvedValue({ items: [], total: 0 })
   })
 
-  it('shows office stats and the attention list for an admin', async () => {
+  it('shows the portfolio tiles, the health board and recent activity for an admin', async () => {
     const user = userEvent.setup()
+    const MGR = { id: 'MGR001', firstName: 'Mia', lastName: 'Manager' }
     dashboardApi.get.mockResolvedValue({
       role: 'admin',
-      stats: { activeProjects: 3, completeProjects: 1, archivedProjects: 1, users: { admin: 1, manager: 3, employee: 12 }, availableEmployees: 4 },
-      attention: [
-        { ...CARD, budget: 100, costConsumed: 250, budgetRemaining: -150, reasons: ['over_budget', 'overdue_milestone'] },
-        { ...CARD, id: 'PRJ002', name: 'Empty shell', budget: 1000, costConsumed: 0, budgetRemaining: 1000, reasons: ['no_members', 'no_milestones'] },
+      projects: [
+        { ...CARD, manager: MGR, nextDueDate: '2020-01-01', budget: 100, costConsumed: 250, budgetRemaining: -150, reasons: ['over_budget', 'overdue_milestone'], health: 'at_risk' },
+        { ...CARD, id: 'PRJ002', name: 'Empty shell', manager: MGR, nextDueDate: null, budget: 1000, costConsumed: 0, budgetRemaining: 1000, reasons: ['no_members', 'no_milestones'], health: 'needs_setup' },
+        { ...CARD, id: 'PRJ003', name: 'Old portal', status: 'complete', manager: MGR, nextDueDate: null, budget: 500, costConsumed: 400, budgetRemaining: 100, reasons: [], health: 'to_close' },
       ],
+      summary: { projects: { late: 0, atRisk: 1, needsSetup: 1, toClose: 1, onTrack: 0 }, hoursCompleted: 140, capacityHours: 4160, budget: 1100, costConsumed: 250 },
+      people: { employees: 12, onProject: 8, available: 4 },
       recentActivity: [
         { id: 1, occurredAt: '2026-10-14T09:00:00Z', actor: EVE, actorRole: 'employee', action: 'time_entry.create', entityType: 'time_entry', entityId: 'TIM001', projectId: 'PRJ001', summary: 'Logged 6 h', details: {}, statusCode: 201 },
         { id: 2, occurredAt: '2026-10-14T08:00:00Z', actor: null, actorRole: null, action: 'auth.login_failed', entityType: 'user', entityId: null, projectId: null, summary: 'Failed login for ghost', details: {}, statusCode: 401 },
       ],
     })
     renderPage({ id: 'ADM001', role: 'admin', firstName: 'System' })
-    expect(await screen.findByText('12')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Available/ })).toHaveAttribute('href', '/users?available=true')
+    expect(await screen.findByText('140 h')).toBeInTheDocument()
+    expect(screen.getByText('of 4,160 h capacity on active projects')).toBeInTheDocument()
+    expect(screen.getByText('$250')).toBeInTheDocument()
+    expect(screen.getByText('of $1,100 planned on active projects')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /4 available/i })).toHaveAttribute('href', '/users?available=true')
+    expect(screen.getByText('1 at risk, 1 needing setup, 1 to close')).toBeInTheDocument()
+    expect(screen.getByText('At risk')).toBeInTheDocument()
+    expect(screen.getByText('Needs setup')).toBeInTheDocument()
+    expect(screen.getByText('Done, not archived')).toBeInTheDocument()
+    expect(screen.getAllByText('Mia Manager')).toHaveLength(3)
+    expect(screen.getByText('Overdue')).toBeInTheDocument() // next due on the at-risk row; complete rows carry no cue
     expect(screen.getByText('Over budget')).toBeInTheDocument()
     expect(screen.getByText('Overdue milestone')).toBeInTheDocument()
     expect(screen.getByText('No members')).toBeInTheDocument()
@@ -89,7 +101,7 @@ describe('DashboardPage', () => {
   it('shows project cards and team availability for a manager', async () => {
     dashboardApi.get.mockResolvedValue({
       role: 'manager',
-      projects: [{ ...CARD, budget: 1000, costConsumed: 200, budgetRemaining: 800, reasons: [], nextDueDate: '2020-01-01' }],
+      projects: [{ ...CARD, budget: 1000, costConsumed: 200, budgetRemaining: 800, reasons: [], health: 'on_track', nextDueDate: '2020-01-01' }],
       dueSoon: [
         { id: 'MIL001', name: 'Inventory', dueDate: '2020-01-01', project: { id: 'PRJ001', name: 'Decommission' }, assignees: [EVE] },
         { id: 'MIL002', name: 'Power-down', dueDate: '2099-12-31', project: { id: 'PRJ001', name: 'Decommission' }, assignees: [] },
@@ -106,6 +118,8 @@ describe('DashboardPage', () => {
     expect(screen.getByText('40 h completed of 160 h capacity')).toBeInTheDocument()
     expect(screen.getByText('Available')).toBeInTheDocument()
     expect(screen.getByText('16 h')).toBeInTheDocument()
+    expect(screen.getByText('On track')).toBeInTheDocument()
+    expect(screen.getByText('16 h of 80 h logged this week')).toBeInTheDocument() // Eve + Quiet are on a project, Max is not
     // due soon: the overdue one is flagged, the unassigned one says so, both link to the milestone
     expect(screen.getAllByText('Overdue')).toHaveLength(2) // card "Next due" + the Due soon row
     expect(screen.getByText('Unassigned')).toBeInTheDocument()

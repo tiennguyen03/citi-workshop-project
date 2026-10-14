@@ -1,33 +1,103 @@
 import PropTypes from 'prop-types'
-import { useNavigate } from 'react-router-dom'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Paper from '@mui/material/Paper'
+import Link from '@mui/material/Link'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined'
-import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined'
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
-import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined'
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
-import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined'
-import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined'
+import MonitorHeartOutlinedIcon from '@mui/icons-material/MonitorHeartOutlined'
+import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
 import DataTable from '../../components/DataTable/DataTable.jsx'
-import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
+import DueTag from '../../components/DueTag/DueTag.jsx'
+import HealthTag from '../../components/HealthTag/HealthTag.jsx'
+import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import RoleChip from '../../components/RoleChip/RoleChip.jsx'
+import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
 import { actionLabel } from '../../utils/auditActions.js'
-import { formatDate, formatDateTime, formatMoney } from '../../utils/format.js'
+import { formatDate, formatDateTime, formatHours, formatMoney } from '../../utils/format.js'
+import { REASON, summarizeHealth } from '../../utils/projectHealth.js'
 import { fullName } from '../../utils/roles.js'
 
-const REASON = {
-  over_budget: { label: 'Over budget', tone: 'error' },
-  past_end: { label: 'Past end date', tone: 'warning' },
-  overdue_milestone: { label: 'Overdue milestone', tone: 'error' },
-  no_members: { label: 'No members', tone: 'warning' },
-  no_milestones: { label: 'No milestones', tone: 'info' },
-}
+/** Inner links on a clickable row: let the link navigate without the row also firing. */
+const stop = (e) => e.stopPropagation()
+
+const BOARD_COLUMNS = [
+  {
+    key: 'name',
+    label: 'Project',
+    render: (p) => (
+      <>
+        <Link component={RouterLink} to={`/projects/${p.id}`} underline="hover" color="inherit" sx={{ fontWeight: 500 }} onClick={stop}>
+          {p.name}
+        </Link>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          {fullName(p.manager)}
+        </Typography>
+      </>
+    ),
+  },
+  {
+    key: 'health',
+    label: 'Health',
+    render: (p) => (
+      <Stack direction="row" useFlexGap spacing={0.75} sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+        <HealthTag health={p.health} />
+        {p.reasons.map((r) => (
+          <Tag key={r} label={REASON[r]?.label ?? r} tone={REASON[r]?.tone ?? 'neutral'} />
+        ))}
+      </Stack>
+    ),
+  },
+  {
+    key: 'progress',
+    label: 'Progress',
+    nowrap: true,
+    render: (p) => <ProgressBar value={p.hoursCompleted} max={p.capacityHours} caption={`${formatHours(p.hoursCompleted)} of ${formatHours(p.capacityHours)}`} />,
+  },
+  {
+    key: 'budgetRemaining',
+    label: 'Budget left',
+    align: 'right',
+    nowrap: true,
+    render: (p) => (
+      <Typography variant="body2" sx={{ color: Number(p.budgetRemaining) < 0 ? 'error.main' : 'text.primary', fontVariantNumeric: 'tabular-nums' }}>
+        {formatMoney(p.budgetRemaining)}
+      </Typography>
+    ),
+  },
+  {
+    key: 'nextDueDate',
+    label: 'Next due',
+    nowrap: true,
+    render: (p) =>
+      p.nextDueDate ? (
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <span>{formatDate(p.nextDueDate)}</span>
+          <DueTag dueDate={p.nextDueDate} isOpen={p.status === 'active'} />
+        </Stack>
+      ) : (
+        <Typography variant="caption" color="text.secondary">
+          —
+        </Typography>
+      ),
+  },
+  {
+    key: 'endDate',
+    label: 'Ends',
+    nowrap: true,
+    render: (p) => (
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <span>{formatDate(p.endDate)}</span>
+        <DueTag dueDate={p.endDate} isOpen={p.status === 'active'} soonDays={14} overdueLabel="Past end" overdueTone="warning" />
+      </Stack>
+    ),
+  },
+]
 
 const ACTIVITY_COLUMNS = [
   { key: 'occurredAt', label: 'When', nowrap: true, render: (e) => formatDateTime(e.occurredAt) },
@@ -51,54 +121,60 @@ const ACTIVITY_COLUMNS = [
   { key: 'summary', label: 'Summary' },
 ]
 
-const COLUMNS = [
-  { key: 'name', label: 'Project' },
-  {
-    key: 'reasons',
-    label: 'Why',
-    render: (p) => (
-      <Stack direction="row" useFlexGap spacing={0.75} sx={{ flexWrap: 'wrap' }}>
-        {p.reasons.map((r) => (
-          <Tag key={r} label={REASON[r].label} tone={REASON[r].tone} />
-        ))}
-      </Stack>
-    ),
-  },
-  { key: 'budgetRemaining', label: 'Budget remaining', align: 'right', render: (p) => formatMoney(p.budgetRemaining) },
-  { key: 'endDate', label: 'End date', render: (p) => formatDate(p.endDate) },
-]
-
-/** Admin landing: counts across the office and the projects that need a look (ui-flow.md › Per-role landing). */
+/**
+ * Admin landing: the portfolio in one screen (ui-flow.md › Per-role landing). Three pillar tiles (time, cost,
+ * people), the project health board sorted worst first by the API, and the latest audit rows.
+ */
 export default function AdminDashboard({ data }) {
   const navigate = useNavigate()
-  const { stats, attention, recentActivity } = data
+  const { projects, summary, people, recentActivity } = data
+  const overBudget = Number(summary.costConsumed) > Number(summary.budget)
   return (
     <Stack spacing={3}>
-      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' } }}>
-        <StatCard icon={<FolderOutlinedIcon />} label="Active projects" value={stats.activeProjects} hint={`${stats.completeProjects} complete, ${stats.archivedProjects} archived`} />
-        <StatCard icon={<BadgeOutlinedIcon />} label="Managers" value={stats.users.manager} hint={`${stats.users.admin} admin${stats.users.admin === 1 ? '' : 's'}`} />
-        <StatCard icon={<PeopleOutlinedIcon />} label="Employees" value={stats.users.employee} hint="Active accounts" />
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' } }}>
+        <StatCard
+          icon={<ScheduleOutlinedIcon />}
+          label="Hours logged"
+          value={formatHours(summary.hoursCompleted)}
+          hint={`of ${formatHours(summary.capacityHours)} capacity on active projects`}
+          footer={<ProgressBar value={summary.hoursCompleted} max={summary.capacityHours} caption={`${formatHours(summary.hoursCompleted)} of ${formatHours(summary.capacityHours)}`} />}
+        />
+        <StatCard
+          icon={<AccountBalanceWalletOutlinedIcon />}
+          label="Budget consumed"
+          value={formatMoney(summary.costConsumed)}
+          color={overBudget ? 'error.main' : 'text.primary'}
+          hint={`of ${formatMoney(summary.budget)} planned on active projects`}
+          footer={<ProgressBar value={summary.costConsumed} max={summary.budget} caption={`${formatMoney(summary.costConsumed)} of ${formatMoney(summary.budget)}`} />}
+        />
         <StatCard
           icon={<EventAvailableOutlinedIcon />}
-          label="Available"
-          value={stats.availableEmployees}
-          hint="Employees not on a project. Open the list"
+          label="People"
+          value={`${people.available} available`}
+          color={people.available > 0 ? 'success.main' : 'text.primary'}
+          hint={`of ${people.employees} employee${people.employees === 1 ? '' : 's'}, ${people.onProject} on a project. Open the list`}
           to="/users?available=true"
-          color={stats.availableEmployees > 0 ? 'success.main' : 'text.primary'}
         />
       </Box>
       <Box>
-        <SectionHeading icon={<WarningAmberOutlinedIcon />} title="Needs attention" />
-        {attention.length === 0 ? (
-          <Paper sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <CheckCircleOutlinedIcon sx={{ color: 'success.main' }} />
-            <Typography variant="body2" color="text.secondary">
-              Every active project is within budget and on schedule.
+        <SectionHeading
+          icon={<MonitorHeartOutlinedIcon />}
+          title="Project health"
+          sx={{ flexWrap: 'wrap' }}
+          aside={
+            <Typography variant="caption" color="text.secondary">
+              {summarizeHealth(summary.projects)}
             </Typography>
-          </Paper>
-        ) : (
-          <DataTable columns={COLUMNS} rows={attention} getRowKey={(p) => p.id} onRowClick={(p) => navigate(`/projects/${p.id}`)} size="small" />
-        )}
+          }
+        />
+        <DataTable
+          columns={BOARD_COLUMNS}
+          rows={projects}
+          getRowKey={(p) => p.id}
+          emptyMessage="No projects yet. Create one to start the board."
+          onRowClick={(p) => navigate(`/projects/${p.id}`)}
+          size="small"
+        />
       </Box>
       <Box>
         <SectionHeading
@@ -118,8 +194,9 @@ export default function AdminDashboard({ data }) {
 
 AdminDashboard.propTypes = {
   data: PropTypes.shape({
-    stats: PropTypes.object.isRequired,
-    attention: PropTypes.array.isRequired,
+    projects: PropTypes.array.isRequired,
+    summary: PropTypes.object.isRequired,
+    people: PropTypes.object.isRequired,
     recentActivity: PropTypes.array.isRequired,
   }).isRequired,
 }

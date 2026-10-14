@@ -166,7 +166,7 @@ Ownership: read by admin only. No write path other than the router hook.
 - 2 managers, 6 employees (3 per manager), realistic titles/salaries.
 - Project "Decommission 1,000 Servers" (manager 1): milestones "Inventory & tagging", "Migrate workloads batch 1", "Power-down batch 1", "Migrate workloads batch 2", each with 2–4 goals, 3 of manager 1's employees as members with hours assigned, a dozen time entries.
 - Project "Customer Portal Redesign" (manager 2): 3 milestones, 2 of manager 2's employees.
-- 1 archived project "Legacy VPN Retirement" (status complete, manager 2) with released memberships for 2 employees (one of whom is now on "Customer Portal Redesign" — demonstrates history + availability).
+- 1 finished project "Legacy VPN Retirement" (status complete, not yet archived, manager 2) with released memberships for 2 employees (one of whom is now on "Customer Portal Redesign" — demonstrates history + availability).
 - At least one employee per manager left **available** (no active project) so adding members can be demoed.
 
 Seed runs only when `users` is empty.

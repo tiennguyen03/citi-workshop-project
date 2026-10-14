@@ -74,6 +74,9 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
   To change several filters at once use `setFilters({...})`, never `setFilter` in a loop: React Router's
   functional `setSearchParams` reads the params of the current render, so repeated calls keep only the last key.
   Audit log deep link: `/audit-log?actorId=<userId>&action=<name>` (the user page's "View activity" button).
+- Project health (D21) comes from the API (`health` on dashboard cards, order in `HEALTH_ORDER`); show it with
+  `components/HealthTag`, labels/tones/`REASON` in `utils/projectHealth.js` (not `health.js`, which is the API
+  health client). Never compute health in the browser; hide the tag for `to_close` on manager cards.
 - `StatCard` takes `to` (whole card becomes a link), `footer` (e.g. a `ProgressBar`) and `icon` (an
   Outlined icon, shown muted opposite the label); `ProgressBar` takes `color` to pin the bar colour
   (default `auto`: amber ≥ 90 %, red > 100 %). Section titles use `components/SectionHeading`

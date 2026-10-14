@@ -61,6 +61,14 @@ def test_seeded_accounts_work_through_the_api():
     assert status == 200 and body["email"] == "john.doe@example.com"
 
     admin, _ = login()
-    status, body = call("GET", "/api/v1/projects?archived=true", token=admin)
-    assert [p["name"] for p in body["items"]] == ["Legacy VPN Retirement"]
-    assert body["items"][0]["memberCount"] == 2  # completed members still count
+    status, body = call("GET", "/api/v1/projects", token=admin)
+    vpn = next(p for p in body["items"] if p["name"] == "Legacy VPN Retirement")
+    assert vpn["status"] == "complete" and vpn["archived"] is False
+    assert vpn["memberCount"] == 2  # completed members still count
+    # it waits on the admin's board; Marcus sees it among his cards too (no health word there: the chip says Complete)
+    body = call("GET", "/api/v1/dashboard", token=admin)[1]
+    assert body["summary"]["projects"]["toClose"] == 1
+    assert next(p for p in body["projects"] if p["id"] == vpn["id"])["health"] == "to_close"
+    marcus = login("marcus.bell", seed.DEMO_PASSWORD)[0]
+    body = call("GET", "/api/v1/dashboard", token=marcus)[1]
+    assert {p["id"]: p["health"] for p in body["projects"]}[vpn["id"]] == "to_close" and len(body["projects"]) == 2

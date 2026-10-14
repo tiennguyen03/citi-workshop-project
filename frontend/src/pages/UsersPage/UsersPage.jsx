@@ -65,12 +65,26 @@ export default function UsersPage() {
   // Reporting lines matter to the admin who moves people between managers; a manager's list is all their own.
   const columns = isAdmin ? [...COLUMNS.slice(0, 3), managerColumn, ...COLUMNS.slice(3)] : COLUMNS
   const total = data?.total ?? '…'
+  const peopleLine = (() => {
+    if (!data) return '…'
+    const live = items.filter((u) => u.isActive !== false)
+    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
+    const buckets = [
+      [live.filter((u) => u.role === ROLES.ADMIN).length, 'admin'],
+      [live.filter((u) => u.role === ROLES.MANAGER).length, 'manager'],
+      [live.filter((u) => u.role === ROLES.EMPLOYEE).length, 'employee'],
+    ]
+    const available = live.filter((u) => u.role === ROLES.EMPLOYEE && !u.currentProject).length
+    const parts = buckets.filter(([n]) => n > 0).map(([n, word]) => plural(n, word))
+    if (available > 0) parts.push(`${available} available`)
+    return `${live.length === 1 ? '1 person' : `${live.length} people`}: ${parts.join(', ')}`
+  })()
 
   return (
     <>
       <PageHeader
         title={isAdmin ? 'Users' : 'My team'}
-        subtitle={isAdmin ? (isFiltered && data ? `${rows.length} of ${total} users` : `${total} users`) : 'Your direct reports'}
+        subtitle={isAdmin ? (isFiltered && data ? `${rows.length} of ${total} users` : peopleLine) : 'Your direct reports'}
         actions={
           isAdmin ? (
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>

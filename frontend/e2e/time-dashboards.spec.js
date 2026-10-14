@@ -97,8 +97,10 @@ test('manager: dashboard cards and team hours; Time tab shows everyone, filters,
 
 test('admin: dashboard stats and the attention list link to the project', async ({ page }) => {
   await signIn(page, ADMIN.username, ADMIN.password)
-  await expect(page.getByText('Active projects')).toBeVisible()
-  await expect(page.getByText('Needs attention')).toBeVisible()
+  await expect(page.getByText('Hours logged')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Project health' })).toBeVisible()
+  await expect(page.getByText('At risk').first()).toBeVisible() // the office's over-budget project
+  await expect(page.getByRole('link', { name: /available/i })).toHaveAttribute('href', '/users?available=true')
   await expect(page.getByText('Recent activity')).toBeVisible()
   // the admin's own sign-in is always among the last eight entries
   await expect(page.getByRole('row', { name: /User 'admin' logged in/ }).first()).toBeVisible()
