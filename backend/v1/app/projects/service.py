@@ -7,6 +7,7 @@ from app.core import permissions
 from app.core.actor import ROLE_EMPLOYEE, ROLE_MANAGER, Actor
 from app.core.errors import Conflict, Forbidden, NotFound, ProjectConflict, ValidationError
 from app.core.ids import new_id
+from app.milestones import repository as milestones_repo
 from app.projects import capacity
 from app.projects import repository as default_repo
 from app.projects.schemas import (
@@ -256,7 +257,15 @@ def list_members(actor: Actor, project_id: str, *, include_released: bool, repo=
     per_member = capacity.capacity_hours_per_member(project["start_date"], project["end_date"])
     include_costs = permissions.can_see_project_costs(actor, project)
     rows = repo.list_members(project_id, include_released=include_released)
-    return [member_shape(r, capacity_per_member=per_member, include_costs=include_costs) for r in rows]
+    # the open milestone each active member is on (D14: at most one per project) — shown on the Members tab
+    open_ms = milestones_repo.open_assignments(project_id, [r["id"] for r in rows if r["is_active"]])
+    current = {m["user_id"]: {"id": m["milestone_id"], "name": m["milestone_name"]} for m in open_ms}
+    return [
+        member_shape(
+            r, capacity_per_member=per_member, include_costs=include_costs, current_milestone=current.get(r["id"])
+        )
+        for r in rows
+    ]
 
 
 def available_members(actor: Actor, project_id: str, repo=default_repo) -> list[dict[str, Any]]:

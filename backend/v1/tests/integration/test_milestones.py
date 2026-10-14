@@ -49,6 +49,20 @@ def create_milestone(token, pid, **overrides):
     return body
 
 
+def test_members_list_shows_each_persons_open_milestone():
+    org = setup_org()
+    ms = create_milestone(org["mgr_token"], org["pid"], assigneeIds=[org["emp1"]["id"]])
+    status, body = call("GET", f"/api/v1/projects/{org['pid']}/members", token=org["mgr_token"])
+    assert status == 200
+    by_user = {m["user"]["id"]: m for m in body["items"]}
+    assert by_user[org["emp1"]["id"]]["currentMilestone"] == {"id": ms["id"], "name": ms["name"]}
+    assert by_user[org["emp2"]["id"]]["currentMilestone"] is None
+    # completing it frees the person again
+    assert call("POST", f"/api/v1/milestones/{ms['id']}/complete", token=org["mgr_token"])[0] == 200
+    status, body = call("GET", f"/api/v1/projects/{org['pid']}/members", token=org["emp1_token"])
+    assert all(m["currentMilestone"] is None for m in body["items"])
+
+
 def test_create_validation_and_permissions():
     org = setup_org()
     pid, m = org["pid"], org["mgr_token"]

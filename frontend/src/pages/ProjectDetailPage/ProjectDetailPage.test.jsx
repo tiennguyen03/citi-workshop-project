@@ -36,6 +36,7 @@ const MEMBER = {
   capacityHours: 160,
   isActive: true,
   costConsumed: 500,
+  currentMilestone: { id: 'MIL001', name: 'Inventory' },
 }
 
 function renderPage(user, url = '/projects/PRJ001') {
@@ -102,6 +103,7 @@ describe('ProjectDetailPage', () => {
     await user.click(screen.getByRole('tab', { name: /members/i }))
     expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
     expect(screen.getByText('$500')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Inventory' })).toHaveAttribute('href', '/milestones/MIL001')
 
     await user.click(screen.getByRole('button', { name: /add member/i }))
     const dialog = screen.getByRole('dialog')

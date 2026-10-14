@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import Avatar from '@mui/material/Avatar'
 import AvatarGroup from '@mui/material/AvatarGroup'
 import Button from '@mui/material/Button'
-import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
@@ -122,20 +121,10 @@ export default function MilestonesTab({ project, canManage, onChanged, notify })
         onRowClick={(m) => navigate(`/milestones/${m.id}`)}
         size="small"
       />
-      {people && (people.items.length > 0 || people.busy.length > 0) && (
-        <Paper sx={{ p: 2.5, mt: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
-            Who is on what
-          </Typography>
-          <Stack direction="row" useFlexGap spacing={1} sx={{ flexWrap: 'wrap' }}>
-            {people.busy.map((b) => (
-              <Tag key={b.user.id} tone="info" label={`${fullName(b.user)} on ${b.milestone.name}`} />
-            ))}
-            {people.items.map((p) => (
-              <Tag key={p.id} tone="success" label={`${fullName(p)}, available`} />
-            ))}
-          </Stack>
-        </Paper>
+      {writable && people && people.items.length > 0 && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          Free for a new milestone: {people.items.map(fullName).join(', ')}.
+        </Typography>
       )}
       {writable && (
         <MilestoneDialog

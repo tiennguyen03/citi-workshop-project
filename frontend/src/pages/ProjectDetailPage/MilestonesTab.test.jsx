@@ -88,8 +88,8 @@ describe('MilestonesTab', () => {
     milestonesApi.create.mockResolvedValue({ ...MILESTONE, id: 'MIL002', name: 'Power-down', assignees: [MAX] })
     const notify = renderTab(true)
     await screen.findByText('Inventory')
-    expect(screen.getByText('Eve Employee on Inventory')).toBeInTheDocument()
-    expect(screen.getByText('Max New, available')).toBeInTheDocument()
+    expect(screen.getByText('Free for a new milestone: Max New.')).toBeInTheDocument()
+    expect(screen.queryByText(/Who is on what/)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /new milestone/i }))
     const dialog = await screen.findByRole('dialog')

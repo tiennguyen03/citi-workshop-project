@@ -67,7 +67,7 @@ ProjectDetail   ProjectSummary + {description, milestoneCounts:{open, complete},
                  budget, costConsumed, budgetRemaining}
                  (budget/cost fields present only for admin and the manager)
 Member          {user: UserSummary, hoursAssigned, hoursCompleted, capacityHours, costConsumed?, isActive, addedAt,
-                 releasedAt, releasedReason}
+                 releasedAt, releasedReason, currentMilestone: {id, name}|null}   (their open milestone on this project)
 GET /projects/{id}: 403 for a non-member/non-manager; 404 for an archived project unless admin.
 hoursAssigned is capped at capacityHoursPerMember (400 VALIDATION_ERROR otherwise).
 UserSummary gains `currentProject: {id, name} | null` when listed via /users or /users/{id}/team (admin/manager views).

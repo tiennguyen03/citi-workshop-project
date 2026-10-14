@@ -95,7 +95,13 @@ def project_detail(row: dict[str, Any], *, include_costs: bool, membership: dict
     return data
 
 
-def member_shape(row: dict[str, Any], *, capacity_per_member: Decimal, include_costs: bool) -> dict[str, Any]:
+def member_shape(
+    row: dict[str, Any],
+    *,
+    capacity_per_member: Decimal,
+    include_costs: bool,
+    current_milestone: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     data = {
         "user": user_summary(row),
         "hoursAssigned": row["hours_assigned"],
@@ -105,6 +111,7 @@ def member_shape(row: dict[str, Any], *, capacity_per_member: Decimal, include_c
         "addedAt": row["added_at"],
         "releasedAt": row["released_at"],
         "releasedReason": row["released_reason"],
+        "currentMilestone": current_milestone,
     }
     if include_costs:
         data["costConsumed"] = row["cost_consumed"]

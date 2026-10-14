@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
+import { Link as RouterLink } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import IconButton from '@mui/material/IconButton'
+import Link from '@mui/material/Link'
 import MenuItem from '@mui/material/MenuItem'
 import Stack from '@mui/material/Stack'
 import Switch from '@mui/material/Switch'
@@ -142,6 +144,20 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
   const columns = [
     { key: 'name', label: 'Name', nowrap: true, render: (m) => fullName(m.user) },
     { key: 'jobTitle', label: 'Job title', render: (m) => m.user.jobTitle },
+    {
+      key: 'currentMilestone',
+      label: 'Current milestone',
+      render: (m) =>
+        m.currentMilestone ? (
+          <Link component={RouterLink} to={`/milestones/${m.currentMilestone.id}`} underline="hover" color="inherit">
+            {m.currentMilestone.name}
+          </Link>
+        ) : (
+          <Typography variant="caption" color="text.secondary">
+            {m.isActive ? 'Free' : '—'}
+          </Typography>
+        ),
+    },
     { key: 'hoursAssigned', label: 'Assigned', align: 'right', render: (m) => formatHours(m.hoursAssigned) },
     {
       key: 'hoursCompleted',

@@ -18,7 +18,7 @@ test('milestone life cycle: create with assignee, goals, employee ticks own, com
   await openProject(page, project.id, project.name)
   await page.getByRole('tab', { name: /milestones/i }).click()
   await expect(page.getByText('No milestones yet.')).toBeVisible()
-  await expect(page.getByText(`${fullName(emp1)}, available`)).toBeVisible()
+  await expect(page.getByText(/Free for a new milestone/)).toContainText(fullName(emp1))
 
   await page.getByRole('button', { name: 'New milestone' }).click()
   let dialog = page.getByRole('dialog')
@@ -29,7 +29,10 @@ test('milestone life cycle: create with assignee, goals, employee ticks own, com
   await page.keyboard.press('Escape')
   await dialog.getByRole('button', { name: 'Create milestone' }).click()
   await toast(page, "Created milestone 'Count the racks'")
-  await expect(page.getByText(`${fullName(emp1)} on Count the racks`)).toBeVisible()
+  await expect(page.getByText(/Free for a new milestone/)).not.toContainText(fullName(emp1))
+  await page.getByRole('tab', { name: /members/i }).click()
+  await expect(page.getByRole('row', { name: new RegExp(fullName(emp1)) }).getByRole('link', { name: 'Count the racks' })).toBeVisible()
+  await page.getByRole('tab', { name: /milestones/i }).click()
 
   // busy member is greyed out when planning the next milestone
   await page.getByRole('button', { name: 'New milestone' }).click()
