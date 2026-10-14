@@ -16,7 +16,8 @@ const PAGE_SIZE_OPTIONS = [25, 50, 100]
 /**
  * Presentational table: column config + rows. Shows skeletons while loading and an
  * empty-state message when there are no rows. Never fetches. With `pagination` it adds the
- * "1–25 of 112" footer; the page itself is the parent's state (usually the URL), the table only reports clicks.
+ * "1–25 of 112" footer whenever there are rows (arrows disabled on a single page, so the paging is visible);
+ * the page itself is the parent's state (usually the URL), the table only reports clicks.
  */
 export default function DataTable({
   columns,
@@ -28,7 +29,7 @@ export default function DataTable({
   size = 'medium',
   pagination,
 }) {
-  const showFooter = pagination && (pagination.total > pagination.pageSize || pagination.page > 0)
+  const showFooter = pagination && !loading && (pagination.total > 0 || pagination.page > 0)
   return (
     <TableContainer component={Paper}>
       <Table size={size} sx={{ minWidth: columns.length > 3 ? 640 : 0 }}>

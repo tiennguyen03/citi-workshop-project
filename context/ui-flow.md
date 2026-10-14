@@ -80,7 +80,7 @@ ProfilePage: first/last name, email editable; username, role, title, manager rea
 
 ### Paged lists (D23)
 Users, Projects, the project Time tab and the Audit log read one page at a time (25 rows; 50 on the audit
-log). `DataTable` shows the "26–50 of 112" footer with previous/next only when there is more than one page.
+log). `DataTable` shows the "26–50 of 112" footer with previous/next whenever the list has rows (arrows disabled on a single page).
 The page number sits in the URL beside the filters, so a link to page 2 of the available employees works;
 typing in the search box waits 300 ms and then returns to page 1. The Time tab keeps its page in memory
 (it is a tab inside the project page) and its hours tile says "Hours on this page" when the list is longer

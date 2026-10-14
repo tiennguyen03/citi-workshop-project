@@ -15,8 +15,17 @@ describe('DataTable pagination', () => {
     expect(onPageChange).toHaveBeenCalledWith(1)
   })
 
-  it('stays quiet when everything fits on one page', () => {
+  it('still shows the range on a single page, with the arrows disabled', () => {
     render(<DataTable columns={COLUMNS} rows={ROWS} getRowKey={(r) => r.id} pagination={{ page: 0, pageSize: 25, total: 2, onPageChange: vi.fn() }} />)
-    expect(screen.queryByText(/of 2/)).not.toBeInTheDocument()
+    expect(screen.getByText('1–2 of 2')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /next page/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /previous page/i })).toBeDisabled()
+  })
+
+  it('shows no footer while loading or when the list is empty', () => {
+    const { rerender } = render(<DataTable columns={COLUMNS} rows={[]} getRowKey={(r) => r.id} loading pagination={{ page: 0, pageSize: 25, total: 0, onPageChange: vi.fn() }} />)
+    expect(screen.queryByText(/of \d/)).not.toBeInTheDocument()
+    rerender(<DataTable columns={COLUMNS} rows={[]} getRowKey={(r) => r.id} pagination={{ page: 0, pageSize: 25, total: 0, onPageChange: vi.fn() }} />)
+    expect(screen.queryByText(/of \d/)).not.toBeInTheDocument()
   })
 })

@@ -266,8 +266,8 @@ box (`q`) and every toggle (role, available, deactivated, status, archived) are 
 SQL. The audit log keeps its 50/200 but shares the parser (`core/paging.py`). Milestones and members stay
 whole: they are bounded by one project. The Users page's subtitle counts come from a `summary` the API
 returns to admins (`people_counts()`), never from the page in hand. In the browser `DataTable` takes an
-optional `pagination` prop and renders MUI's `TablePagination` footer ("26–50 of 112") only when there is
-more than one page; the page number lives in the URL next to the filters (`/users?available=true&page=2`),
+optional `pagination` prop and renders MUI's `TablePagination` footer ("26–50 of 112") whenever the list has
+rows, arrows disabled on a single page so the paging is always visible; the page number lives in the URL next to the filters (`/users?available=true&page=2`),
 the search box is debounced 300 ms, and changing any filter returns to page 1. The audit log's "Load more"
 is replaced by the same footer. `utils/listFilters.js` is deleted.
 **Why**: With everything returned whole, a 1,000-person office would ship every row to the browser on
