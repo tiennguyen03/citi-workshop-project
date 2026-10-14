@@ -105,6 +105,7 @@ export default function ManagerDashboard({ data }) {
     <Stack spacing={3}>
       <Box>
         <SectionHeading icon={<FolderOutlinedIcon />} title="Your projects" />
+        {/* cards sit two to a row; a lone card takes the whole row rather than leaving an empty slot */}
         {projects.length === 0 ? (
           <Paper sx={{ p: 3 }}>
             <Typography variant="body2" color="text.secondary">
@@ -112,7 +113,7 @@ export default function ManagerDashboard({ data }) {
             </Typography>
           </Paper>
         ) : (
-          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: projects.length > 1 ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 2fr) minmax(0, 1fr)' } }}>
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: projects.length > 1 ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)' } }}>
             {projects.map((p) => (
               <Paper
                 key={p.id}
