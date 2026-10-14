@@ -42,10 +42,22 @@ test('admin deactivates a user, who is locked out until reactivated; the audit l
   await toast(page, 'Changes saved')
 
   await nav(page).getByRole('link', { name: 'Audit log' }).click()
-  await page.getByLabel('Action').fill('user.update')
+  await page.getByRole('combobox', { name: 'Action' }).click()
+  await page.getByRole('option', { name: 'user.update' }).click()
+  await page.getByRole('combobox', { name: 'Actor' }).click()
+  await page.getByRole('option', { name: 'System Admin' }).click()
   await page.getByRole('button', { name: 'Apply' }).click()
+  await expect(page).toHaveURL(/action=user\.update&actorId=/)
   await expect(page.getByText(new RegExp(`Updated user '${emp2.username}'`)).first()).toBeVisible()
   await expect(page.getByText('auth.login', { exact: true })).toHaveCount(0)
+
+  // from a person's page, "View activity" lands on the log filtered to them; the history table shows their projects
+  await page.goto(`/users/${emp2.id}`)
+  await expect(page.getByText('Not on any project yet.')).toBeVisible()
+  await expect(page.getByRole('link', { name: fullName(office.manager) })).toBeVisible() // Reports to
+  await page.getByRole('button', { name: 'View activity' }).click()
+  await expect(page).toHaveURL(new RegExp(`actorId=${emp2.id}`))
+  await expect(page.getByText(`User '${emp2.username}' logged in`).first()).toBeVisible()
 })
 
 test('an employee changes their own password; an admin can set a temporary one', async ({ page }) => {

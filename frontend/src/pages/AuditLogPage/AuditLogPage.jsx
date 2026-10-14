@@ -17,13 +17,16 @@ import PageHeader from '../../components/PageHeader/PageHeader.jsx'
 import RoleChip from '../../components/RoleChip/RoleChip.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
 import useApi from '../../hooks/useApi.js'
+import useUrlFilters from '../../hooks/useUrlFilters.js'
 import * as auditApi from '../../services/auditLog.js'
+import * as usersApi from '../../services/users.js'
 import { formatDateTime } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 
 const PAGE_SIZE = 50
 const ENTITY_TYPES = ['', 'user', 'project', 'milestone', 'goal', 'time_entry']
-const EMPTY_FILTERS = { entityType: '', action: '', from: '', to: '' }
+/** Applied filters live in the URL (`/audit-log?actorId=…` is linked from a user's page); the form holds a draft. */
+const FILTER_DEFAULTS = { entityType: '', action: '', actorId: '', from: '', to: '' }
 
 function DetailsCell({ entry }) {
   const [open, setOpen] = useState(false)
@@ -83,8 +86,8 @@ const COLUMNS = [
 
 /** Admin-only audit trail with filters and "load more" paging (ui-flow.md F11). */
 export default function AuditLogPage() {
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
-  const [applied, setApplied] = useState(EMPTY_FILTERS)
+  const { filters: applied, setFilters: applyToUrl } = useUrlFilters(FILTER_DEFAULTS)
+  const [filters, setFilters] = useState(applied)
   const [offset, setOffset] = useState(0)
   const [extra, setExtra] = useState([])
 
@@ -92,15 +95,21 @@ export default function AuditLogPage() {
     () => auditApi.list({ ...applied, limit: PAGE_SIZE, offset: 0 }),
     [applied],
   )
+  const { data: actionsData } = useApi(() => auditApi.actions(), [])
+  const { data: peopleData } = useApi(() => usersApi.list(), [])
+  const actions = actionsData?.items ?? []
+  const people = peopleData?.items ?? []
   const rows = [...(data?.items ?? []), ...extra]
   const total = data?.total ?? 0
   const hasMore = rows.length < total
 
-  function apply() {
+  function commit(next) {
     setExtra([])
     setOffset(0)
-    setApplied(filters)
+    applyToUrl(next)
   }
+  const apply = () => commit(filters)
+  const select = (key, value) => setFilters((f) => ({ ...f, [key]: value }))
 
   async function loadMore() {
     const nextOffset = offset + PAGE_SIZE
@@ -114,49 +123,39 @@ export default function AuditLogPage() {
       <PageHeader title="Audit log" subtitle={`${total} recorded actions`} />
       <Paper sx={{ p: 2, mb: 2 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'flex-end' } }}>
-          <TextField
-            select
-            label="Entity"
-            value={filters.entityType}
-            onChange={(e) => setFilters((f) => ({ ...f, entityType: e.target.value }))}
-            sx={{ minWidth: 160 }}
-          >
+          <TextField select label="Entity" value={filters.entityType} onChange={(e) => select('entityType', e.target.value)} sx={{ minWidth: 150 }}>
             {ENTITY_TYPES.map((t) => (
               <MenuItem key={t || 'all'} value={t}>
                 {t ? t.replace('_', ' ') : 'All'}
               </MenuItem>
             ))}
           </TextField>
-          <TextField
-            label="Action"
-            placeholder="e.g. project.archive"
-            value={filters.action}
-            onChange={(e) => setFilters((f) => ({ ...f, action: e.target.value.trim() }))}
-          />
-          <TextField
-            label="From"
-            type="date"
-            value={filters.from}
-            onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))}
-            slotProps={{ inputLabel: { shrink: true } }}
-          />
-          <TextField
-            label="To"
-            type="date"
-            value={filters.to}
-            onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
-            slotProps={{ inputLabel: { shrink: true } }}
-          />
+          <TextField select label="Action" value={filters.action} onChange={(e) => select('action', e.target.value)} sx={{ minWidth: 200 }}>
+            <MenuItem value="">All actions</MenuItem>
+            {actions.map((a) => (
+              <MenuItem key={a} value={a}>
+                {a}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField select label="Actor" value={filters.actorId} onChange={(e) => select('actorId', e.target.value)} sx={{ minWidth: 200 }}>
+            <MenuItem value="">Anyone</MenuItem>
+            {people.map((p) => (
+              <MenuItem key={p.id} value={p.id}>
+                {fullName(p)}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField label="From" type="date" value={filters.from} onChange={(e) => select('from', e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+          <TextField label="To" type="date" value={filters.to} onChange={(e) => select('to', e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
           <Stack direction="row" spacing={1}>
             <Button variant="contained" onClick={apply}>
               Apply
             </Button>
             <Button
               onClick={() => {
-                setFilters(EMPTY_FILTERS)
-                setExtra([])
-                setOffset(0)
-                setApplied(EMPTY_FILTERS)
+                setFilters(FILTER_DEFAULTS)
+                commit(FILTER_DEFAULTS)
               }}
             >
               Clear

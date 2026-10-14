@@ -206,5 +206,7 @@ those payloads rather than moving the cue logic server-side.
 whole (D18 pagination), so filtering in the browser is free and instant.
 **Consequences**: If pagination ever lands, search/status/role move to query params on the list
 endpoints and `useUrlFilters` keeps the same shape. Anything that must be *enforced* (not just shown)
-stays in the services; the client only shows and hides.
+stays in the services; the client only shows and hides. The audit log's action picker is fed by
+`GET /audit-log/actions`, backed by the `core.audit.ACTIONS` constant that a unit test keeps equal to the
+route table's `audit=` declarations (slice 9), so the UI can never offer a name the router does not record.
 

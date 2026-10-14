@@ -61,6 +61,9 @@ class FakeRepo:
     def current_projects(self, user_ids):
         return {uid: self.active_projects[uid] for uid in user_ids if uid in self.active_projects}
 
+    def membership_history(self, user_id):
+        return [dict(h) for h in getattr(self, "history", {}).get(user_id, [])]
+
 
 def row(id, role, username, manager_id=None, **extra):
     base = {
@@ -121,6 +124,57 @@ def test_salary_visibility(repo):
     assert "salary" in service.get_user(EMP1, "EMP001", repo=repo)  # own
     assert "salary" not in service.get_user(EMP1, "EMP002", repo=repo)  # teammate
     assert "salary" not in service.get_user(EMP1, "MGR001", repo=repo)  # own manager
+
+
+def test_get_user_adds_manager_and_history_hiding_archived_from_non_admins(repo):
+    repo.history = {
+        "EMP001": [
+            {
+                "id": "PRJ001",
+                "name": "Live",
+                "status": "active",
+                "archived": False,
+                "manager_id": "MGR001",
+                "hours_assigned": Decimal("40"),
+                "hours_completed": Decimal("6"),
+                "is_active": True,
+                "released_reason": None,
+                "added_at": None,
+                "released_at": None,
+            },
+            {
+                "id": "PRJ000",
+                "name": "Gone",
+                "status": "complete",
+                "archived": True,
+                "manager_id": "MGR001",
+                "hours_assigned": Decimal("10"),
+                "hours_completed": Decimal("10"),
+                "is_active": False,
+                "released_reason": "archived",
+                "added_at": None,
+                "released_at": None,
+            },
+        ]
+    }
+    as_manager = service.get_user(MGR1, "EMP001", repo=repo)
+    assert as_manager["manager"] == {"id": "MGR001", "firstName": "Mgr1", "lastName": "Test"}
+    assert [p["id"] for p in as_manager["projects"]] == ["PRJ001"]
+    assert as_manager["projects"][0] == {
+        "id": "PRJ001",
+        "name": "Live",
+        "status": "active",
+        "archived": False,
+        "hoursAssigned": Decimal("40"),
+        "hoursCompleted": Decimal("6"),
+        "isActive": True,
+        "releasedReason": None,
+        "addedAt": None,
+        "releasedAt": None,
+    }
+    assert [p["id"] for p in service.get_user(ADMIN, "EMP001", repo=repo)["projects"]] == ["PRJ001", "PRJ000"]
+    assert service.get_user(ADMIN, "MGR001", repo=repo)["manager"] is None
+    assert service.get_user(ADMIN, "MGR001", repo=repo)["projects"] == []
 
 
 def test_get_user_visibility_rules(repo):

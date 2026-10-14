@@ -110,6 +110,46 @@ def test_team_and_visibility(org):
     assert call("GET", "/api/v1/users/NOPE00", token=org["admin"])[0] == 404
 
 
+def test_user_page_shows_manager_and_project_history(org):
+    from tests.integration.test_projects import create_project
+
+    project = create_project(org["admin"], org["mgr"]["id"])
+    pid, uid = project["id"], org["e1"]["id"]
+    assert (
+        call("POST", f"/api/v1/projects/{pid}/members", {"userId": uid, "hoursAssigned": 40}, token=org["mgr_token"])[0]
+        == 201
+    )
+    assert (
+        call(
+            "POST",
+            f"/api/v1/projects/{pid}/time-entries",
+            {"entryDate": project["startDate"], "hours": 6},
+            token=org["e1_token"],
+        )[0]
+        == 201
+    )
+    status, body = call("GET", f"/api/v1/users/{uid}", token=org["mgr_token"])
+    assert status == 200 and body["manager"] == {"id": org["mgr"]["id"], "firstName": "U", "lastName": "One"}
+    (row,) = body["projects"]
+    assert row["id"] == pid and row["isActive"] and row["hoursAssigned"] == 40 and row["hoursCompleted"] == 6
+    assert row["releasedReason"] is None and row["releasedAt"] is None and row["addedAt"]
+
+    assert call("DELETE", f"/api/v1/projects/{pid}/members/{uid}", token=org["mgr_token"])[0] == 204
+    (row,) = call("GET", f"/api/v1/users/{uid}", token=org["e1_token"])[1]["projects"]  # self can see it too
+    assert (
+        not row["isActive"] and row["releasedReason"] == "removed" and row["releasedAt"] and row["hoursCompleted"] == 6
+    )
+
+    # archived projects drop out of the history for everyone but admins
+    assert call("POST", f"/api/v1/projects/{pid}/archive", token=org["admin"])[0] == 200
+    assert call("GET", f"/api/v1/users/{uid}", token=org["mgr_token"])[1]["projects"] == []
+    (row,) = call("GET", f"/api/v1/users/{uid}", token=org["admin"])[1]["projects"]
+    assert row["archived"] and row["releasedReason"] == "removed"
+    # a manager has no manager and no memberships
+    body = call("GET", f"/api/v1/users/{org['mgr']['id']}", token=org["admin"])[1]
+    assert body["manager"] is None and body["projects"] == []
+
+
 def test_deactivated_user_locked_out(org):
     status, _ = call("PATCH", f"/api/v1/users/{org['e1']['id']}", {"isActive": False}, token=org["admin"])
     assert status == 200

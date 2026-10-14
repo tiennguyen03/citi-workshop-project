@@ -62,6 +62,9 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 - List pages use `ListToolbar` (search + controls) with `useUrlFilters(FILTER_DEFAULTS)` (module-level
   constant) so filters are deep-linkable; filtering itself is pure (`utils/listFilters.js`). The project
   page's tab is `?tab=members|milestones|time`; link to it instead of asking the user to click a tab.
+  To change several filters at once use `setFilters({...})`, never `setFilter` in a loop: React Router's
+  functional `setSearchParams` reads the params of the current render, so repeated calls keep only the last key.
+  Audit log deep link: `/audit-log?actorId=<userId>&action=<name>` (the user page's "View activity" button).
 - `StatCard` takes `to` (whole card becomes a link) and `footer` (e.g. a `ProgressBar`); `ProgressBar`
   takes `color` to pin the bar colour (default `auto`: amber ≥ 90 %, red > 100 %).
 

@@ -7,7 +7,7 @@ from app.core.actor import ROLE_ADMIN, ROLE_EMPLOYEE, ROLE_MANAGER, Actor
 from app.core.errors import Conflict, Forbidden, NotFound, ValidationError
 from app.core.ids import new_id
 from app.users import repository as default_repo
-from app.users.schemas import CreateUserRequest, UpdateUserRequest, user_full, user_summary
+from app.users.schemas import CreateUserRequest, UpdateUserRequest, membership_history_item, user_full, user_summary
 
 ID_COLLISION_RETRIES = 5
 
@@ -40,12 +40,22 @@ def list_users(actor: Actor, *, role: str | None = None, manager_id: str | None 
 
 
 def get_user(actor: Actor, user_id: str, repo=default_repo) -> dict[str, Any]:
+    """UserFull plus who they report to and every project they have been on (archived ones: admins only)."""
     row = repo.find_by_id(user_id)
     if row is None:
         raise NotFound("User not found")
     permissions.assert_can_view_user(actor, row)
     (row,) = _with_current_project([row], repo)
-    return _present(actor, row)
+    manager = repo.find_by_id(row["manager_id"]) if row["manager_id"] else None
+    history = [h for h in repo.membership_history(user_id) if actor.is_admin or not h["archived"]]
+    manager_ref = None
+    if manager:
+        manager_ref = {"id": manager["id"], "firstName": manager["first_name"], "lastName": manager["last_name"]}
+    return {
+        **_present(actor, row),
+        "manager": manager_ref,
+        "projects": [membership_history_item(h) for h in history],
+    }
 
 
 def _validate_manager_assignment(role: str, manager_id: str | None, repo) -> None:

@@ -73,6 +73,23 @@ def list_users(*, role: str | None = None, manager_id: str | None = None, conn=N
     return db.query(query, params, conn=conn)
 
 
+def membership_history(user_id: str, conn=None) -> list[dict[str, Any]]:
+    """Every project the user has been on, with their own hours; active memberships first, then newest."""
+    return db.query(
+        """
+        SELECT p.id, p.name, p.status, p.archived, p.manager_id,
+               pm.hours_assigned, pm.is_active, pm.released_reason, pm.added_at, pm.released_at,
+               (SELECT COALESCE(SUM(t.hours), 0) FROM time_entries t
+                 WHERE t.project_id = pm.project_id AND t.user_id = pm.user_id) AS hours_completed
+        FROM project_members pm JOIN projects p ON p.id = pm.project_id
+        WHERE pm.user_id = %s
+        ORDER BY pm.is_active DESC, pm.added_at DESC, p.name
+        """,
+        (user_id,),
+        conn=conn,
+    )
+
+
 def list_reports(manager_id: str, *, active_only: bool = False, conn=None) -> list[dict[str, Any]]:
     extra = sql.SQL(" AND is_active") if active_only else sql.SQL("")
     query = sql.SQL("SELECT {cols} FROM users WHERE manager_id = %s{extra} ORDER BY last_name, first_name").format(

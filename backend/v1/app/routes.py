@@ -79,5 +79,6 @@ def build_router() -> Router:
 
     # Audit log (admin)
     router.add("GET", "/audit-log", audit_log.list_entries)
+    router.add("GET", "/audit-log/actions", audit_log.list_actions)
 
     return router

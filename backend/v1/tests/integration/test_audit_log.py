@@ -25,6 +25,10 @@ def test_audit_log_admin_only_with_filters_and_paging():
     mgr_token, _ = login("mgr", "Password1!")
 
     assert call("GET", "/api/v1/audit-log", token=mgr_token)[0] == 403
+    assert call("GET", "/api/v1/audit-log/actions", token=mgr_token)[0] == 403
+    status, actions = call("GET", "/api/v1/audit-log/actions", token=admin_token)
+    assert status == 200 and actions["items"] == sorted(actions["items"])
+    assert {"auth.login_failed", "user.create", "project.archive", "time_entry.delete"} <= set(actions["items"])
 
     status, body = call("GET", "/api/v1/audit-log", token=admin_token)
     assert status == 200

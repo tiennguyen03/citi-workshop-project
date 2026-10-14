@@ -5,6 +5,7 @@ from typing import Any
 from app.audit_log import repository as default_repo
 from app.core import permissions
 from app.core.actor import Actor
+from app.core.audit import ACTIONS
 from app.core.errors import ValidationError
 
 MAX_LIMIT = 200
@@ -48,6 +49,12 @@ def _int_param(value: str | None, name: str, default: int, maximum: int | None =
     if number < 0 or (maximum is not None and number > maximum):
         raise ValidationError(f"{name} must be between 0 and {maximum}", field=name)
     return number
+
+
+def list_actions(actor: Actor) -> dict[str, Any]:
+    """The action names an admin can filter by."""
+    permissions.assert_can_view_audit_log(actor)
+    return {"items": sorted(ACTIONS)}
 
 
 def list_entries(actor: Actor, query: dict[str, str], repo=default_repo) -> dict[str, Any]:

@@ -2,7 +2,7 @@
 
 > Only one feature is "current" at a time. Update this file when starting, progressing or finishing.
 
-## Status: 🔨 Slice 8 (dashboards) in progress on `slice-8-dashboards`
+## Status: 🔨 Slice 9 (people & audit) in progress on `slice-9-people-audit`
 
 ## Plan (3 days) — each item is a thin vertical slice
 
@@ -16,10 +16,23 @@
 | 5 | Time entries: endpoints, Time tab, dashboard per role (~~seed data~~ done early) | 3 AM | **done** |
 | 6 | Hardening: tests to target, responsive pass, README, deploy to AWS, smoke test, known gaps | 3 PM | **paused** (deploy + README location deferred by user) |
 | 7 | UX signals (frontend only): overdue / due-soon / past-end tags, 40 h week bar, clickable dashboard counts, `?tab=` deep links, search + filters on Projects/Users mirrored in the URL, milestone ordering with "Next due", capacity hint when assigning hours, this-week / last-week filter on the Time tab | pre-demo | **done** |
-| 8 | Dashboards: manager "Due soon" + current milestone per report + zero-hour cue; admin recent activity + wider attention reasons; employee teammates + recent entries (`GET /dashboard` grows) | pre-demo | **in progress** |
-| 9 | People & audit: user page "Reports to" + project history; audit log action/actor pickers (`GET /users/{id}` grows, `GET /audit-log/actions`) | — | planned |
+| 8 | Dashboards: manager "Due soon" + current milestone per report + zero-hour cue; admin recent activity + wider attention reasons; employee teammates + recent entries (`GET /dashboard` grows) | pre-demo | **done** |
+| 9 | People & audit: user page "Reports to" + project history; audit log action/actor pickers (`GET /users/{id}` grows, `GET /audit-log/actions`) | pre-demo | **in progress** |
 
-## Current slice: 8 — Dashboards (plan: `~/.claude/plans/shiny-singing-simon.md`, approved 2026-10-14)
+## Current slice: 9 — People & audit (plan: `~/.claude/plans/shiny-singing-simon.md`, approved 2026-10-14)
+
+**Acceptance**: a person's page shows who they report to (link) and every project they have been on with hours,
+membership state and dates (archived ones only for admins); admins can jump from there to the audit log filtered to
+that person; the audit log's Action box is a dropdown of real action names and there is an Actor dropdown; both live
+in the URL. New read route `GET /audit-log/actions`; `GET /users/{id}` gains `manager` + `projects`.
+**Done**: contract; `users.repository.membership_history`, `membership_history_item`, `get_user` additions, `core.audit.ACTIONS`
+(unit test keeps it equal to the route table), `GET /audit-log/actions`; unit + integration tests; frontend user page + audit
+page with `useUrlFilters`; new `UserDetailPage.test.jsx`, audit page tests (deep link, clear, error); e2e auth spec updated.
+111 backend tests (97 %), 89 frontend, 12 e2e, ruff/Bandit/ESLint clean; browser walk of the user page and audit log.
+**Remaining**: commit + push on request.
+**Blockers**: none.
+
+## Slice 8 — Dashboards (done 2026-10-14)
 
 **Acceptance**: manager sees every open milestone overdue or due within 7 days across their projects, each report's
 current milestone, and a "0 h" nudge for anyone on a project with nothing logged this week; admin sees the last 8
@@ -69,6 +82,7 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-14 · **Slice 9 built** (branch `slice-9-people-audit`). `GET /users/{id}` gains `manager {id, firstName, lastName}|null` and `projects: MembershipHistory[]` (every project the person has been on, with their own assigned/logged hours, membership state, joined/released dates; archived ones only for admins) via `users.repository.membership_history`. New `GET /audit-log/actions` backed by `core.audit.ACTIONS`, which `tests/unit/test_routes.py` keeps equal to the route table. Frontend: user page shows "Reports to" (link), a Projects history table and, for admins, "View activity" → `/audit-log?actorId=…`; the audit log's Action and Actor are dropdowns and all its filters live in the URL (`useUrlFilters` gained `setFilters` for multi-key updates — React Router's functional `setSearchParams` reads the current render's params, so sequential single-key calls clobber each other). New `UserDetailPage.test.jsx`; audit page tests cover deep link, clear and error. 111 backend tests (97 %), 89 frontend, 12 e2e.
 - 2026-10-14 · **Slice 8 built** (branch `slice-8-dashboards`). `GET /dashboard` grows: `ProjectCard.nextDueDate`; admin `recentActivity` (last 8 audit rows) and attention reasons `overdue_milestone` / `no_members` / `no_milestones`; manager `dueSoon` (open milestones overdue or due ≤ 7 days across their live projects, with assignees) and `team[].currentMilestone`; employee `currentMilestone.{dueDate, assignees}` and `recentEntries` (last 5 own). Backend: one subquery in the project summary, `milestones.open_assignments_for_users`, `dashboard.due_soon_milestones`, `time_entries.list_entries(limit=)`, public `audit_log.service.entry_shape`; `_attention_reasons` unit-tested as a matrix. Frontend: manager "Due soon" table + "Next due" on cards + current-milestone column + "0 h" nudge; admin "Recent activity" with "View all"; employee milestone due date, cue and teammates, "Recent entries" with in-place edit. 107 backend tests (97 %), 83 frontend, 12 e2e.
 - 2026-10-14 · **Slice 7 built** (branch `slice-7-signals`, D19). Frontend-only: `DueTag` (Overdue / Due today / Due in N days; "Past end date" on projects) on the project list and header, milestones tab and page, and the employee's goal list; employee "Hours this week" measured against the 40-hour week; admin "Available" count and manager "N members" / "open milestones" are links (`?tab=` deep links on the project page); search + status filter on Projects and search + role + "Available only" + "Show deactivated" on Users, mirrored in the URL; milestones ordered open-first by due date with a "Next due" marker; hours dialog shows project capacity so far and warns (not blocks) past it; Time tab This week / Last week / All. 83 frontend tests (+29), 12 e2e, 92-screen walk clean. Demo seed: one overdue and one due-soon milestone.
 - 2026-10-13 · **Browser suite in the repo** (`frontend/e2e/`, `@playwright/test@1.56.1` approved by the user). 12 self-contained tests (each spec builds its own office through the API): auth + lockout + audit filter + password change/reset, project form validation, staffing, archive/unarchive, completion gating, milestone life cycle with the one-open-milestone picker, time logging on dashboard and Time tab, manager/admin dashboards, phone width. `npm run test:e2e`.

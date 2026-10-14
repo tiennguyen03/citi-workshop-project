@@ -104,4 +104,20 @@ def user_full(row: dict[str, Any], *, include_salary: bool) -> dict[str, Any]:
     return data
 
 
+def membership_history_item(row: dict[str, Any]) -> dict[str, Any]:
+    """MembershipHistory: one project the user has been on, with their own allocation and logged hours."""
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "status": row["status"],
+        "archived": row["archived"],
+        "hoursAssigned": row["hours_assigned"],
+        "hoursCompleted": row["hours_completed"],
+        "isActive": row["is_active"],
+        "releasedReason": row["released_reason"],
+        "addedAt": row["added_at"],
+        "releasedAt": row["released_at"],
+    }
+
+
 assert set(Role.__args__) == set(ROLES)  # nosec B101 - import-time consistency check, not input validation

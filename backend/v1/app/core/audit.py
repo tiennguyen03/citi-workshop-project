@@ -16,6 +16,34 @@ REDACT_KEYS = frozenset({"token", "authorization"})
 REDACT_SUBSTRINGS = ("password", "secret")
 MASK_KEYS = frozenset({"salary"})
 
+# Every action name the router can record (routes.py `audit=` / `audit_on_failure=`). Kept as a constant so the
+# audit-log filter UI can list them without importing the route table; tests/unit/test_routes.py keeps it in sync.
+ACTIONS: tuple[str, ...] = (
+    "auth.login",
+    "auth.login_failed",
+    "auth.password_change",
+    "user.create",
+    "user.update",
+    "project.create",
+    "project.update",
+    "project.complete",
+    "project.archive",
+    "project.unarchive",
+    "project.member_add",
+    "project.member_update",
+    "project.member_remove",
+    "milestone.create",
+    "milestone.update",
+    "milestone.complete",
+    "milestone.reopen",
+    "goal.create",
+    "goal.update",
+    "goal.delete",
+    "time_entry.create",
+    "time_entry.update",
+    "time_entry.delete",
+)
+
 # action prefix -> entity_type column value
 ENTITY_TYPES = {
     "user": "user",

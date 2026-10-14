@@ -4,3 +4,8 @@ import { api } from './client.js'
 export function list(query) {
   return api.get('/audit-log', { query })
 }
+
+/** GET /audit-log/actions → {items: string[]} */
+export function actions() {
+  return api.get('/audit-log/actions')
+}
