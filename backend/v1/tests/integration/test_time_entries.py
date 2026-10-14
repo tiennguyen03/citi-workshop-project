@@ -89,7 +89,9 @@ def test_visibility_edit_and_delete_rules():
     status, body = call("GET", f"/api/v1/projects/{pid}/time-entries?userId={org['emp2']['id']}", token=e1)
     assert status == 200 and [e["id"] for e in body["items"]] == [mine["id"]]
     status, body = call("GET", f"/api/v1/projects/{pid}/time-entries", token=m)
-    assert {e["id"] for e in body["items"]} == {mine["id"], theirs["id"]}
+    assert {e["id"] for e in body["items"]} == {mine["id"], theirs["id"]} and body["total"] == 2
+    paged = call("GET", f"/api/v1/projects/{pid}/time-entries?limit=1&offset=1", token=m)[1]
+    assert paged["total"] == 2 and len(paged["items"]) == 1 and paged["limit"] == 1 and paged["offset"] == 1
     status, body = call("GET", f"/api/v1/projects/{pid}/time-entries?userId={org['emp2']['id']}", token=org["admin"])
     assert [e["id"] for e in body["items"]] == [theirs["id"]]
     assert call("GET", f"/api/v1/projects/{pid}/time-entries?from=bad", token=m)[0] == 400

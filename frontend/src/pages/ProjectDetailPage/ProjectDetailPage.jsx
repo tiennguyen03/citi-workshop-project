@@ -56,7 +56,7 @@ export default function ProjectDetailPage() {
   const isAdmin = me.role === ROLES.ADMIN
 
   const { data: project, loading, error, refetch } = useApi(() => projectsApi.get(id), [id])
-  const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER }) : Promise.resolve(null)), [isAdmin])
+  const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER, limit: 100 }) : Promise.resolve(null)), [isAdmin])
   const managers = (managersData?.items ?? []).filter((m) => m.isActive !== false)
 
   const canManage = Boolean(project) && (isAdmin || project.manager.id === me.id)

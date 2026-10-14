@@ -12,9 +12,16 @@ JSON. All endpoints except `POST /auth/login` require `Authorization: Bearer <jw
   { "error": { "code": "VALIDATION_ERROR", "message": "end_date must be on or after start_date", "details": { "field": "end_date" } } }
   ```
   Codes: `VALIDATION_ERROR` 400 · `UNAUTHENTICATED` 401 · `FORBIDDEN` 403 · `NOT_FOUND` 404 · `CONFLICT` 409 · `PROJECT_CONFLICT` 409 (employee already on an active project; `details.userIds`, `details.projectId`) · `MILESTONE_CONFLICT` 409 (employee already on an open milestone in this project) · `INTERNAL` 500.
-- Lists return `{ "items": [...], "total": n }`. Filtering via query params where listed. No pagination in MVP (data is small); `limit`/`offset` reserved.
+- Lists return `{ "items": [...], "total": n }`. Filtering via query params where listed. Users, projects, time entries and the audit log page (`Page<T>` below); milestones and members are returned whole.
 - `UserSummary` = `{id, firstName, lastName, email, jobTitle, role}` (no salary). `UserFull` = UserSummary + `salary, managerId, isActive, username`. Salary is included only when the actor is admin or the user's manager.
 - Field names are camelCase on the wire; snake_case in the database. Handlers do the mapping via DTOs.
+
+Paged lists (users, projects, time entries, audit log) share one shape:
+```
+Page<T> {items: T[], total, limit, offset}   — limit defaults to 25 (audit log 50), max 100 (audit log 200);
+                                               0 means the default; anything else out of range → 400 naming the field
+```
+Milestones, goals and members are returned whole: they are bounded by one project.
 
 ## Auth
 
@@ -28,7 +35,7 @@ JSON. All endpoints except `POST /auth/login` require `Authorization: Bearer <jw
 
 | Method | Path | Body | Response | Who |
 |---|---|---|---|---|
-| GET | `/users?role=&managerId=` | — | `200 {items: UserFull[]}` | admin: all. manager: own reports (+self). employee: `403`. |
+| GET | `/users?role=&managerId=&q=&available=&inactive=&limit=25&offset=0` | — | `200 Page<UserFull> & {summary: {admins, managers, employees, available}\|null}` (`q` searches name/email/username; `available=true` = employees on no project; deactivated people only with `inactive=true`; `summary` counts every active person, admins only) | admin: all. manager: own reports (+self), filtered and paged the same way. employee: `403`. |
 | POST | `/users` | `{username, password, firstName, lastName, email, jobTitle, salary, role, managerId?}` | `201 UserFull` · `400` · `409` username/email taken | admin |
 | GET | `/users/{id}` | — | `200 UserFull & {manager: {id, firstName, lastName}\|null, projects: MembershipHistory[]}` (salary only for admin / own manager / self; archived projects only for admins) · `403` not allowed to view · `404` | admin; manager for self + reports; employee for self, teammates (same manager) and own manager |
 | PATCH | `/users/{id}` | any of `{firstName, lastName, email}`; admin additionally `{jobTitle, salary, role, managerId, isActive}` | `200 UserFull` | admin; manager (name/email of reports); employee (name/email of self) | `password` (≥ 8 chars) is admin-only and sets a new temporary password (hash stored, never returned).
@@ -44,7 +51,7 @@ Rules enforced server-side: `managerId` required iff `role=employee`; `managerId
 
 | Method | Path | Body | Response | Who |
 |---|---|---|---|---|
-| GET | `/projects?archived=false&status=` | — | `200 {items: ProjectSummary[]}` | admin: all (archived only via `archived=true`). manager: projects they manage. employee: projects they are or were a member of (non-archived). |
+| GET | `/projects?archived=false&status=&q=&limit=25&offset=0` | — | `200 Page<ProjectSummary>` (`q` searches the project and manager name) | admin: all (archived only via `archived=true`). manager: projects they manage. employee: projects they are or were a member of (non-archived). |
 | POST | `/projects` | `{name, description?, budget, startDate, endDate, managerId}` | `201 ProjectDetail` | admin |
 | GET | `/projects/{id}` | — | `200 ProjectDetail` · `404` (also for archived to non-admins) | admin; its manager; its members |
 | PATCH | `/projects/{id}` | `{name?, description?, budget?, startDate?, endDate?}`; admin additionally `{managerId}` | `200 ProjectDetail` · `409` if archived | admin; its manager |
@@ -101,7 +108,7 @@ All writes `409` when the project is archived or complete. `MILESTONE_CONFLICT.d
 
 | Method | Path | Body | Response | Who |
 |---|---|---|---|---|
-| GET | `/projects/{id}/time-entries?userId=&from=&to=` | — | `200 {items: TimeEntry[]}` | admin; project manager; member (own only — `userId` forced to self) |
+| GET | `/projects/{id}/time-entries?userId=&from=&to=&limit=25&offset=0` | — | `200 Page<TimeEntry>}` | admin; project manager; member (own only — `userId` forced to self) |
 | POST | `/projects/{id}/time-entries` | `{entryDate, hours, note?}` | `201 TimeEntry` · `403` not an *active* member · `400` limits (hours 0.25–24, date within project dates and not in the future) · `409` project archived/complete | active member (self) |
 | PATCH | `/time-entries/{id}` | `{entryDate?, hours?, note?}` | `200 TimeEntry` | author |
 | DELETE | `/time-entries/{id}` | — | `204` | author; project manager; admin |
@@ -154,7 +161,7 @@ One read per landing page (ui-flow.md › Per-role landing); "this week" is Mond
 AuditEntry {id, occurredAt, actor: UserSummary|null, actorRole, action, entityType, entityId, projectId,
             summary, details, statusCode}
 ```
-This is the only list endpoint that paginates in MVP (`limit` ≤ 200, default 50, newest first).
+Paged like the other lists but with its own sizes (`limit` ≤ 200, default 50, newest first).
 There are no write endpoints; entries are produced automatically (D13).
 
 ## Health

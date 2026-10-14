@@ -6,6 +6,7 @@ from app.core import permissions, security
 from app.core.actor import ROLE_ADMIN, ROLE_EMPLOYEE, ROLE_MANAGER, Actor
 from app.core.errors import Conflict, Forbidden, NotFound, ValidationError
 from app.core.ids import new_id
+from app.core.paging import DEFAULT_LIMIT, page
 from app.users import repository as default_repo
 from app.users.schemas import CreateUserRequest, UpdateUserRequest, membership_history_item, user_full, user_summary
 
@@ -21,22 +22,58 @@ def _present(actor: Actor, row: dict[str, Any]) -> dict[str, Any]:
     return user_full(row, include_salary=permissions.can_view_salary(actor, row))
 
 
-def list_users(actor: Actor, *, role: str | None = None, manager_id: str | None = None, repo=default_repo):
-    """Admin: everyone (filterable). Manager: own reports + self. Employee: forbidden (use /team)."""
+def _matches(row: dict[str, Any], needle: str) -> bool:
+    return needle in f"{row['first_name']} {row['last_name']} {row['email']} {row['username']}".lower()
+
+
+def list_users(
+    actor: Actor,
+    *,
+    role: str | None = None,
+    manager_id: str | None = None,
+    q: str | None = None,
+    include_inactive: bool = False,
+    available_only: bool = False,
+    limit: int = DEFAULT_LIMIT,
+    offset: int = 0,
+    repo=default_repo,
+) -> dict[str, Any]:
+    """One page of users. Admin: everyone (filterable, with people counts). Manager: own reports + self.
+    Employee: forbidden (use /team)."""
     if actor.is_employee:
         raise Forbidden("Employees can only view their team")
     if actor.is_admin:
-        rows = repo.list_users(role=role, manager_id=manager_id)
+        rows, total = repo.list_users(
+            role=role,
+            manager_id=manager_id,
+            q=q,
+            include_inactive=include_inactive,
+            available_only=available_only,
+            limit=limit,
+            offset=offset,
+        )
+        summary = repo.people_counts()
     else:
         rows = repo.list_reports(actor.id)
         me = repo.find_by_id(actor.id)
         if me:
             rows = [me, *rows]
-        if role:
-            rows = [r for r in rows if r["role"] == role]
-        if manager_id:
-            rows = [r for r in rows if r["manager_id"] == manager_id]
-    return [_present(actor, r) for r in _with_current_project(rows, repo)]
+        rows = _with_current_project(rows, repo)
+        needle = (q or "").strip().lower()
+        rows = [
+            r
+            for r in rows
+            if (not role or r["role"] == role)
+            and (not manager_id or r["manager_id"] == manager_id)
+            and (include_inactive or r["is_active"])
+            and (not available_only or (r["role"] == ROLE_EMPLOYEE and not r.get("current_project")))
+            and (not needle or _matches(r, needle))
+        ]
+        total = len(rows)
+        rows = rows[offset : offset + limit]
+        summary = None
+    items = [_present(actor, r) for r in _with_current_project(rows, repo)]
+    return page(items, total, limit, offset, summary=summary)
 
 
 def get_user(actor: Actor, user_id: str, repo=default_repo) -> dict[str, Any]:

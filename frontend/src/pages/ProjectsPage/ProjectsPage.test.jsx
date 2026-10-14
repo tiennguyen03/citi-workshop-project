@@ -60,9 +60,9 @@ describe('ProjectsPage', () => {
     projectsApi.list.mockResolvedValue({ items: [], total: 0 })
     renderPage('admin')
     expect(await screen.findByText('No projects yet.')).toBeInTheDocument()
-    expect(projectsApi.list).toHaveBeenLastCalledWith({ archived: undefined })
+    expect(projectsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ archived: undefined, limit: 25, offset: 0 }))
     await user.click(screen.getByLabelText(/show archived/i))
-    await waitFor(() => expect(projectsApi.list).toHaveBeenLastCalledWith({ archived: 'true' }))
+    await waitFor(() => expect(projectsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ archived: 'true' })))
     expect(await screen.findByText('No archived projects.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /new project/i }))
     expect(await screen.findByRole('dialog')).toHaveTextContent('New project')
@@ -113,29 +113,30 @@ describe('ProjectsPage', () => {
     expect(screen.getAllByText('Past end date')).toHaveLength(1)
   })
 
-  it('narrows the list by search and status, mirrored in the URL', async () => {
+  it('sends search and status to the API, mirrored in the URL', async () => {
     const user = userEvent.setup()
-    projectsApi.list.mockResolvedValue({
-      items: [PROJECT, { ...PROJECT, id: 'PRJ002', name: 'Customer Portal', status: 'complete', manager: { id: 'MGR002', firstName: 'Marcus', lastName: 'Bell' } }],
-      total: 2,
-    })
+    projectsApi.list.mockResolvedValue({ items: [PROJECT], total: 1 })
     renderPage('admin')
-    await screen.findByText('Customer Portal')
+    await screen.findByText('Decommission 1,000 Servers')
     await user.type(screen.getByRole('searchbox', { name: /search/i }), 'bell')
-    expect(screen.queryByText('Decommission 1,000 Servers')).not.toBeInTheDocument()
-    expect(screen.getByText('Customer Portal')).toBeInTheDocument()
+    await waitFor(() => expect(projectsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'bell', offset: 0 })))
+    projectsApi.list.mockResolvedValue({ items: [], total: 0 })
     await user.click(screen.getByRole('combobox', { name: /status/i }))
     await user.click(await screen.findByRole('option', { name: 'Active' }))
+    await waitFor(() => expect(projectsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'bell', status: 'active' })))
     expect(await screen.findByText('No projects match your filters.')).toBeInTheDocument()
-    expect(projectsApi.list).toHaveBeenCalledTimes(1) // filtering is client-side
   })
 
-  it('reads filters from the URL', async () => {
-    projectsApi.list.mockResolvedValue({ items: [PROJECT, { ...PROJECT, id: 'PRJ002', name: 'Customer Portal', status: 'complete' }], total: 2 })
+  it('reads filters and the page from the URL and pages with the footer', async () => {
+    const user = userEvent.setup()
+    projectsApi.list.mockResolvedValue({ items: [{ ...PROJECT, id: 'PRJ002', name: 'Customer Portal', status: 'complete' }], total: 26 })
     renderPage('admin', '/projects?status=complete')
     expect(await screen.findByText('Customer Portal')).toBeInTheDocument()
-    expect(screen.queryByText('Decommission 1,000 Servers')).not.toBeInTheDocument()
+    expect(projectsApi.list).toHaveBeenCalledWith(expect.objectContaining({ status: 'complete', limit: 25, offset: 0 }))
     expect(screen.getByRole('combobox', { name: /status/i })).toHaveTextContent('Complete')
+    expect(screen.getByText('1–25 of 26')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /next page/i }))
+    await waitFor(() => expect(projectsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'complete', offset: 25 })))
   })
 
   it('shows the employee empty state and errors', async () => {

@@ -7,6 +7,7 @@ from app.core import permissions
 from app.core.actor import ROLE_EMPLOYEE, ROLE_MANAGER, Actor
 from app.core.errors import Conflict, Forbidden, NotFound, ProjectConflict, ValidationError
 from app.core.ids import new_id
+from app.core.paging import DEFAULT_LIMIT, page
 from app.milestones import repository as milestones_repo
 from app.projects import capacity
 from app.projects import repository as default_repo
@@ -102,19 +103,30 @@ def require_manageable(actor: Actor, project_id: str, repo=default_repo) -> dict
 # ---- read ------------------------------------------------------------------------
 
 
-def list_projects(actor: Actor, *, archived: str | None, status: str | None, repo=default_repo) -> list[dict[str, Any]]:
+def list_projects(
+    actor: Actor,
+    *,
+    archived: str | None,
+    status: str | None,
+    q: str | None = None,
+    limit: int = DEFAULT_LIMIT,
+    offset: int = 0,
+    repo=default_repo,
+) -> dict[str, Any]:
+    """One page of the projects the actor may see, with the total that matches."""
     want_archived = archived == "true"
     if want_archived and not actor.is_admin:
         raise Forbidden("Only admins can view archived projects")
     if status and status not in (STATUS_ACTIVE, STATUS_COMPLETE):
         raise ValidationError("status must be 'active' or 'complete'", field="status")
-    kwargs = {"archived": want_archived, "status": status}
+    kwargs: dict[str, Any] = {"archived": want_archived, "status": status, "q": q}
     if actor.is_manager:
         kwargs["manager_id"] = actor.id
     elif actor.is_employee:
         kwargs["member_user_id"] = actor.id
-    rows = repo.list_summaries(**kwargs)
-    return [project_summary(_with_capacity(r)) for r in rows]
+    rows = repo.list_summaries(**kwargs, limit=limit, offset=offset)
+    total = repo.count_summaries(**kwargs)
+    return page([project_summary(_with_capacity(r)) for r in rows], total, limit, offset)
 
 
 def get_project(actor: Actor, project_id: str, repo=default_repo) -> dict[str, Any]:

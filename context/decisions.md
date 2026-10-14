@@ -176,13 +176,13 @@ with the workaround in place so nobody mistakes it for an oversight.
 | Forced password rotation | Users change their own password on the profile page (`POST /auth/change-password`, current password required) and admins can set a temporary one (`PATCH /users/{id} {password}`). Nothing forces a change on first login. | A `must_change_password` flag set by the admin reset, checked by the login response. |
 | Session expiry | JWT lives 8 h; no refresh. A `401` from any call clears the session and sends the user to the login page. | Sliding refresh token or a shorter token with silent renewal. |
 | Email / notifications | Nothing is sent. Email addresses are stored for identification only. | SES on milestone due dates, goal assignment, budget overrun. |
-| Pagination | Only the audit log pages (`limit`/`offset`). Users, projects, milestones, entries are returned whole; fine at workshop scale (tens to low hundreds of rows). | Add `limit`/`offset` to the list endpoints; the `DataTable` already takes rows, not fetches. |
+| Pagination | ~~Only the audit log pages.~~ Closed by D23 (slice 13): users, projects, time entries and the audit log page on the server (`limit` ≤ 100). Milestones and members are still returned whole (bounded by one project). | Page milestones/members if a project ever has hundreds. |
 | Time zones | Dates are calendar dates (`DATE`), no time of day. "Today" and "this week" use the Lambda's clock (UTC) on the server and the browser's clock in the client, so near midnight the two can disagree by a day. | Pass the client's date as a query param, or store the user's time zone. |
 | Hours per day cap | At most 24 h per entry; no cap on the sum of entries per day. | Reject when a day's total would exceed 24 h. |
 | Capacity model | Weekdays × 8 h per member for the whole project, from the day they joined is **not** considered; public holidays and leave are ignored (D9). | Pro-rate by membership dates; a holiday calendar table. |
 | Concurrency | Last write wins on `PATCH`; no `updated_at` check. Unique rules (one active project, one open milestone) are enforced by partial indexes so they hold under races. | Send `If-Unmodified-Since`/version on edits. |
 | Soft delete elsewhere | Projects archive (M11). Goals and time entries are hard-deleted but every deletion is audited with the full payload, so nothing is lost silently. | Add `deleted_at` if restores are ever needed. |
-| Audit log retention / export | Append-only, never pruned, admin-only UI with filters and "load more". No CSV export. | Export endpoint; retention job. |
+| Audit log retention / export | Append-only, never pruned, admin-only UI with filters and a paging footer. No CSV export. | Export endpoint; retention job. |
 | Multiple admins | Supported (the last active admin cannot be deactivated/demoted). No admin audit of other admins' permission changes beyond the normal `user.update` rows. | — |
 | File uploads, comments, RAG status | Not built (stretch items S1–S4 in requirements). `goals.rag_status` column exists but is unused. | — |
 | Browser E2E in CI | `frontend/e2e/` (Playwright, 12 tests across auth, projects, milestones, time + dashboards) runs locally against the dev stack with `npm run test:e2e`. The workshop CI has no Postgres/LocalStack, so it is not wired into GitHub Actions. | A CI job that starts Postgres + LocalStack, or points the suite at a deployed stack. |
@@ -198,15 +198,15 @@ a post-workshop hardening pass.
 **Decision**: Urgency cues (milestone "Overdue" / "Due in N days", project "Past end date", the
 40-hour week bar, the "Next due" marker) are derived in the browser from the calendar dates the API
 already returns, using the browser's clock (`utils/dates.js`, `components/DueTag`). Search and filters
-on the Projects and Users lists run client-side over the whole list and are mirrored in the query
-string (`hooks/useUrlFilters`), so a filtered view is a shareable link (e.g. `/users?available=true`).
+on the Projects and Users lists ~~run client-side over the whole list~~ (moved to the API in D23) and are
+mirrored in the query string (`hooks/useUrlFilters`), so a filtered view is a shareable link (e.g. `/users?available=true`).
 The project page keeps its tab in `?tab=`. Dashboards keep returning pre-computed lists; slice 8 extends
 those payloads rather than moving the cue logic server-side.
 **Why**: No new endpoint or round trip for what is purely presentation; the D18 time-zone caveat
 (server vs browser "today") already applies and is acceptable for a day-granular cue. Lists are returned
 whole (D18 pagination), so filtering in the browser is free and instant.
-**Consequences**: If pagination ever lands, search/status/role move to query params on the list
-endpoints and `useUrlFilters` keeps the same shape. Anything that must be *enforced* (not just shown)
+**Consequences**: ~~If pagination ever lands, search/status/role move to query params on the list
+endpoints and `useUrlFilters` keeps the same shape~~ — that is what D23 did. Anything that must be *enforced* (not just shown)
 stays in the services; the client only shows and hides. The audit log's action picker is fed by
 `GET /audit-log/actions`, backed by the `core.audit.ACTIONS` constant that a unit test keeps equal to the
 route table's `audit=` declarations (slice 9), so the UI can never offer a name the router does not record.
@@ -259,3 +259,21 @@ CloudFront 403 page. The app itself was fine: starting at `/` and navigating ins
 boilerplate changes. A genuine missing asset now also renders the app shell instead of an error page,
 which is the standard trade-off for single-page apps on CloudFront.
 
+## D23 · 2026-10-14 · Lists page and search on the server
+**Decision**: `GET /users`, `GET /projects` and `GET /projects/{id}/time-entries` take `limit` (default 25,
+max 100) and `offset` beside their filters and return `Page<T> = {items, total, limit, offset}`; the search
+box (`q`) and every toggle (role, available, deactivated, status, archived) are query parameters resolved in
+SQL. The audit log keeps its 50/200 but shares the parser (`core/paging.py`). Milestones and members stay
+whole: they are bounded by one project. The Users page's subtitle counts come from a `summary` the API
+returns to admins (`people_counts()`), never from the page in hand. In the browser `DataTable` takes an
+optional `pagination` prop and renders MUI's `TablePagination` footer ("26–50 of 112") only when there is
+more than one page; the page number lives in the URL next to the filters (`/users?available=true&page=2`),
+the search box is debounced 300 ms, and changing any filter returns to page 1. The audit log's "Load more"
+is replaced by the same footer. `utils/listFilters.js` is deleted.
+**Why**: With everything returned whole, a 1,000-person office would ship every row to the browser on
+each visit, and the Lambda's 128 MB would be spent serialising rows nobody reads. Offset paging is enough
+here: lists are sorted by stable keys, writes are rare, and the audit log already used it.
+**Consequences**: Clients that need *every* row of a kind (the manager pickers, the audit log's actor
+list) ask for `limit=100` explicitly; past 100 managers that picker would need a search of its own.
+Counts shown next to a filtered list are `total`, so "2 people match" is true across all pages. The
+Time tab's hours tile names what it sums ("Hours on this page" once the entries exceed a page).

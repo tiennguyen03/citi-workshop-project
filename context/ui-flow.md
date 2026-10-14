@@ -10,11 +10,11 @@ loading skeleton, empty state, and an error `Alert`; every mutation shows a `Sna
 |---|---|---|---|
 | `/login` | LoginPage | public | `POST /auth/login` |
 | `/` | DashboardPage | all | `GET /dashboard` (role-shaped) |
-| `/projects` | ProjectsPage | all | `GET /projects` (+`?archived=true` toggle for admin) |
+| `/projects` | ProjectsPage | all | `GET /projects?q=&status=&archived=&limit=&offset=` (archived toggle for admin); filters and `page` in the URL |
 | (dialog on `/projects` and `/`) | ProjectDialog, create mode | admin | `GET /users?role=manager`, `POST /projects` |
 | `/projects/:id` | ProjectDetailPage | viewers | `GET /projects/{id}`, `/stats`, `/members`, `/milestones`, `/time-entries` |
 | `/milestones/:id` | MilestoneDetailPage | viewers | `GET /milestones/{id}`, goal endpoints |
-| `/users` | UsersPage | admin, manager | `GET /users`, `POST /users` (admin) |
+| `/users` | UsersPage | admin, manager | `GET /users?q=&role=&available=&inactive=&limit=&offset=` (paged, `page` in the URL; admin subtitle from `summary`), `POST /users` (admin) |
 | `/users/:id` | UserDetailPage | per rules | `GET /users/{id}`, `PATCH /users/{id}` |
 | `/team` | TeamPage | manager, employee | `GET /users/{me}/team` |
 | `/profile` | ProfilePage | all | `GET /auth/me`, `PATCH /users/{me}` |
@@ -65,7 +65,7 @@ ProjectsPage: admin sees "Show archived" toggle. Row/detail action "Archive" (Co
 UserDetailPage (admin view) → manager select → `PATCH /users/{id} {managerId}`. ProjectDetailPage overview (admin) → manager select → `PATCH /projects/{id} {managerId}`.
 
 ### F11 Admin reviews the audit log
-AuditLogPage (admin nav item "Audit log"): `DataTable` newest-first with columns time, actor (name + role chip), action, entity (link to the project/user/milestone where applicable), summary. Filter bar: actor select, entity type, action, date range → query params. Row expand shows `details` JSON. "Load more" pagination (`offset`). Managers/employees never see the nav item; direct navigation gets the 403 page.
+AuditLogPage (admin nav item "Audit log"): `DataTable` newest-first with columns time, actor (name + role chip), action, entity (link to the project/user/milestone where applicable), summary. Filter bar: actor select, entity type, action, date range → query params. Row expand shows `details` JSON. Paging footer ("1–50 of 312", `page` in the URL, `offset` to the API). Managers/employees never see the nav item; direct navigation gets the 403 page.
 
 ### F10 Profile
 ProfilePage: first/last name, email editable; username, role, title, manager read-only; salary shown to self (read-only).
@@ -77,3 +77,11 @@ ProfilePage: first/last name, email editable; username, role, title, manager rea
 
 ## Components (reusable, no fetching)
 `AppShell`, `RoleGate`, `DataTable` (sortable columns, empty state), `StatCard`, `ProgressBar` (hours/capacity), `StatusChip` (project/milestone status, archived), `FormDialog`, `ConfirmDialog`, `UserSelect`, `ErrorAlert`, `PageHeader`.
+
+### Paged lists (D23)
+Users, Projects, the project Time tab and the Audit log read one page at a time (25 rows; 50 on the audit
+log). `DataTable` shows the "26–50 of 112" footer with previous/next only when there is more than one page.
+The page number sits in the URL beside the filters, so a link to page 2 of the available employees works;
+typing in the search box waits 300 ms and then returns to page 1. The Time tab keeps its page in memory
+(it is a tab inside the project page) and its hours tile says "Hours on this page" when the list is longer
+than a page.

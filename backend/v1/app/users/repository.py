@@ -60,17 +60,75 @@ def find_credentials(username: str, conn=None) -> dict[str, Any] | None:
     return db.query_one(query, (username,), conn=conn)
 
 
-def list_users(*, role: str | None = None, manager_id: str | None = None, conn=None) -> list[dict[str, Any]]:
-    clauses, params = [], []
+NOT_ON_A_PROJECT = sql.SQL(
+    "role = 'employee' AND NOT EXISTS (SELECT 1 FROM project_members pm WHERE pm.user_id = users.id AND pm.is_active)"
+)
+
+
+def list_users(
+    *,
+    role: str | None = None,
+    manager_id: str | None = None,
+    q: str | None = None,
+    include_inactive: bool = False,
+    available_only: bool = False,
+    limit: int | None = None,
+    offset: int = 0,
+    conn=None,
+) -> tuple[list[dict[str, Any]], int]:
+    """One page of users plus the total that matches. `q` searches name, email and username, case-insensitively."""
+    clauses: list[sql.Composable] = []
+    params: dict[str, Any] = {}
     if role:
-        clauses.append(sql.SQL("role = %s"))
-        params.append(role)
+        clauses.append(sql.SQL("role = %(role)s"))
+        params["role"] = role
     if manager_id:
-        clauses.append(sql.SQL("manager_id = %s"))
-        params.append(manager_id)
+        clauses.append(sql.SQL("manager_id = %(manager_id)s"))
+        params["manager_id"] = manager_id
+    if q:
+        clauses.append(
+            sql.SQL(
+                "(lower(first_name || ' ' || last_name) LIKE %(q)s"
+                " OR lower(email) LIKE %(q)s OR lower(username) LIKE %(q)s)"
+            )
+        )
+        params["q"] = f"%{q.strip().lower()}%"
+    if not include_inactive:
+        clauses.append(sql.SQL("is_active"))
+    if available_only:
+        clauses.append(NOT_ON_A_PROJECT)
     where = sql.SQL("WHERE ") + sql.SQL(" AND ").join(clauses) if clauses else sql.SQL("")
-    query = sql.SQL("SELECT {cols} FROM users {where} ORDER BY last_name, first_name").format(cols=COLS, where=where)
-    return db.query(query, params, conn=conn)
+    paging = sql.SQL("")
+    if limit is not None:
+        paging = sql.SQL("LIMIT %(limit)s OFFSET %(offset)s")
+        params.update(limit=limit, offset=offset)
+    rows = db.query(
+        sql.SQL("SELECT {cols} FROM users {where} ORDER BY last_name, first_name, id {paging}").format(
+            cols=COLS, where=where, paging=paging
+        ),
+        params,
+        conn=conn,
+    )
+    total = db.query_one(sql.SQL("SELECT COUNT(*) AS n FROM users {where}").format(where=where), params, conn=conn)["n"]
+    return rows, int(total)
+
+
+def people_counts(conn=None) -> dict[str, int]:
+    """Active people by role, and how many employees are free — the Users page subtitle, independent of paging."""
+    rows = db.query(
+        sql.SQL(
+            """
+            SELECT role, COUNT(*) AS n, COUNT(*) FILTER (WHERE {free}) AS free
+            FROM users WHERE is_active GROUP BY role
+            """
+        ).format(free=NOT_ON_A_PROJECT),
+        conn=conn,
+    )
+    counts = {"admins": 0, "managers": 0, "employees": 0, "available": 0}
+    for r in rows:
+        counts[f"{r['role']}s"] = int(r["n"])
+        counts["available"] += int(r["free"])
+    return counts
 
 
 def membership_history(user_id: str, conn=None) -> list[dict[str, Any]]:

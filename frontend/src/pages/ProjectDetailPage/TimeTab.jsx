@@ -29,6 +29,7 @@ import { fullName } from '../../utils/roles.js'
 import { sumHours } from '../../utils/timeEntryForm.js'
 
 const RANGE_LABELS = { this: 'this week', last: 'last week' }
+const PAGE_SIZE = 25
 import TimeEntryDialog from './TimeEntryDialog.jsx'
 
 /** Logged time for a project: members see their own entries, managers/admins everyone's (ui-flow.md F6/F7). */
@@ -36,6 +37,7 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
   const { user: me } = useAuth()
   const [userId, setUserId] = useState('')
   const [range, setRange] = useState('all') // 'all' | 'this' | 'last'
+  const [page, setPage] = useState(0)
   const [logging, setLogging] = useState(false)
   const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
@@ -45,10 +47,25 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
   const canLog = writable && project.myMembership?.isActive === true
 
   const { data, loading, error, refetch } = useApi(
-    () => timeEntriesApi.list(project.id, { userId: userId || undefined, ...(range === 'all' ? {} : weekRange(range)) }),
-    [project.id, userId, range],
+    () =>
+      timeEntriesApi.list(project.id, {
+        userId: userId || undefined,
+        ...(range === 'all' ? {} : weekRange(range)),
+        limit: PAGE_SIZE,
+        offset: page * PAGE_SIZE,
+      }),
+    [project.id, userId, range, page],
   )
   const rows = data?.items ?? []
+  const total = data?.total ?? 0
+  const pickPerson = (id) => {
+    setUserId(id)
+    setPage(0)
+  }
+  const pickRange = (value) => {
+    setRange(value)
+    setPage(0)
+  }
   const people = canManage ? [...new Map(rows.map((e) => [e.user.id, e.user])).values()] : []
 
   const changed = () => {
@@ -117,7 +134,7 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
       <Stack direction="row" useFlexGap spacing={2} sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
         <Stack direction="row" useFlexGap spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
           {canManage ? (
-            <TextField select label="Person" size="small" value={userId} onChange={(e) => setUserId(e.target.value)} sx={{ width: 220 }}>
+            <TextField select label="Person" size="small" value={userId} onChange={(e) => pickPerson(e.target.value)} sx={{ width: 220 }}>
               <MenuItem value="">Everyone</MenuItem>
               {people.map((p) => (
                 <MenuItem key={p.id} value={p.id}>
@@ -130,7 +147,7 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
               {canLog ? 'Your logged time on this project.' : 'Your logged time on this project (read-only).'}
             </Typography>
           )}
-          <ToggleButtonGroup exclusive size="small" value={range} onChange={(_e, v) => v && setRange(v)} aria-label="Date range">
+          <ToggleButtonGroup exclusive size="small" value={range} onChange={(_e, v) => v && pickRange(v)} aria-label="Date range">
             <ToggleButton value="this">This week</ToggleButton>
             <ToggleButton value="last">Last week</ToggleButton>
             <ToggleButton value="all">All</ToggleButton>
@@ -145,9 +162,9 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, mb: 2 }}>
         <StatCard
           icon={<ScheduleOutlinedIcon />}
-          label="Hours logged"
+          label={total > rows.length ? 'Hours on this page' : 'Hours logged'}
           value={formatHours(sumHours(rows))}
-          hint={`${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}${range !== 'all' ? ` ${RANGE_LABELS[range]}` : ''}${canManage && userId ? ' for this person' : ''}`}
+          hint={`${total > rows.length ? `${rows.length} of ${total}` : total} entr${total === 1 ? 'y' : 'ies'}${range !== 'all' ? ` ${RANGE_LABELS[range]}` : ''}${canManage && userId ? ' for this person' : ''}`}
         />
         {!canManage && project.myMembership && (
           <StatCard icon={<FlagOutlinedIcon />} label="Assigned to you" value={formatHours(project.myMembership.hoursAssigned)} hint={`${formatHours(project.myMembership.hoursCompleted)} completed`} />
@@ -162,6 +179,7 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
         loading={loading}
         emptyMessage={canLog ? 'Nothing logged yet. Use "Log time" to add your first entry.' : 'No time logged yet.'}
         size="small"
+        pagination={{ page, pageSize: PAGE_SIZE, total, onPageChange: setPage }}
       />
       {canLog && (
         <TimeEntryDialog

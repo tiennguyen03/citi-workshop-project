@@ -1,6 +1,7 @@
 """Project endpoints (api-contract.md › Projects)."""
 
 from app.core.dto import parse
+from app.core.paging import parse_page
 from app.http import Request, Response, created, no_content, ok
 from app.projects import service
 from app.projects.schemas import AddMemberRequest, CreateProjectRequest, UpdateMemberRequest, UpdateProjectRequest
@@ -15,10 +16,17 @@ def _name(user: dict) -> str:
 
 
 def list_projects(request: Request) -> Response:
-    items = service.list_projects(
-        request.require_actor, archived=request.query.get("archived"), status=request.query.get("status") or None
+    limit, offset = parse_page(request.query)
+    return ok(
+        service.list_projects(
+            request.require_actor,
+            archived=request.query.get("archived"),
+            status=request.query.get("status") or None,
+            q=request.query.get("q") or None,
+            limit=limit,
+            offset=offset,
+        )
     )
-    return ok({"items": items, "total": len(items)})
 
 
 def create_project(request: Request) -> Response:

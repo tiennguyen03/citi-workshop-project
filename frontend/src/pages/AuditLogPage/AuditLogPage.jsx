@@ -27,7 +27,8 @@ import { fullName } from '../../utils/roles.js'
 const PAGE_SIZE = 50
 const ENTITY_TYPES = ['', 'user', 'project', 'milestone', 'goal', 'time_entry']
 /** Applied filters live in the URL (`/audit-log?actorId=…` is linked from a user's page); the form holds a draft. */
-const FILTER_DEFAULTS = { entityType: '', action: '', actorId: '', from: '', to: '' }
+const FILTER_DEFAULTS = { entityType: '', action: '', actorId: '', from: '', to: '', page: '1' }
+const { page: _defaultPage, ...appliedDefaults } = FILTER_DEFAULTS
 
 function DetailsCell({ entry }) {
   const [open, setOpen] = useState(false)
@@ -98,39 +99,27 @@ const COLUMNS = [
   },
 ]
 
-/** Admin-only audit trail with filters and "load more" paging (ui-flow.md F11). */
+/** Admin-only audit trail with filters and paging, all in the URL (ui-flow.md F11). */
 export default function AuditLogPage() {
   const { filters: applied, setFilters: applyToUrl } = useUrlFilters(FILTER_DEFAULTS)
-  const [filters, setFilters] = useState(applied)
-  const [offset, setOffset] = useState(0)
-  const [extra, setExtra] = useState([])
+  const { page: pageParam, ...appliedFilters } = applied
+  const page = Math.max(1, Number(pageParam) || 1)
+  const [filters, setFilters] = useState(appliedFilters)
 
   const { data, loading, error, refetch } = useApi(
-    () => auditApi.list({ ...applied, limit: PAGE_SIZE, offset: 0 }),
-    [applied],
+    () => auditApi.list({ ...appliedFilters, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
+    [appliedFilters, page],
   )
   const { data: actionsData } = useApi(() => auditApi.actions(), [])
-  const { data: peopleData } = useApi(() => usersApi.list(), [])
+  const { data: peopleData } = useApi(() => usersApi.list({ inactive: 'true', limit: 100 }), [])
   const actions = actionsData?.items ?? []
   const people = peopleData?.items ?? []
-  const rows = [...(data?.items ?? []), ...extra]
+  const rows = data?.items ?? []
   const total = data?.total ?? 0
-  const hasMore = rows.length < total
 
-  function commit(next) {
-    setExtra([])
-    setOffset(0)
-    applyToUrl(next)
-  }
+  const commit = (next) => applyToUrl({ ...next, page: '' })
   const apply = () => commit(filters)
   const select = (key, value) => setFilters((f) => ({ ...f, [key]: value }))
-
-  async function loadMore() {
-    const nextOffset = offset + PAGE_SIZE
-    const page = await auditApi.list({ ...applied, limit: PAGE_SIZE, offset: nextOffset })
-    setExtra((prev) => [...prev, ...page.items])
-    setOffset(nextOffset)
-  }
 
   return (
     <>
@@ -173,8 +162,8 @@ export default function AuditLogPage() {
             </Button>
             <Button
               onClick={() => {
-                setFilters(FILTER_DEFAULTS)
-                commit(FILTER_DEFAULTS)
+                setFilters(appliedDefaults)
+                commit(appliedDefaults)
               }}
             >
               Clear
@@ -183,12 +172,15 @@ export default function AuditLogPage() {
         </Stack>
       </Paper>
       <ErrorAlert error={error} onRetry={refetch} />
-      <DataTable columns={COLUMNS} rows={rows} getRowKey={(e) => e.id} loading={loading} emptyMessage="No actions match these filters." size="small" />
-      {hasMore && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          <Button onClick={loadMore}>Load more ({total - rows.length} remaining)</Button>
-        </Box>
-      )}
+      <DataTable
+        columns={COLUMNS}
+        rows={rows}
+        getRowKey={(e) => e.id}
+        loading={loading}
+        emptyMessage="No actions match these filters."
+        size="small"
+        pagination={{ page: page - 1, pageSize: PAGE_SIZE, total, onPageChange: (p) => applyToUrl({ page: String(p + 1) }) }}
+      />
     </>
   )
 }

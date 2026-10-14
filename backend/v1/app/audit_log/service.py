@@ -6,7 +6,7 @@ from app.audit_log import repository as default_repo
 from app.core import permissions
 from app.core.actor import Actor
 from app.core.audit import ACTIONS
-from app.core.errors import ValidationError
+from app.core.paging import int_param
 
 MAX_LIMIT = 200
 DEFAULT_LIMIT = 50
@@ -39,18 +39,6 @@ def entry_shape(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _int_param(value: str | None, name: str, default: int, maximum: int | None = None) -> int:
-    if value in (None, ""):
-        return default
-    try:
-        number = int(value)
-    except ValueError as exc:
-        raise ValidationError(f"{name} must be an integer", field=name) from exc
-    if number < 0 or (maximum is not None and number > maximum):
-        raise ValidationError(f"{name} must be between 0 and {maximum}", field=name)
-    return number
-
-
 def list_actions(actor: Actor) -> dict[str, Any]:
     """The action names an admin can filter by."""
     permissions.assert_can_view_audit_log(actor)
@@ -59,8 +47,8 @@ def list_actions(actor: Actor) -> dict[str, Any]:
 
 def list_entries(actor: Actor, query: dict[str, str], repo=default_repo) -> dict[str, Any]:
     permissions.assert_can_view_audit_log(actor)
-    limit = _int_param(query.get("limit"), "limit", DEFAULT_LIMIT, MAX_LIMIT) or DEFAULT_LIMIT
-    offset = _int_param(query.get("offset"), "offset", 0)
+    limit = int_param(query.get("limit"), "limit", DEFAULT_LIMIT, MAX_LIMIT) or DEFAULT_LIMIT
+    offset = int_param(query.get("offset"), "offset", 0)
     filters = {
         "actor_id": query.get("actorId"),
         "entity_type": query.get("entityType"),

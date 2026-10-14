@@ -7,6 +7,7 @@ from app.core import permissions
 from app.core.actor import Actor
 from app.core.errors import Conflict, Forbidden, NotFound, ValidationError
 from app.core.ids import new_id
+from app.core.paging import DEFAULT_LIMIT, page
 from app.projects import repository as projects_repo
 from app.projects import service as projects
 from app.time_entries import repository as default_repo
@@ -55,19 +56,18 @@ def list_entries(
     user_id: str | None,
     date_from: str | None,
     date_to: str | None,
+    limit: int = DEFAULT_LIMIT,
+    offset: int = 0,
     repo=default_repo,
-) -> list[dict[str, Any]]:
-    """Managers/admins see everyone's entries (optionally one person's); members see only their own."""
+) -> dict[str, Any]:
+    """One page of entries. Managers/admins see everyone's (optionally one person's); members see only their own."""
     project = projects.require_visible(actor, project_id)
     if not permissions.manages_project(actor, project):
         user_id = actor.id
-    rows = repo.list_entries(
-        project_id,
-        user_id=user_id,
-        date_from=_parse_date(date_from, "from"),
-        date_to=_parse_date(date_to, "to"),
-    )
-    return [time_entry_shape(r) for r in rows]
+    filters = {"user_id": user_id, "date_from": _parse_date(date_from, "from"), "date_to": _parse_date(date_to, "to")}
+    rows = repo.list_entries(project_id, **filters, limit=limit, offset=offset)
+    total = repo.count_entries(project_id, **filters)
+    return page([time_entry_shape(r) for r in rows], total, limit, offset)
 
 
 # ---- write -----------------------------------------------------------------------

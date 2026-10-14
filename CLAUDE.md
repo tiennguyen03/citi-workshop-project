@@ -39,7 +39,8 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 - `frontend/vitest.config.js`, `frontend/src/{auth,components,hooks,pages,services,test,utils}/`,
   `frontend/src/theme.js`; `App.jsx`, `main.jsx`, `index.css` replaced (Vite demo removed).
   Slice 7 added `utils/dates.js` (all calendar-date math; `todayISO` is re-exported from `timeEntryForm.js`),
-  `utils/listFilters.js`, `utils/milestones.js`, `hooks/useUrlFilters.js`, `components/{DueTag,ListToolbar}`.
+  `utils/milestones.js`, `hooks/useUrlFilters.js`, `components/{DueTag,ListToolbar}`; slice 13 added
+  `hooks/useDebouncedValue.js` and `backend/v1/app/core/paging.py`.
 - `frontend/playwright.config.js`, `frontend/e2e/` — browser suite (`npm run test:e2e` with the local stack up).
   Each spec creates its own manager/employees/projects through the API (`e2e/support/api.js`), so it reruns
   without reseeding; it adds a few `e2e.*`/`mgr.*`/`emp.*` users each run (reseed to clear). Results go to
@@ -69,7 +70,9 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
   `overdueLabel`/`overdueTone` for "Past end date"); never compare dates inline. Date math only through
   `utils/dates.js` (`todayISO`, `addDays`, `daysUntil`, `dueStatus`, `weekRange`), never `new Date('YYYY-MM-DD')`.
 - List pages use `ListToolbar` (search + controls) with `useUrlFilters(FILTER_DEFAULTS)` (module-level
-  constant) so filters are deep-linkable; filtering itself is pure (`utils/listFilters.js`). The project
+  constant) so filters are deep-linkable; search and filters are query parameters the API resolves (D23),
+  one page (25 rows) at a time with `page` in the URL and `DataTable`'s `pagination` footer. Callers that need
+  every row of a kind (manager pickers, the audit log's actor list) pass `limit: 100`. The project
   page's tab is `?tab=members|milestones|time`; link to it instead of asking the user to click a tab.
   To change several filters at once use `setFilters({...})`, never `setFilter` in a loop: React Router's
   functional `setSearchParams` reads the params of the current render, so repeated calls keep only the last key.

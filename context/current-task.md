@@ -2,7 +2,7 @@
 
 > Only one feature is "current" at a time. Update this file when starting, progressing or finishing.
 
-## Status: 🔨 Slice 12 (dashboard) in progress on `slice-12-dashboard`
+## Status: ✅ Slice 13 (pagination) built on `slice-13-pagination`; redeploy to AWS pending
 
 ## Plan (3 days) — each item is a thin vertical slice
 
@@ -20,15 +20,17 @@
 | 9 | People & audit: user page "Reports to" + project history; audit log action/actor pickers (`GET /users/{id}` grows, `GET /audit-log/actions`) | pre-demo | **done** |
 | 10 | Visual identity (D20): serif display face for titles and figures, self-hosted fonts, sentence-case labels, no middle-dot strings, tile/section/table hierarchy, ink neutrals, two-part login, two copy fixes | pre-demo | **done** |
 | 11 | Polish from a role-by-role walkthrough: goal-assignee hint, "not your project" message, one people page per role, Manager column for admins, non-assignee hint on milestones, milestone start defaults to today, empty hours on add member, project name in Log time, fixed back links, readable audit actions; "who is on what" moved to the Members tab; New project is a dialog; icons; role as a fact | pre-demo | **done** |
-| 12 | Admin dashboard rebuilt around project health (D21): pillar tiles, health board worst-first, recent activity; manager cards get the health word and a team weekly total; seed keeps one finished unarchived project | pre-demo | **in progress** |
+| 12 | Admin dashboard rebuilt around project health (D21): pillar tiles, health board worst-first, recent activity; manager cards get the health word and a team weekly total; seed keeps one finished unarchived project | pre-demo | **done** |
+| 13 | Server-side paging and search (D23): `limit`/`offset`/`q` on users, projects and time entries, `Page<T>` shape, Users subtitle from an API `summary`; `DataTable` paging footer with the page in the URL, debounced search, audit log loses "Load more" | pre-demo | **done** |
 
-## Current slice: 12 — Dashboard (plan `~/.claude/plans/ethereal-cooking-blossom.md`, approved 2026-10-14)
+## Current slice: 13 — Pagination (agreed 2026-10-14: server-side, user said "go")
 
-**Done**: `_health` + `HEALTH_ORDER` in `dashboard/service.py`, cards carry `manager`, admin payload is
-`projects/summary/people/recentActivity` (`stats`/`attention` gone), unit matrix + rewritten integration tests, seed
-(Legacy VPN complete, not archived) + seed test; `utils/projectHealth.js`, `HealthTag`, AdminDashboard rebuilt,
-ManagerDashboard health word + team total, Users page subtitle with people counts; 96 frontend tests, 113 backend (97 %).
-**Remaining**: e2e, screenshot walk incl. archiving Legacy VPN live, commit + push on request.
+**Done**: `core/paging.py` (`parse_page`, `page`, 25/100), users/projects/time-entries repositories count + page in
+SQL with `q` search, users `summary` counts, audit log on the shared parser; contract `Page<T>`; `DataTable`
+`pagination` prop (MUI `TablePagination`), `useDebouncedValue`, Users/Projects/Time tab/Audit log paged with
+`page` in the URL, `listFilters.js` removed; tests updated, `e2e/lists.spec.js` added; docs D18/D23/ui-flow.
+133 backend tests (97 %), 93 frontend, 13 e2e; screenshot pass with 144 users / 333 audit rows, no console errors.
+**Remaining**: redeploy to AWS (API shape changed).
 **Blockers**: none.
 
 ## Slice 11 — Polish (done 2026-10-14)
@@ -111,6 +113,8 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-14 · **Slice 13 built** (branch `slice-13-pagination`, D23). Users, projects and time entries page on the server (`limit` ≤ 100, `offset`, `q` search in SQL, `Page<T>` shape, admin `summary` counts); the audit log shares the parser. `DataTable` gained a paging footer, the page number sits in the URL with the filters, search is debounced, "Load more" is gone, `utils/listFilters.js` deleted. 133 backend tests (97 %), 93 frontend, 13 e2e.
+- 2026-10-14 · **Slice 12 built** (branch `slice-12-dashboard`, D21). Admin dashboard is three pillar tiles (hours, budget, people) over a project health board sorted worst first (late, at risk, needs setup, done-not-archived, on track) plus recent activity; manager cards carry the health word and a team weekly total; seed leaves Legacy VPN complete and unarchived so there is something to close. 113 backend tests (97 %), 96 frontend, 12 e2e.
 - 2026-10-14 · **Deployed to AWS** (on `slice-12-dashboard`). `./bin/deploy-backend.sh aws` then `./bin/deploy-frontend.sh aws`, no manual steps beyond the workshop scripts. Site: https://d2f2rff70xkxny.cloudfront.net (CloudFront → S3 for the app, `/api/v1*` → the Lambda function URL). Lambda `coding-workshop-v1-ae7479c0` in us-east-2, 96 MB of 128 MB at cold start. Schema init + demo seed ran on the first request against Aurora (`codingworkshop` db). First requests after the 5-minute Aurora auto-pause failed with 502 (10 s connect timeout): cloud timeout raised to 45 s with one retry (`core/db.py`, unit-tested), redeployed. Known: the page title is the boilerplate's "hello-world" (`frontend/index.html` is read-only).
 - 2026-10-14 · **Icons and the role label** (on `slice-11-polish`). Following the MUI icon guidance (Outlined theme, decorative icons stay aria-hidden, muted colour, 20 px): `StatCard` takes an `icon` shown opposite the label; new `components/SectionHeading` (icon + title + aside) replaces the hand-rolled heading rows on the three dashboards; project tabs carry icons; the dashboard empty states get a green check. The role chip left the page-header button row on the user page and the profile; "Role" is now the first fact in the details panel. 93 frontend tests.
 - 2026-10-14 · **New project is a dialog** (on `slice-11-polish`). The only form in the app that lived on its own page (`/projects/new`, `ProjectFormPage`) is gone; `pages/ProjectsPage/ProjectDialog.jsx` handles create and edit (it replaces `ProjectEditDialog`), opened from "New project" on the Projects page and on the admin dashboard, landing on the new project afterwards. Tests moved; e2e creates from the dashboard button.

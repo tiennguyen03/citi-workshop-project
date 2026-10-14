@@ -52,14 +52,49 @@ SUMMARY_SELECT = sql.SQL(
     FROM projects p JOIN users u ON u.id = p.manager_id
     {where}
     ORDER BY p.archived, p.status, p.start_date DESC, p.name
+    {paging}
     """
 )
 
 
-def _select(where: sql.Composable) -> sql.Composed:
+NO_PAGING = sql.SQL("")
+
+
+def _select(where: sql.Composable, paging: sql.Composable = NO_PAGING) -> sql.Composed:
     return SUMMARY_SELECT.format(
-        pcols=PCOLS, counted=COUNTED_MEMBER, hours_per_year=sql.Literal(HOURS_PER_YEAR), where=where
+        pcols=PCOLS, counted=COUNTED_MEMBER, hours_per_year=sql.Literal(HOURS_PER_YEAR), where=where, paging=paging
     )
+
+
+def _filters(
+    *,
+    archived: bool | None,
+    status: str | None,
+    manager_id: str | None,
+    member_user_id: str | None,
+    q: str | None,
+) -> tuple[sql.Composable, dict[str, Any]]:
+    clauses: list[sql.Composable] = []
+    params: dict[str, Any] = {}
+    if archived is not None:
+        clauses.append(sql.SQL("p.archived = %(archived)s"))
+        params["archived"] = archived
+    if status:
+        clauses.append(sql.SQL("p.status = %(status)s"))
+        params["status"] = status
+    if manager_id:
+        clauses.append(sql.SQL("p.manager_id = %(manager_id)s"))
+        params["manager_id"] = manager_id
+    if member_user_id:
+        clauses.append(
+            sql.SQL("EXISTS (SELECT 1 FROM project_members x WHERE x.project_id = p.id AND x.user_id = %(member)s)")
+        )
+        params["member"] = member_user_id
+    if q:
+        clauses.append(sql.SQL("(lower(p.name) LIKE %(q)s OR lower(u.first_name || ' ' || u.last_name) LIKE %(q)s)"))
+        params["q"] = f"%{q.strip().lower()}%"
+    where = sql.SQL("WHERE ") + sql.SQL(" AND ").join(clauses) if clauses else sql.SQL("")
+    return where, params
 
 
 def find_by_id(project_id: str, conn=None) -> dict[str, Any] | None:
@@ -81,25 +116,40 @@ def list_summaries(
     status: str | None,
     manager_id: str | None = None,
     member_user_id: str | None = None,
+    q: str | None = None,
+    limit: int | None = None,
+    offset: int = 0,
     conn=None,
 ) -> list[dict[str, Any]]:
-    clauses, params = [], {}
-    if archived is not None:
-        clauses.append(sql.SQL("p.archived = %(archived)s"))
-        params["archived"] = archived
-    if status:
-        clauses.append(sql.SQL("p.status = %(status)s"))
-        params["status"] = status
-    if manager_id:
-        clauses.append(sql.SQL("p.manager_id = %(manager_id)s"))
-        params["manager_id"] = manager_id
-    if member_user_id:
-        clauses.append(
-            sql.SQL("EXISTS (SELECT 1 FROM project_members x WHERE x.project_id = p.id AND x.user_id = %(member)s)")
-        )
-        params["member"] = member_user_id
-    where = sql.SQL("WHERE ") + sql.SQL(" AND ").join(clauses) if clauses else sql.SQL("")
-    return db.query(_select(where), params, conn=conn)
+    """Project summaries, optionally one page of them. `q` searches the name and the manager's name."""
+    where, params = _filters(
+        archived=archived, status=status, manager_id=manager_id, member_user_id=member_user_id, q=q
+    )
+    paging = sql.SQL("")
+    if limit is not None:
+        paging = sql.SQL("LIMIT %(limit)s OFFSET %(offset)s")
+        params.update(limit=limit, offset=offset)
+    return db.query(_select(where, paging), params, conn=conn)
+
+
+def count_summaries(
+    *,
+    archived: bool | None,
+    status: str | None,
+    manager_id: str | None = None,
+    member_user_id: str | None = None,
+    q: str | None = None,
+    conn=None,
+) -> int:
+    where, params = _filters(
+        archived=archived, status=status, manager_id=manager_id, member_user_id=member_user_id, q=q
+    )
+    row = db.query_one(
+        sql.SQL("SELECT COUNT(*) AS n FROM projects p JOIN users u ON u.id = p.manager_id {where}").format(where=where),
+        params,
+        conn=conn,
+    )
+    return int(row["n"])
 
 
 def name_exists(name: str, exclude_id: str | None = None, conn=None) -> bool:

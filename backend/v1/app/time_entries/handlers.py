@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 from app.core.dto import parse
+from app.core.paging import parse_page
 from app.http import Request, Response, created, no_content, ok
 from app.time_entries import service
 from app.time_entries.schemas import CreateTimeEntryRequest, UpdateTimeEntryRequest
@@ -18,14 +19,18 @@ def _hours(value) -> str:
 
 
 def list_entries(request: Request) -> Response:
-    items = service.list_entries(
-        request.require_actor,
-        request.path_params["id"],
-        user_id=request.query.get("userId") or None,
-        date_from=request.query.get("from") or None,
-        date_to=request.query.get("to") or None,
+    limit, offset = parse_page(request.query)
+    return ok(
+        service.list_entries(
+            request.require_actor,
+            request.path_params["id"],
+            user_id=request.query.get("userId") or None,
+            date_from=request.query.get("from") or None,
+            date_to=request.query.get("to") or None,
+            limit=limit,
+            offset=offset,
+        )
     )
-    return ok({"items": items, "total": len(items)})
 
 
 def create_entry(request: Request) -> Response:

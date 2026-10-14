@@ -20,9 +20,9 @@ const EMPLOYEE = {
   managerId: 'MGR001',
   currentProject: null,
 }
-
-const RETIRED = { ...EMPLOYEE, id: 'EMP009', firstName: 'Old', lastName: 'Timer', email: 'old@x.com', isActive: false }
-const BUSY = { ...EMPLOYEE, id: 'EMP002', firstName: 'Max', lastName: 'New', email: 'max@x.com', currentProject: { id: 'PRJ001', name: 'Decommission' } }
+const SUMMARY = { admins: 0, managers: 1, employees: 1, available: 1 }
+const pageOf = (items, extra = {}) => ({ items, total: items.length, limit: 25, offset: 0, summary: SUMMARY, ...extra })
+const lastQuery = () => usersApi.list.mock.calls.at(-1)[0]
 
 function renderPage(role = 'admin', url = '/users') {
   return render(
@@ -42,8 +42,8 @@ describe('UsersPage', () => {
     vi.resetAllMocks()
   })
 
-  it('lists users for an admin with a create button', async () => {
-    usersApi.list.mockResolvedValue({ items: [MANAGER, EMPLOYEE], total: 2 })
+  it('lists one page for an admin, with the office counts and the manager column', async () => {
+    usersApi.list.mockResolvedValue(pageOf([MANAGER, EMPLOYEE]))
     renderPage('admin')
     expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
     expect(screen.getByText('2 people: 1 manager, 1 employee, 1 available')).toBeInTheDocument()
@@ -51,41 +51,49 @@ describe('UsersPage', () => {
     expect(screen.getByRole('columnheader', { name: 'Manager' })).toBeInTheDocument()
     expect(screen.getByText('Available')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /new user/i })).toBeInTheDocument()
+    expect(usersApi.list).toHaveBeenCalledWith(expect.objectContaining({ limit: 25, offset: 0 }))
   })
 
-  it('hides the create button for managers', async () => {
-    usersApi.list.mockResolvedValue({ items: [EMPLOYEE], total: 1 })
+  it('hides the create button and the manager column for managers', async () => {
+    usersApi.list.mockResolvedValue(pageOf([EMPLOYEE], { summary: null }))
     renderPage('manager')
     expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /new user/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('columnheader', { name: 'Manager' })).not.toBeInTheDocument()
   })
 
-  it('hides deactivated accounts until asked, and searches by email', async () => {
+  it('sends filters and search to the API and keeps them in the URL', async () => {
     const user = userEvent.setup()
-    usersApi.list.mockResolvedValue({ items: [MANAGER, EMPLOYEE, RETIRED], total: 3 })
+    usersApi.list.mockResolvedValue(pageOf([MANAGER, EMPLOYEE]))
     renderPage('admin')
     await screen.findByText('Eve Employee')
-    expect(screen.queryByText('Old Timer')).not.toBeInTheDocument()
     await user.click(screen.getByLabelText(/show deactivated/i))
-    expect(await screen.findByText('Old Timer')).toBeInTheDocument()
-    expect(screen.getByText('3 of 3 users')).toBeInTheDocument()
+    await waitFor(() => expect(lastQuery()).toEqual(expect.objectContaining({ inactive: 'true', offset: 0 })))
     await user.type(screen.getByRole('searchbox', { name: /search/i }), 'old@')
-    expect(screen.queryByText('Eve Employee')).not.toBeInTheDocument()
-    expect(screen.getByText('Old Timer')).toBeInTheDocument()
+    await waitFor(() => expect(lastQuery()).toEqual(expect.objectContaining({ q: 'old@', inactive: 'true' })))
+    expect(screen.getByText('2 people match')).toBeInTheDocument()
   })
 
-  it('shows only free employees when linked with ?available=true', async () => {
-    usersApi.list.mockResolvedValue({ items: [MANAGER, EMPLOYEE, BUSY], total: 3 })
-    renderPage('admin', '/users?available=true')
+  it('reads ?available=true and the page from the URL', async () => {
+    usersApi.list.mockResolvedValue(pageOf([EMPLOYEE], { total: 30, offset: 25 }))
+    renderPage('admin', '/users?available=true&page=2')
     expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
-    expect(screen.queryByText('Max New')).not.toBeInTheDocument()
-    expect(screen.queryByText('mia@x.com')).not.toBeInTheDocument() // the manager's own row is gone; her name still shows in Eve's Manager column
+    expect(usersApi.list).toHaveBeenCalledWith(expect.objectContaining({ available: 'true', limit: 25, offset: 25 }))
     expect(screen.getByLabelText(/available only/i)).toBeChecked()
+    expect(screen.getByText('26–30 of 30')).toBeInTheDocument()
+  })
+
+  it('pages with the footer', async () => {
+    const user = userEvent.setup()
+    usersApi.list.mockResolvedValue(pageOf([MANAGER, EMPLOYEE], { total: 40 }))
+    renderPage('admin')
+    expect(await screen.findByText('1–25 of 40')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /next page/i }))
+    await waitFor(() => expect(lastQuery()).toEqual(expect.objectContaining({ offset: 25 })))
   })
 
   it('shows the empty state and the error state', async () => {
-    usersApi.list.mockResolvedValue({ items: [], total: 0 })
+    usersApi.list.mockResolvedValue(pageOf([]))
     const { unmount } = renderPage('admin')
     expect(await screen.findByText('No users yet.')).toBeInTheDocument()
     unmount()
@@ -96,7 +104,7 @@ describe('UsersPage', () => {
   })
 
   it('navigates to the detail page on row click', async () => {
-    usersApi.list.mockResolvedValue({ items: [EMPLOYEE], total: 1 })
+    usersApi.list.mockResolvedValue(pageOf([EMPLOYEE]))
     renderPage('admin')
     await userEvent.setup().click(await screen.findByText('Eve Employee'))
     expect(screen.getByText('detail page')).toBeInTheDocument()
@@ -104,7 +112,7 @@ describe('UsersPage', () => {
 
   it('creates an employee through the dialog', async () => {
     const user = userEvent.setup()
-    usersApi.list.mockResolvedValue({ items: [MANAGER], total: 1 })
+    usersApi.list.mockResolvedValue(pageOf([MANAGER]))
     usersApi.create.mockResolvedValue({ ...EMPLOYEE, id: 'NEW001' })
     renderPage('admin')
     await user.click(await screen.findByRole('button', { name: /new user/i }))
@@ -135,12 +143,12 @@ describe('UsersPage', () => {
       managerId: 'MGR001',
     })
     expect(await screen.findByText('Created Eve Employee')).toBeInTheDocument()
-    expect(usersApi.list).toHaveBeenCalledTimes(2) // refetched
+    await waitFor(() => expect(usersApi.list).toHaveBeenCalledTimes(3)) // page + managers, then the page again
   })
 
   it('shows client-side validation errors before calling the API', async () => {
     const user = userEvent.setup()
-    usersApi.list.mockResolvedValue({ items: [MANAGER], total: 1 })
+    usersApi.list.mockResolvedValue(pageOf([MANAGER]))
     renderPage('admin')
     await user.click(await screen.findByRole('button', { name: /new user/i }))
     await user.click(screen.getByRole('button', { name: /create user/i }))

@@ -27,7 +27,7 @@ export default function DashboardPage() {
   const { data, loading, error, refetch } = useApi(() => dashboardApi.get(), [user.id])
   const isAdmin = user.role === ROLES.ADMIN
   const [creating, setCreating] = useState(false)
-  const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER }) : Promise.resolve(null)), [isAdmin])
+  const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER, limit: 100 }) : Promise.resolve(null)), [isAdmin])
   const managers = (managersData?.items ?? []).filter((m) => m.isActive !== false)
 
   return (

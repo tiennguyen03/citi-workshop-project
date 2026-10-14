@@ -138,9 +138,12 @@ def test_list_scopes_members_to_their_own_entries(project, monkeypatch):
     seen = {}
 
     class ListRepo(FakeRepo):
-        def list_entries(self, project_id, *, user_id=None, date_from=None, date_to=None):
+        def list_entries(self, project_id, *, user_id=None, date_from=None, date_to=None, limit=None, offset=0):
             seen.update(user_id=user_id, date_from=date_from, date_to=date_to)
             return [_row()]
+
+        def count_entries(self, project_id, *, user_id=None, date_from=None, date_to=None):
+            return 1
 
     repo = ListRepo()
     service.list_entries(EMP, "PRJ001", user_id="EMP002", date_from="2026-10-01", date_to=None, repo=repo)

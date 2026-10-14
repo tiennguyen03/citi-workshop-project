@@ -64,6 +64,41 @@ def test_list_users_scoping(org):
     assert call("GET", "/api/v1/users", token=org["e1_token"])[0] == 403
 
 
+def test_users_paging_search_and_people_counts(org):
+    admin = org["admin"]
+    status, body = call("GET", "/api/v1/users?limit=2&offset=0", token=admin)
+    assert status == 200 and len(body["items"]) == 2 and body["total"] == 6
+    assert body["limit"] == 2 and body["offset"] == 0
+    assert body["summary"] == {"admins": 1, "managers": 2, "employees": 3, "available": 3}
+    rest = call("GET", "/api/v1/users?limit=2&offset=4", token=admin)[1]
+    assert len(rest["items"]) == 2 and rest["total"] == 6
+    assert call("GET", "/api/v1/users?limit=101", token=admin)[0] == 400
+    assert call("GET", "/api/v1/users?offset=-1", token=admin)[0] == 400
+    # search covers name, email and username; filters compose
+    assert {u["username"] for u in call("GET", "/api/v1/users?q=emp", token=admin)[1]["items"]} == {
+        "emp1",
+        "emp2",
+        "emp3",
+    }
+    assert [u["username"] for u in call("GET", "/api/v1/users?q=e3@example", token=admin)[1]["items"]] == ["emp3"]
+    assert [
+        u["username"]
+        for u in call("GET", "/api/v1/users?q=EMP&role=employee&managerId=" + org["mgr2"]["id"], token=admin)[1][
+            "items"
+        ]
+    ] == ["emp3"]
+    assert call("GET", "/api/v1/users?available=true", token=admin)[1]["total"] == 3
+    # deactivated people drop out unless asked for
+    assert call("PATCH", f"/api/v1/users/{org['e3']['id']}", {"isActive": False}, token=admin)[0] == 200
+    assert call("GET", "/api/v1/users", token=admin)[1]["total"] == 5
+    assert call("GET", "/api/v1/users?inactive=true", token=admin)[1]["total"] == 6
+    assert call("GET", "/api/v1/users", token=admin)[1]["summary"]["employees"] == 2
+    # a manager's page is cut from their own people, with no office-wide counts
+    mine = call("GET", "/api/v1/users?limit=2&offset=1", token=org["mgr_token"])[1]
+    assert mine["total"] == 3 and len(mine["items"]) == 2 and mine["summary"] is None
+    assert [u["username"] for u in call("GET", "/api/v1/users?q=emp2", token=org["mgr_token"])[1]["items"]] == ["emp2"]
+
+
 def test_employee_edits_own_name_but_not_salary(org):
     e1 = org["e1"]["id"]
     status, body = call("PATCH", f"/api/v1/users/{e1}", {"firstName": "Renamed"}, token=org["e1_token"])

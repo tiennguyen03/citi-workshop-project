@@ -54,7 +54,7 @@ export default function UserDetailPage() {
   const [resetOpen, setResetOpen] = useState(false)
 
   const { data: user, loading, error, refetch } = useApi(() => usersApi.get(id), [id])
-  const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER }) : Promise.resolve(null)), [isAdmin])
+  const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER, limit: 100 }) : Promise.resolve(null)), [isAdmin])
   const managers = (managersData?.items ?? []).filter((m) => m.isActive !== false)
 
   const isSelf = user?.id === me.id

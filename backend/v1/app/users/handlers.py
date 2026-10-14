@@ -1,18 +1,26 @@
 """User endpoints (api-contract.md › Users)."""
 
 from app.core.dto import parse
+from app.core.paging import parse_page
 from app.http import Request, Response, created, ok
 from app.users import service
 from app.users.schemas import CreateUserRequest, UpdateUserRequest
 
 
 def list_users(request: Request) -> Response:
-    items = service.list_users(
-        request.require_actor,
-        role=request.query.get("role") or None,
-        manager_id=request.query.get("managerId") or None,
+    limit, offset = parse_page(request.query)
+    return ok(
+        service.list_users(
+            request.require_actor,
+            role=request.query.get("role") or None,
+            manager_id=request.query.get("managerId") or None,
+            q=request.query.get("q") or None,
+            include_inactive=request.query.get("inactive") == "true",
+            available_only=request.query.get("available") == "true",
+            limit=limit,
+            offset=offset,
+        )
     )
-    return ok({"items": items, "total": len(items)})
 
 
 def create_user(request: Request) -> Response:

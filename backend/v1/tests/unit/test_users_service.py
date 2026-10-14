@@ -21,13 +21,37 @@ class FakeRepo:
     def find_by_id(self, user_id):
         return dict(self.rows[user_id]) if user_id in self.rows else None
 
-    def list_users(self, role=None, manager_id=None):
-        rows = self.rows.values()
+    def list_users(
+        self, role=None, manager_id=None, q=None, include_inactive=False, available_only=False, limit=None, offset=0
+    ):
+        rows = list(self.rows.values())
         if role:
             rows = [r for r in rows if r["role"] == role]
         if manager_id:
             rows = [r for r in rows if r["manager_id"] == manager_id]
-        return [dict(r) for r in rows]
+        if not include_inactive:
+            rows = [r for r in rows if r["is_active"]]
+        if q:
+            rows = [
+                r
+                for r in rows
+                if q.lower() in f"{r['first_name']} {r['last_name']} {r['email']} {r['username']}".lower()
+            ]
+        if available_only:
+            rows = [r for r in rows if r["role"] == "employee" and r["id"] not in self.active_projects]
+        total = len(rows)
+        if limit is not None:
+            rows = rows[offset : offset + limit]
+        return [dict(r) for r in rows], total
+
+    def people_counts(self):
+        live = [r for r in self.rows.values() if r["is_active"]]
+        return {
+            "admins": sum(1 for r in live if r["role"] == "admin"),
+            "managers": sum(1 for r in live if r["role"] == "manager"),
+            "employees": sum(1 for r in live if r["role"] == "employee"),
+            "available": sum(1 for r in live if r["role"] == "employee" and r["id"] not in self.active_projects),
+        }
 
     def list_reports(self, manager_id, active_only=False):
         return [
@@ -107,16 +131,31 @@ def repo():
 
 
 def test_list_scoping(repo):
-    assert {u["id"] for u in service.list_users(ADMIN, repo=repo)} == set(repo.rows)
-    assert {u["id"] for u in service.list_users(MGR1, repo=repo)} == {"MGR001", "EMP001", "EMP002"}
-    assert {u["id"] for u in service.list_users(ADMIN, role="manager", repo=repo)} == {"MGR001", "MGR002"}
+    everyone = service.list_users(ADMIN, repo=repo)
+    assert {u["id"] for u in everyone["items"]} == set(repo.rows) and everyone["total"] == len(repo.rows)
+    assert everyone["summary"] == {"admins": 1, "managers": 2, "employees": 3, "available": 3}
+    mine = service.list_users(MGR1, repo=repo)
+    assert {u["id"] for u in mine["items"]} == {"MGR001", "EMP001", "EMP002"} and mine["summary"] is None
+    assert {u["id"] for u in service.list_users(ADMIN, role="manager", repo=repo)["items"]} == {"MGR001", "MGR002"}
     with pytest.raises(Forbidden):
         service.list_users(EMP1, repo=repo)
 
 
+def test_list_paging_and_search(repo):
+    repo.active_projects["EMP001"] = {"id": "PRJ001", "name": "Decom"}
+    first = service.list_users(ADMIN, limit=2, offset=0, repo=repo)
+    assert len(first["items"]) == 2 and first["total"] == 6 and first["limit"] == 2 and first["offset"] == 0
+    assert [u["id"] for u in service.list_users(ADMIN, q="emp2@", repo=repo)["items"]] == ["EMP002"]
+    assert {u["id"] for u in service.list_users(ADMIN, available_only=True, repo=repo)["items"]} == {"EMP002", "EMP003"}
+    # a manager's list is filtered and paged in Python over their own people
+    assert [u["id"] for u in service.list_users(MGR1, available_only=True, repo=repo)["items"]] == ["EMP002"]
+    second = service.list_users(MGR1, limit=1, offset=1, repo=repo)
+    assert second["total"] == 3 and len(second["items"]) == 1
+
+
 def test_salary_visibility(repo):
     repo.active_projects["EMP001"] = {"id": "PRJ001", "name": "Decom"}
-    by_id = {u["id"]: u for u in service.list_users(MGR1, repo=repo)}
+    by_id = {u["id"]: u for u in service.list_users(MGR1, repo=repo)["items"]}
     assert "salary" in by_id["EMP001"] and "salary" in by_id["MGR001"]
     assert by_id["EMP001"]["currentProject"] == {"id": "PRJ001", "name": "Decom"}
     assert by_id["EMP002"]["currentProject"] is None

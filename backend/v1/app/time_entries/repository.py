@@ -21,15 +21,9 @@ ENTRY_SELECT = sql.SQL(
 UPDATABLE_COLUMNS = frozenset({"entry_date", "hours", "note"})
 
 
-def list_entries(
-    project_id: str,
-    *,
-    user_id: str | None = None,
-    date_from: date | None = None,
-    date_to: date | None = None,
-    limit: int | None = None,
-    conn=None,
-) -> list[dict[str, Any]]:
+def _filters(
+    project_id: str, *, user_id: str | None, date_from: date | None, date_to: date | None
+) -> tuple[sql.Composable, dict[str, Any]]:
     clauses = [sql.SQL("t.project_id = %(pid)s")]
     params: dict[str, Any] = {"pid": project_id}
     if user_id:
@@ -41,12 +35,40 @@ def list_entries(
     if date_to:
         clauses.append(sql.SQL("t.entry_date <= %(date_to)s"))
         params["date_to"] = date_to
-    where = sql.SQL("WHERE ") + sql.SQL(" AND ").join(clauses)
+    return sql.SQL("WHERE ") + sql.SQL(" AND ").join(clauses), params
+
+
+def list_entries(
+    project_id: str,
+    *,
+    user_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    limit: int | None = None,
+    offset: int = 0,
+    conn=None,
+) -> list[dict[str, Any]]:
+    where, params = _filters(project_id, user_id=user_id, date_from=date_from, date_to=date_to)
     limit_sql = sql.SQL("")
     if limit is not None:
-        limit_sql = sql.SQL("LIMIT %(limit)s")
-        params["limit"] = limit
+        limit_sql = sql.SQL("LIMIT %(limit)s OFFSET %(offset)s")
+        params.update(limit=limit, offset=offset)
     return db.query(ENTRY_SELECT.format(where=where, limit=limit_sql), params, conn=conn)
+
+
+def count_entries(
+    project_id: str,
+    *,
+    user_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    conn=None,
+) -> int:
+    where, params = _filters(project_id, user_id=user_id, date_from=date_from, date_to=date_to)
+    row = db.query_one(
+        sql.SQL("SELECT COUNT(*) AS n FROM time_entries t {where}").format(where=where), params, conn=conn
+    )
+    return int(row["n"])
 
 
 def find_by_id(entry_id: str, conn=None) -> dict[str, Any] | None:

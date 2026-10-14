@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '@mui/material/Button'
 import FormControlLabel from '@mui/material/FormControlLabel'
@@ -16,15 +16,17 @@ import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
 import useApi from '../../hooks/useApi.js'
 import useAuth from '../../auth/useAuth.js'
+import useDebouncedValue from '../../hooks/useDebouncedValue.js'
 import useUrlFilters from '../../hooks/useUrlFilters.js'
 import * as projectsApi from '../../services/projects.js'
 import * as usersApi from '../../services/users.js'
 import { formatDate, formatHours } from '../../utils/format.js'
-import { filterProjects } from '../../utils/listFilters.js'
 import { ROLES, fullName } from '../../utils/roles.js'
 import ProjectDialog from './ProjectDialog.jsx'
 
-const FILTER_DEFAULTS = { q: '', status: '' }
+const PAGE_SIZE = 25
+/** Filters and the page live in the URL (`/projects?status=active&page=2`); the API does the searching and paging. */
+const FILTER_DEFAULTS = { q: '', status: '', archived: '', page: '1' }
 
 const COLUMNS = [
   { key: 'name', label: 'Project' },
@@ -61,26 +63,42 @@ export default function ProjectsPage() {
   const { user: me } = useAuth()
   const navigate = useNavigate()
   const isAdmin = me.role === ROLES.ADMIN
-  const [showArchived, setShowArchived] = useState(false)
   const [creating, setCreating] = useState(false)
-  const { filters, setFilter, isFiltered } = useUrlFilters(FILTER_DEFAULTS)
-  const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER }) : Promise.resolve(null)), [isAdmin])
+  const { filters, setFilters } = useUrlFilters(FILTER_DEFAULTS)
+  const page = Math.max(1, Number(filters.page) || 1)
+  const showArchived = filters.archived === 'true'
+  const isFiltered = Boolean(filters.q || filters.status)
+  const setFilter = (key, value) => setFilters({ [key]: value, page: '' })
+  const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER, limit: 100 }) : Promise.resolve(null)), [isAdmin])
   const managers = (managersData?.items ?? []).filter((m) => m.isActive !== false)
 
+  const [search, setSearch] = useState(filters.q)
+  const debounced = useDebouncedValue(search)
+  useEffect(() => {
+    if (debounced !== filters.q) setFilters({ q: debounced, page: '' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debounced])
+
   const { data, loading, error, refetch } = useApi(
-    () => projectsApi.list({ archived: showArchived ? 'true' : undefined }),
-    [showArchived],
+    () =>
+      projectsApi.list({
+        archived: showArchived ? 'true' : undefined,
+        status: filters.status || undefined,
+        q: filters.q || undefined,
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+      }),
+    [showArchived, filters.status, filters.q, page],
   )
-  const items = data?.items ?? []
-  const rows = filterProjects(items, filters)
-  const emptyMessage =
-    isFiltered && items.length > 0
-      ? 'No projects match your filters.'
-      : showArchived
-        ? 'No archived projects.'
-        : me.role === ROLES.EMPLOYEE
-          ? 'You are not on a project yet.'
-          : 'No projects yet.'
+  const rows = data?.items ?? []
+  const total = data?.total ?? 0
+  const emptyMessage = isFiltered
+    ? 'No projects match your filters.'
+    : showArchived
+      ? 'No archived projects.'
+      : me.role === ROLES.EMPLOYEE
+        ? 'You are not on a project yet.'
+        : 'No projects yet.'
 
   return (
     <>
@@ -95,7 +113,7 @@ export default function ProjectsPage() {
           ) : null
         }
       />
-      <ListToolbar search={filters.q} onSearchChange={(q) => setFilter('q', q)} placeholder="Name or manager">
+      <ListToolbar search={search} onSearchChange={setSearch} placeholder="Name or manager">
         <TextField select label="Status" size="small" value={filters.status} onChange={(e) => setFilter('status', e.target.value)} sx={{ width: 160 }}>
           <MenuItem value="">All</MenuItem>
           <MenuItem value="active">Active</MenuItem>
@@ -103,7 +121,7 @@ export default function ProjectsPage() {
         </TextField>
         {isAdmin && (
           <FormControlLabel
-            control={<Switch checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />}
+            control={<Switch checked={showArchived} onChange={(e) => setFilter('archived', e.target.checked ? 'true' : '')} />}
             label="Show archived"
           />
         )}
@@ -117,6 +135,7 @@ export default function ProjectsPage() {
         emptyMessage={emptyMessage}
         onRowClick={(p) => navigate(`/projects/${p.id}`)}
         size="small"
+        pagination={{ page: page - 1, pageSize: PAGE_SIZE, total, onPageChange: (p) => setFilters({ page: String(p + 1) }) }}
       />
       {isAdmin && (
         <ProjectDialog

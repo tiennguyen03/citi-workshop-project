@@ -67,15 +67,16 @@ describe('AuditLogPage', () => {
     expect(screen.getByText(/"username": "eve"/)).toBeInTheDocument()
   })
 
-  it('loads the next page and applies action + actor filters into the URL', async () => {
+  it('pages with the footer and applies action + actor filters into the URL', async () => {
     const user = userEvent.setup()
     auditApi.list.mockResolvedValue({ items: [ENTRY], total: 60 })
     renderPage()
-    const more = await screen.findByRole('button', { name: /load more/i })
+    expect(await screen.findByText('1–50 of 60')).toBeInTheDocument()
     auditApi.list.mockResolvedValue({ items: [{ ...ENTRY, id: 2, summary: 'second page' }], total: 60 })
-    await user.click(more)
+    await user.click(screen.getByRole('button', { name: /next page/i }))
     expect(await screen.findByText('second page')).toBeInTheDocument()
     expect(auditApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 50, limit: 50 }))
+    expect(screen.getByText('url ?page=2')).toBeInTheDocument()
 
     await user.click(screen.getByRole('combobox', { name: /action/i }))
     await user.click(await screen.findByRole('option', { name: /project\.archive/ }))
@@ -85,7 +86,7 @@ describe('AuditLogPage', () => {
     await waitFor(() =>
       expect(auditApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ action: 'project.archive', actorId: 'EMP001', offset: 0 })),
     )
-    expect(screen.getByText('url ?action=project.archive&actorId=EMP001')).toBeInTheDocument()
+    expect(screen.getByText('url ?action=project.archive&actorId=EMP001')).toBeInTheDocument() // filtering resets to page 1
     await user.click(screen.getByRole('button', { name: /clear/i }))
     await waitFor(() => expect(screen.getByText('url')).toBeInTheDocument())
     expect(auditApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ action: '', actorId: '', offset: 0 }))

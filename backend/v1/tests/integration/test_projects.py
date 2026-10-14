@@ -113,6 +113,27 @@ def test_visibility_and_cost_hiding(org):
     assert body["items"] == []
 
 
+def test_project_list_pages_and_searches(org):
+    for name in ("Alpha migration", "Beta portal", "Gamma cleanup"):
+        create_project(org["admin"], org["mgr"]["id"], name=name)
+    first = call("GET", "/api/v1/projects?limit=2", token=org["admin"])[1]
+    assert first["total"] == 3 and len(first["items"]) == 2 and first["limit"] == 2 and first["offset"] == 0
+    second = call("GET", "/api/v1/projects?limit=2&offset=2", token=org["admin"])[1]
+    assert len(second["items"]) == 1 and {p["name"] for p in first["items"] + second["items"]} == {
+        "Alpha migration",
+        "Beta portal",
+        "Gamma cleanup",
+    }
+    assert [p["name"] for p in call("GET", "/api/v1/projects?q=portal", token=org["admin"])[1]["items"]] == [
+        "Beta portal"
+    ]
+    # the manager's name is searchable too, and the manager only ever sees their own projects
+    by_manager = call("GET", f"/api/v1/projects?q={org['mgr']['lastName'].lower()}", token=org["mgr_token"])[1]
+    assert by_manager["total"] == 3
+    assert call("GET", "/api/v1/projects?q=portal", token=org["mgr2_token"])[1]["total"] == 0
+    assert call("GET", "/api/v1/projects?limit=0", token=org["admin"])[1]["limit"] == 25
+
+
 def test_member_rules(org):
     pid = create_project(org["admin"], org["mgr"]["id"])["id"]
     other = create_project(org["admin"], org["mgr2"]["id"], name="Other")["id"]
