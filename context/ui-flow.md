@@ -78,6 +78,13 @@ ProfilePage: first/last name, email editable; username, role, title, manager rea
 ## Components (reusable, no fetching)
 `AppShell`, `RoleGate`, `DataTable` (sortable columns, empty state), `StatCard`, `ProgressBar` (hours/capacity), `StatusChip` (project/milestone status, archived), `FormDialog`, `ConfirmDialog`, `UserSelect`, `ErrorAlert`, `PageHeader`.
 
+### Labels and bars (D24)
+Normal states (Active, Open, a person's role, a 200 result) are quiet dot-and-text labels; exceptions (Overdue,
+At risk, Archived, Deactivated, Available, a failed request) are tinted tags, so one exception stands out in a
+list of normal rows. Roles keep a coloured dot (indigo admin, ink manager, grey employee). Progress inside a table
+row is one line: bar, percentage, raw figures. Health on the admin board and manager cards is the one-word tag
+with the reasons as a muted line beneath. Section summaries sit under the section title; the right side holds actions.
+
 ### Paged lists (D23)
 Users, Projects, the project Time tab and the Audit log read one page at a time (25 rows; 50 on the audit
 log). `DataTable` shows the "26–50 of 112" footer with previous/next whenever the list has rows (arrows disabled on a single page).

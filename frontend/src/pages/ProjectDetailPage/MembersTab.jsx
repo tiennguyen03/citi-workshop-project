@@ -162,13 +162,13 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
     {
       key: 'hoursCompleted',
       label: 'Completed',
-      render: (m) => <ProgressBar value={m.hoursCompleted} max={m.hoursAssigned} caption={`${formatHours(m.hoursCompleted)} of ${formatHours(m.hoursAssigned)}`} />,
+      render: (m) => <ProgressBar layout="inline" value={m.hoursCompleted} max={m.hoursAssigned} caption={`${formatHours(m.hoursCompleted)} of ${formatHours(m.hoursAssigned)}`} />,
     },
     ...(hasCosts ? [{ key: 'costConsumed', label: 'Cost consumed', align: 'right', render: (m) => formatMoney(m.costConsumed) }] : []),
     {
       key: 'isActive',
       label: 'Status',
-      render: (m) => (m.isActive ? <Tag label="Active" tone="success" dot /> : <Tag label={`Released (${m.releasedReason})`} tone="neutral" />),
+      render: (m) => (m.isActive ? <Tag label="Active" tone="success" variant="quiet" /> : <Tag label={`Released (${m.releasedReason})`} tone="neutral" />),
     },
     ...(writable
       ? [

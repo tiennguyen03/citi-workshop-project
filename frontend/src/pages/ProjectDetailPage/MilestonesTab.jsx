@@ -12,6 +12,7 @@ import DataTable from '../../components/DataTable/DataTable.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
+import TitleCell from '../../components/TitleCell/TitleCell.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
 import useApi from '../../hooks/useApi.js'
@@ -26,21 +27,7 @@ const buildColumns = (nextDue) => [
   {
     key: 'name',
     label: 'Milestone',
-    render: (m) => (
-      <>
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            {m.name}
-          </Typography>
-          {m.id === nextDue && <Tag label="Next due" tone="primary" />}
-        </Stack>
-        {m.description && (
-          <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', maxWidth: 360 }}>
-            {m.description}
-          </Typography>
-        )}
-      </>
-    ),
+    render: (m) => <TitleCell title={m.name} caption={m.description} captionNoWrap adornment={m.id === nextDue && <Tag label="Next due" tone="primary" />} />,
   },
   {
     key: 'status',
@@ -62,7 +49,7 @@ const buildColumns = (nextDue) => [
           No goals yet
         </Typography>
       ) : (
-        <ProgressBar value={m.goalsDone} max={m.goalsTotal} caption={`${m.goalsDone} of ${m.goalsTotal} done`} />
+        <ProgressBar layout="inline" value={m.goalsDone} max={m.goalsTotal} caption={`${m.goalsDone} of ${m.goalsTotal} done`} />
       ),
   },
   {

@@ -81,10 +81,8 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Done, not archived')).toBeInTheDocument()
     expect(screen.getAllByText('Mia Manager')).toHaveLength(3)
     expect(screen.getByText('Overdue')).toBeInTheDocument() // next due on the at-risk row; complete rows carry no cue
-    expect(screen.getByText('Over budget')).toBeInTheDocument()
-    expect(screen.getByText('Overdue milestone')).toBeInTheDocument()
-    expect(screen.getByText('No members')).toBeInTheDocument()
-    expect(screen.getByText('No milestones')).toBeInTheDocument()
+    expect(screen.getByText('Over budget, overdue milestone')).toBeInTheDocument() // reasons as one muted line under the health tag
+    expect(screen.getByText('No members, no milestones')).toBeInTheDocument()
     expect(screen.getByText('Logged 6 h')).toBeInTheDocument()
     expect(screen.getByText('Logged time')).toBeInTheDocument()
     expect(screen.getByText('Failed login for ghost')).toBeInTheDocument()
@@ -119,7 +117,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Available')).toBeInTheDocument()
     expect(screen.getByText('16 h')).toBeInTheDocument()
     expect(screen.getByText('On track')).toBeInTheDocument()
-    expect(screen.getByText('16 h of 80 h logged this week')).toBeInTheDocument() // Eve + Quiet are on a project, Max is not
+    expect(screen.getByText(/16 h of 80 h logged in the week of/)).toBeInTheDocument() // Eve + Quiet are on a project, Max is not
     // due soon: the overdue one is flagged, the unassigned one says so, both link to the milestone
     expect(screen.getAllByText('Overdue')).toHaveLength(2) // card "Next due" + the Due soon row
     expect(screen.getByText('Unassigned')).toBeInTheDocument()
@@ -144,7 +142,7 @@ describe('DashboardPage', () => {
       week: WEEK,
     })
     renderPage({ id: 'EMP001', role: 'employee', firstName: 'Eve' })
-    expect(await screen.findByText('42 h of 40 h, over the 40-hour week')).toBeInTheDocument()
+    expect(await screen.findByText(/over the 40-hour week/)).toBeInTheDocument()
     expect(screen.getByText('Overdue')).toBeInTheDocument()
   })
 

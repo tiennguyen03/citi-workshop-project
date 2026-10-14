@@ -16,6 +16,7 @@ import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import PageHeader from '../../components/PageHeader/PageHeader.jsx'
 import RoleChip from '../../components/RoleChip/RoleChip.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
+import TitleCell from '../../components/TitleCell/TitleCell.jsx'
 import useApi from '../../hooks/useApi.js'
 import useUrlFilters from '../../hooks/useUrlFilters.js'
 import * as auditApi from '../../services/auditLog.js'
@@ -81,21 +82,15 @@ const COLUMNS = [
     key: 'action',
     label: 'Action',
     nowrap: true,
-    render: (e) => (
-      <Box>
-        <Typography variant="body2">{actionLabel(e.action)}</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-          {e.action}
-        </Typography>
-      </Box>
-    ),
+    render: (e) => <TitleCell title={actionLabel(e.action)} caption={e.action} />,
   },
   { key: 'summary', label: 'What happened', render: (e) => <DetailsCell entry={e} /> },
   {
     key: 'statusCode',
     label: 'Result',
-    align: 'right',
-    render: (e) => <Tag label={e.statusCode} tone={e.statusCode < 400 ? 'success' : 'error'} />,
+    numeric: true,
+    // a 2xx is the normal result (quiet, green dot); a failure is the exception worth a tinted tag
+    render: (e) => <Tag label={e.statusCode} tone={e.statusCode < 400 ? 'success' : 'error'} variant={e.statusCode < 400 ? 'quiet' : 'tinted'} />,
   },
 ]
 

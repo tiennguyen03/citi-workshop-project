@@ -1,8 +1,7 @@
 import PropTypes from 'prop-types'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Link from '@mui/material/Link'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined'
@@ -12,60 +11,33 @@ import MonitorHeartOutlinedIcon from '@mui/icons-material/MonitorHeartOutlined'
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
-import HealthTag from '../../components/HealthTag/HealthTag.jsx'
+import HealthSummary from '../../components/HealthSummary/HealthSummary.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import RoleChip from '../../components/RoleChip/RoleChip.jsx'
 import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
+import TitleCell from '../../components/TitleCell/TitleCell.jsx'
 import { actionLabel } from '../../utils/auditActions.js'
 import { formatDate, formatDateTime, formatHours, formatMoney } from '../../utils/format.js'
-import { REASON, summarizeHealth } from '../../utils/projectHealth.js'
+import { summarizeHealth } from '../../utils/projectHealth.js'
 import { fullName } from '../../utils/roles.js'
 
-/** Inner links on a clickable row: let the link navigate without the row also firing. */
-const stop = (e) => e.stopPropagation()
-
 const BOARD_COLUMNS = [
-  {
-    key: 'name',
-    label: 'Project',
-    render: (p) => (
-      <>
-        <Link component={RouterLink} to={`/projects/${p.id}`} underline="hover" color="inherit" sx={{ fontWeight: 500 }} onClick={stop}>
-          {p.name}
-        </Link>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-          {fullName(p.manager)}
-        </Typography>
-      </>
-    ),
-  },
-  {
-    key: 'health',
-    label: 'Health',
-    render: (p) => (
-      <Stack direction="row" useFlexGap spacing={0.75} sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-        <HealthTag health={p.health} />
-        {p.reasons.map((r) => (
-          <Tag key={r} label={REASON[r]?.label ?? r} tone={REASON[r]?.tone ?? 'neutral'} />
-        ))}
-      </Stack>
-    ),
-  },
+  { key: 'name', label: 'Project', render: (p) => <TitleCell title={p.name} to={`/projects/${p.id}`} caption={fullName(p.manager)} /> },
+  { key: 'health', label: 'Health', render: (p) => <HealthSummary health={p.health} reasons={p.reasons} /> },
   {
     key: 'progress',
     label: 'Progress',
     nowrap: true,
-    render: (p) => <ProgressBar value={p.hoursCompleted} max={p.capacityHours} caption={`${formatHours(p.hoursCompleted)} of ${formatHours(p.capacityHours)}`} />,
+    render: (p) => <ProgressBar layout="inline" value={p.hoursCompleted} max={p.capacityHours} caption={`${formatHours(p.hoursCompleted)} of ${formatHours(p.capacityHours)}`} />,
   },
   {
     key: 'budgetRemaining',
     label: 'Budget left',
-    align: 'right',
-    nowrap: true,
+    numeric: true,
     render: (p) => (
-      <Typography variant="body2" sx={{ color: Number(p.budgetRemaining) < 0 ? 'error.main' : 'text.primary', fontVariantNumeric: 'tabular-nums' }}>
+      <Typography variant="body2" component="span" sx={{ color: Number(p.budgetRemaining) < 0 ? 'error.main' : 'text.primary', fontVariantNumeric: 'tabular-nums' }}>
         {formatMoney(p.budgetRemaining)}
       </Typography>
     ),
@@ -117,8 +89,9 @@ const ACTIVITY_COLUMNS = [
         </Typography>
       ),
   },
-  { key: 'action', label: 'Action', nowrap: true, render: (e) => <Tag label={actionLabel(e.action)} tone={e.statusCode < 400 ? 'neutral' : 'error'} /> },
-  { key: 'summary', label: 'Summary' },
+  // a normal action is plain text; only a failure earns a tag
+  { key: 'action', label: 'Action', nowrap: true, render: (e) => (e.statusCode < 400 ? actionLabel(e.action) : <Tag label={actionLabel(e.action)} tone="error" />) },
+  { key: 'summary', label: 'Summary', muted: true },
 ]
 
 /**
@@ -137,7 +110,7 @@ export default function AdminDashboard({ data }) {
           label="Hours logged"
           value={formatHours(summary.hoursCompleted)}
           hint={`of ${formatHours(summary.capacityHours)} capacity on active projects`}
-          footer={<ProgressBar value={summary.hoursCompleted} max={summary.capacityHours} caption={`${formatHours(summary.hoursCompleted)} of ${formatHours(summary.capacityHours)}`} />}
+          progress={{ value: summary.hoursCompleted, max: summary.capacityHours, caption: `${formatHours(summary.hoursCompleted)} of ${formatHours(summary.capacityHours)}` }}
         />
         <StatCard
           icon={<AccountBalanceWalletOutlinedIcon />}
@@ -145,36 +118,19 @@ export default function AdminDashboard({ data }) {
           value={formatMoney(summary.costConsumed)}
           color={overBudget ? 'error.main' : 'text.primary'}
           hint={`of ${formatMoney(summary.budget)} planned on active projects`}
-          footer={<ProgressBar value={summary.costConsumed} max={summary.budget} caption={`${formatMoney(summary.costConsumed)} of ${formatMoney(summary.budget)}`} />}
+          progress={{ value: summary.costConsumed, max: summary.budget, caption: `${formatMoney(summary.costConsumed)} of ${formatMoney(summary.budget)}` }}
         />
         <StatCard
           icon={<EventAvailableOutlinedIcon />}
           label="People"
           value={`${people.available} available`}
-          color={people.available > 0 ? 'success.main' : 'text.primary'}
           hint={`of ${people.employees} employee${people.employees === 1 ? '' : 's'}, ${people.onProject} on a project. Open the list`}
           to="/users?available=true"
         />
       </Box>
       <Box>
-        <SectionHeading
-          icon={<MonitorHeartOutlinedIcon />}
-          title="Project health"
-          sx={{ flexWrap: 'wrap' }}
-          aside={
-            <Typography variant="caption" color="text.secondary">
-              {summarizeHealth(summary.projects)}
-            </Typography>
-          }
-        />
-        <DataTable
-          columns={BOARD_COLUMNS}
-          rows={projects}
-          getRowKey={(p) => p.id}
-          emptyMessage="No projects yet. Create one to start the board."
-          onRowClick={(p) => navigate(`/projects/${p.id}`)}
-          size="small"
-        />
+        <SectionHeading icon={<MonitorHeartOutlinedIcon />} title="Project health" description={summarizeHealth(summary.projects)} />
+        <DataTable columns={BOARD_COLUMNS} rows={projects} getRowKey={(p) => p.id} emptyMessage="No projects yet. Create one to start the board." onRowClick={(p) => navigate(`/projects/${p.id}`)} />
       </Box>
       <Box>
         <SectionHeading
@@ -186,7 +142,7 @@ export default function AdminDashboard({ data }) {
             </Button>
           }
         />
-        <DataTable columns={ACTIVITY_COLUMNS} rows={recentActivity} getRowKey={(e) => e.id} emptyMessage="Nothing recorded yet." size="small" />
+        <DataTable columns={ACTIVITY_COLUMNS} rows={recentActivity} getRowKey={(e) => e.id} emptyMessage="Nothing recorded yet." />
       </Box>
     </Stack>
   )

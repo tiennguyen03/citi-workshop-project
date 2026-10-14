@@ -118,7 +118,7 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
                     {teammates.length === 0 ? 'Just you on this milestone' : 'With'}
                   </Typography>
                   {teammates.map((a) => (
-                    <Tag key={a.id} label={fullName(a)} />
+                    <Tag key={a.id} label={fullName(a)} variant="quiet" />
                   ))}
                 </Stack>
               )}
@@ -150,15 +150,8 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
           label="Hours this week"
           value={formatHours(weekHours)}
           color={overWeek ? 'warning.main' : 'text.primary'}
-          hint={`${formatDate(week.start)} – ${formatDate(week.end)}`}
-          footer={
-            <ProgressBar
-              value={weekHours}
-              max={HOURS_PER_WEEK}
-              color={overWeek ? 'warning' : 'primary'}
-              caption={overWeek ? `${formatHours(weekHours)} of ${HOURS_PER_WEEK} h, over the ${HOURS_PER_WEEK}-hour week` : `${formatHours(weekHours)} of ${HOURS_PER_WEEK} h`}
-            />
-          }
+          hint={overWeek ? `over the ${HOURS_PER_WEEK}-hour week, ${formatDate(week.start)} – ${formatDate(week.end)}` : `of ${HOURS_PER_WEEK} h, ${formatDate(week.start)} – ${formatDate(week.end)}`}
+          progress={{ value: weekHours, max: HOURS_PER_WEEK, color: overWeek ? 'warning' : 'primary', caption: `${formatHours(weekHours)} of ${HOURS_PER_WEEK} h` }}
         />
       </Box>
 

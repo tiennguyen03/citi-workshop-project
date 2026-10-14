@@ -3,14 +3,16 @@ import { Link as RouterLink } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
+import ProgressBar from '../ProgressBar/ProgressBar.jsx'
 
 /**
  * Single headline figure with a label and optional hint. Tiles sit flat on a tinted ground (no border), so
  * they read as numbers rather than as yet another card; bordered Paper is kept for sections and tables (D20).
- * `to` turns the tile into a link (the number is a shortcut to the list behind it); `footer` sits under
- * the hint, e.g. a ProgressBar.
+ * The figure is the largest thing on the tile (h3 scale); the label and hint are one muted line each (D24).
+ * `to` turns the tile into a link (the number is a shortcut to the list behind it); `progress` draws a bar
+ * without a caption (the hint already says the numbers); `footer` is for anything else under the hint.
  */
-export default function StatCard({ label, value, hint, color = 'text.primary', to, footer, icon }) {
+export default function StatCard({ label, value, hint, color = 'text.primary', to, footer, icon, progress }) {
   const linkProps = to ? { component: RouterLink, to, sx: { textDecoration: 'none', color: 'inherit', '&:hover': { bgcolor: 'action.selected' } } } : {}
   return (
     <Paper {...linkProps} variant="elevation" elevation={0} sx={{ p: 2.5, minWidth: 0, display: 'block', bgcolor: 'background.default', ...linkProps.sx }}>
@@ -20,13 +22,18 @@ export default function StatCard({ label, value, hint, color = 'text.primary', t
         </Typography>
         {icon && <Box sx={{ display: 'flex', color: 'text.secondary', '& svg': { fontSize: 20 } }}>{icon}</Box>}
       </Box>
-      <Typography variant="h4" component="p" sx={{ color, mt: 0.5 }} noWrap>
+      <Typography variant="h3" component="p" sx={{ color, mt: 0.75 }} noWrap>
         {value}
       </Typography>
       {hint && (
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
           {hint}
         </Typography>
+      )}
+      {progress && (
+        <Box sx={{ mt: 1.5 }}>
+          <ProgressBar value={progress.value} max={progress.max} color={progress.color} caption={progress.caption} showCaption={false} />
+        </Box>
       )}
       {footer && <Box sx={{ mt: 1.5 }}>{footer}</Box>}
     </Paper>
@@ -41,4 +48,10 @@ StatCard.propTypes = {
   to: PropTypes.string,
   footer: PropTypes.node,
   icon: PropTypes.node,
+  progress: PropTypes.shape({
+    value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    max: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    color: PropTypes.oneOf(['auto', 'primary', 'warning', 'error']),
+    caption: PropTypes.node, // used for the bar's accessible name only
+  }),
 }

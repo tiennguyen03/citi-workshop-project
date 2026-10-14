@@ -42,12 +42,12 @@ const COLUMNS = [
   },
   { key: 'manager', label: 'Manager', render: (p) => fullName(p.manager) },
   { key: 'dates', label: 'Dates', nowrap: true, render: (p) => `${formatDate(p.startDate)} – ${formatDate(p.endDate)}` },
-  { key: 'memberCount', label: 'Team', align: 'right' },
+  { key: 'memberCount', label: 'Team', numeric: true },
   {
     key: 'hours',
     label: 'Hours completed',
     render: (p) => (
-      <ProgressBar value={p.hoursCompleted} max={p.capacityHours} caption={`${formatHours(p.hoursCompleted)} of ${formatHours(p.capacityHours)}`} />
+      <ProgressBar layout="inline" value={p.hoursCompleted} max={p.capacityHours} caption={`${formatHours(p.hoursCompleted)} of ${formatHours(p.capacityHours)}`} />
     ),
   },
 ]

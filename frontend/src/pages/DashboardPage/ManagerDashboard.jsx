@@ -12,12 +12,11 @@ import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
-import HealthTag from '../../components/HealthTag/HealthTag.jsx'
+import HealthSummary from '../../components/HealthSummary/HealthSummary.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
 import { formatDate, formatHours, formatMoney } from '../../utils/format.js'
-import { REASON } from '../../utils/projectHealth.js'
 import { fullName } from '../../utils/roles.js'
 
 /** The 40-hour week each report is measured against (requirements.md). */
@@ -132,12 +131,10 @@ export default function ManagerDashboard({ data }) {
                       </Link>
                     </Typography>
                   </Box>
-                  <Stack direction="row" useFlexGap spacing={0.75} sx={{ flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '60%' }}>
+                  <Stack direction="row" useFlexGap spacing={1.5} sx={{ flexShrink: 0, alignItems: 'flex-start', justifyContent: 'flex-end', maxWidth: '55%' }}>
                     <StatusChip status={p.status} />
-                    {p.health && p.health !== 'to_close' && <HealthTag health={p.health} />}
-                    {p.reasons.map((r) => (
-                      <Tag key={r} label={REASON[r].label} tone={REASON[r].tone} />
-                    ))}
+                    {/* a complete project's status already says it; the reasons still read (e.g. over budget) */}
+                    {p.health && <HealthSummary health={p.health} reasons={p.reasons} hideTag={p.health === 'to_close'} align="right" />}
                   </Stack>
                 </Stack>
                 <ProgressBar value={p.hoursCompleted} max={p.capacityHours} caption={`${formatHours(p.hoursCompleted)} completed of ${formatHours(p.capacityHours)} capacity`} />
@@ -181,15 +178,7 @@ export default function ManagerDashboard({ data }) {
         )}
       </Box>
       <Box>
-        <SectionHeading
-          icon={<EventOutlinedIcon />}
-          title="Due soon"
-          aside={
-            <Typography variant="caption" color="text.secondary">
-              Open milestones overdue or due within 7 days
-            </Typography>
-          }
-        />
+        <SectionHeading icon={<EventOutlinedIcon />} title="Due soon" description="Open milestones overdue or due within 7 days" />
         {dueSoon.length === 0 ? (
           <Paper sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <CheckCircleOutlinedIcon sx={{ color: 'success.main' }} />
@@ -205,17 +194,10 @@ export default function ManagerDashboard({ data }) {
         <SectionHeading
           icon={<GroupsOutlinedIcon />}
           title="Your team"
-          aside={
-            <Box sx={{ textAlign: 'right' }}>
-              {onProject.length > 0 && (
-                <Typography variant="body2" sx={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {formatHours(teamHours)} of {formatHours(onProject.length * HOURS_PER_WEEK)} logged this week
-                </Typography>
-              )}
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                Week of {formatDate(week.start)} – {formatDate(week.end)}
-              </Typography>
-            </Box>
+          description={
+            onProject.length > 0
+              ? `${formatHours(teamHours)} of ${formatHours(onProject.length * HOURS_PER_WEEK)} logged in the week of ${formatDate(week.start)} – ${formatDate(week.end)}`
+              : `Week of ${formatDate(week.start)} – ${formatDate(week.end)}`
           }
         />
         <DataTable

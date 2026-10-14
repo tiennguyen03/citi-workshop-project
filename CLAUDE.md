@@ -58,7 +58,12 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 - Three container levels: `StatCard` is a flat tile on `background.default` (no border); sections are
   bordered `Paper`; tables keep the tinted header band. Don't wrap a tile in another card.
 - Status/role labels use `components/Tag` (`tone` = neutral|primary|accent|success|warning|error|info),
-  not MUI `Chip`. Read-only label/value groups use `components/FieldList`. Page titles use
+  not MUI `Chip`. Two weights (D24): the normal state is `variant="quiet"` (dot + text: Active, roles, a 2xx),
+  the exception is tinted (Overdue, At risk, Archived, Deactivated, Available). `RoleChip` and `StatusChip`
+  already apply this. Bars inside table cells use `ProgressBar layout="inline"` (percentage + raw figures);
+  two-line cells use `components/TitleCell`; health in a row or card uses `components/HealthSummary`.
+  `SectionHeading` takes `description` for a summary under the title and `aside` for an action only.
+  `StatCard` takes `progress={{ value, max }}` for a bar without a caption (the hint says the numbers). Read-only label/value groups use `components/FieldList`. Page titles use
   `PageHeader` (`back={{ label, to|onClick }}` for the back link). Brand = `components/BrandMark`.
 - Paper defaults to `variant="outlined"`; tables scroll sideways under 640px.
 - In browser scripts, click nav links inside `getByRole('navigation', { name: 'Main navigation' })` —

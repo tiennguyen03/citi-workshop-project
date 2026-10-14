@@ -14,7 +14,7 @@ const SKELETON_ROWS = 4
 const PAGE_SIZE_OPTIONS = [25, 50, 100]
 
 /**
- * Presentational table: column config + rows. Shows skeletons while loading and an
+ * Presentational table: column config + rows (small density by default, D24). Shows skeletons while loading and an
  * empty-state message when there are no rows. Never fetches. With `pagination` it adds the
  * "1–25 of 112" footer whenever there are rows (arrows disabled on a single page, so the paging is visible);
  * the page itself is the parent's state (usually the URL), the table only reports clicks.
@@ -26,7 +26,7 @@ export default function DataTable({
   loading = false,
   emptyMessage = 'Nothing to show yet.',
   onRowClick,
-  size = 'medium',
+  size = 'small',
   pagination,
 }) {
   const showFooter = pagination && !loading && (pagination.total > 0 || pagination.page > 0)
@@ -36,7 +36,7 @@ export default function DataTable({
         <TableHead>
           <TableRow>
             {columns.map((col) => (
-              <TableCell key={col.key} align={col.align} sx={{ width: col.width }}>
+              <TableCell key={col.key} align={col.numeric ? 'right' : col.align} sx={{ width: col.width }}>
                 {col.label}
               </TableCell>
             ))}
@@ -71,7 +71,11 @@ export default function DataTable({
                 sx={onRowClick ? { cursor: 'pointer' } : undefined}
               >
                 {columns.map((col) => (
-                  <TableCell key={col.key} align={col.align} sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: col.nowrap ? 'nowrap' : undefined }}>
+                  <TableCell
+                    key={col.key}
+                    align={col.numeric ? 'right' : col.align}
+                    sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: col.nowrap || col.numeric ? 'nowrap' : undefined, color: col.muted ? 'text.secondary' : undefined }}
+                  >
                     {col.render ? col.render(row) : row[col.key]}
                   </TableCell>
                 ))}
@@ -106,6 +110,8 @@ DataTable.propTypes = {
       align: PropTypes.oneOf(['left', 'right', 'center']),
       width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
       nowrap: PropTypes.bool,
+      numeric: PropTypes.bool, // right-aligned, tabular, never wraps
+      muted: PropTypes.bool, // secondary text colour for supporting columns
     }),
   ).isRequired,
   rows: PropTypes.arrayOf(PropTypes.object).isRequired,

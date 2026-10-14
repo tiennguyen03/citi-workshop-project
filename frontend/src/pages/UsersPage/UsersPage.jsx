@@ -40,7 +40,7 @@ const COLUMNS = [
   {
     key: 'isActive',
     label: 'Status',
-    render: (u) => (u.isActive === false ? <Tag label="Deactivated" tone="warning" /> : <Tag label="Active" tone="neutral" dot />),
+    render: (u) => (u.isActive === false ? <Tag label="Deactivated" tone="warning" /> : <Tag label="Active" tone="neutral" variant="quiet" />),
   },
 ]
 

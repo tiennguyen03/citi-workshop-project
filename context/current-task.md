@@ -2,7 +2,7 @@
 
 > Only one feature is "current" at a time. Update this file when starting, progressing or finishing.
 
-## Status: ✅ Slice 13 (pagination) built and deployed to AWS 2026-10-14 (`slice-13-pagination`)
+## Status: 🔍 Slice 14 (visual consistency, D24) built on `slice-14-consistency`; awaiting the user's review of before/after screenshots before push/deploy
 
 ## Plan (3 days) — each item is a thin vertical slice
 
@@ -22,6 +22,7 @@
 | 11 | Polish from a role-by-role walkthrough: goal-assignee hint, "not your project" message, one people page per role, Manager column for admins, non-assignee hint on milestones, milestone start defaults to today, empty hours on add member, project name in Log time, fixed back links, readable audit actions; "who is on what" moved to the Members tab; New project is a dialog; icons; role as a fact | pre-demo | **done** |
 | 12 | Admin dashboard rebuilt around project health (D21): pillar tiles, health board worst-first, recent activity; manager cards get the health word and a team weekly total; seed keeps one finished unarchived project | pre-demo | **done** |
 | 13 | Server-side paging and search (D23): `limit`/`offset`/`q` on users, projects and time entries, `Page<T>` shape, Users subtitle from an API `summary`; `DataTable` paging footer with the page in the URL, debounced search, audit log loses "Load more" | pre-demo | **done** |
+| 14 | Visual consistency (D24): quiet/tinted tag weights, inline table progress with percentage, stronger StatCard figure, DataTable small + numeric/muted + TitleCell, SectionHeading description, HealthSummary on board and cards, sidebar name wraps | pre-demo | **built, in review** |
 
 ## Current slice: 13 — Pagination (agreed 2026-10-14: server-side, user said "go")
 
@@ -32,6 +33,34 @@ SQL with `q` search, users `summary` counts, audit log on the shared parser; con
 133 backend tests (97 %), 93 frontend, 13 e2e; screenshot pass with 144 users / 333 audit rows, no console errors.
 **Remaining**: nothing; hosted site redeployed (backend + frontend) and smoke-tested.
 **Blockers**: none.
+
+## Slice 14 — visual consistency pass (approved 2026-10-14 with two constraints: roles/important statuses stay distinguishable; table progress shows percentage + raw figures). Built, not pushed.
+
+Audit over theme.js, StatCard, SectionHeading, DataTable, Tag/RoleChip/StatusChip/DueTag/HealthTag, ProgressBar, PageHeader,
+AppShell, and screenshots of admin/manager/employee dashboards, projects list, project detail, users, audit log, login at 1440 px.
+
+**System-level (shared components / theme)**
+1. `StatCard`: value size up (h3 scale, ~1.75rem), hint one muted line, and when `footer` is a `ProgressBar` the bar's caption is
+   suppressed (today the hint and the bar caption say the same numbers twice). No green values; `color` stays for negatives only.
+2. `ProgressBar`: `layout="inline"` for table cells (bar + "53 of 1,560 h" + "3 %" on one line, tabular nums); the
+   percentage becomes explicit everywhere a bar sits in a row (projects list, admin board, members, user history, milestones).
+3. Tag system: `Tag` gains `variant="quiet"` (dot + text, no fill, no border) for the *normal* state; tinted tags are kept for
+   exceptions. `StatusChip` → quiet for active/open; `RoleChip` → quiet in tables; audit action/result → text unless ≥ 400.
+   Rule written into CLAUDE.md: "the normal state is text, the exception is a tag".
+4. `DataTable`: default `size="small"`; column flags `numeric` (right, tabular) and `muted`; a shared two-line cell
+   (`TitleCell`: title 600 + caption) replacing the hand-rolled name/caption stacks in admin board, audit log, milestones.
+5. `SectionHeading`: new `description` slot under the title for summaries ("2 at risk, 1 to close, 2 on track"); `aside` is
+   for actions only. mb 1.5 → 2.
+6. New shared `HealthSummary` (HealthTag + reasons as a muted caption line) used by the admin board and manager cards, so
+   health is primary and the reason secondary on both pages.
+7. `AppShell` user block: name wraps to two lines (line-clamp 2, full name in `title`), never "System Ad…".
+
+**Page-specific**: admin board rows (project 600 / manager caption via TitleCell, Next due keeps its DueTag, reason tags gone
+from the Health cell); admin tiles lose the duplicate captions and the green People value; project overview "Budget remaining"
+neutral unless negative; audit log Result column quiet; employee "With …" teammates quiet. Login untouched.
+
+**Expected impact**: every list gets shorter rows and fewer pills; dashboards share one health pattern; no page carries
+one-off sx for these concerns. Tests: text queries unchanged, a handful of snapshot-ish assertions (tag presence) updated.
 
 ## Slice 11 — Polish (done 2026-10-14)
 

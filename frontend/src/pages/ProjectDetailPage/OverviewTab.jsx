@@ -28,7 +28,7 @@ export default function OverviewTab({ project }) {
         {hasCosts && <StatCard icon={<AccountBalanceWalletOutlinedIcon />} label="Budget" value={formatMoney(project.budget)} />}
         {hasCosts && <StatCard icon={<PaymentsOutlinedIcon />} label="Cost consumed" value={formatMoney(project.costConsumed)} hint="Logged hours × hourly cost" />}
         {hasCosts && (
-          <StatCard icon={<SavingsOutlinedIcon />} label="Budget remaining" value={formatMoney(project.budgetRemaining)} color={overBudget ? 'error.main' : 'success.main'} />
+          <StatCard icon={<SavingsOutlinedIcon />} label="Budget remaining" value={formatMoney(project.budgetRemaining)} color={overBudget ? 'error.main' : 'text.primary'} />
         )}
       </Box>
       <Paper sx={{ p: 3 }}>

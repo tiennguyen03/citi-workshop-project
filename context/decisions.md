@@ -277,3 +277,23 @@ here: lists are sorted by stable keys, writes are rare, and the audit log alread
 list) ask for `limit=100` explicitly; past 100 managers that picker would need a search of its own.
 Counts shown next to a filtered list are `total`, so "2 people match" is true across all pages. The
 Time tab's hours tile names what it sums ("Hours on this page" once the entries exceed a page).
+
+## D24 · 2026-10-14 · Hierarchy rules live in the shared components, not on pages
+**Decision**: A consistency pass driven by the admin dashboard but implemented only in shared pieces, so every
+page inherits it. (1) `Tag` has two weights: `tinted` for the exception (Overdue, At risk, Archived,
+Deactivated, Available, a failed request) and `quiet` (a tone-coloured dot and plain text) for the normal
+state (Active, Open, a role, a 2xx result). Roles keep their tone through the dot (indigo admin, ink manager,
+grey employee) so a column of roles is still scannable. (2) `ProgressBar` has an `inline` layout for table
+cells: bar, percentage and raw figures on one line. (3) `StatCard` sets the figure at the h3 scale, keeps the
+label and hint to one line each, and takes `progress` for a captionless bar so the hint is never repeated.
+(4) `DataTable` is small by default with `numeric` and `muted` column flags; `TitleCell` is the one two-line
+cell (title 600 over a muted caption). (5) `SectionHeading` has a `description` slot under the title for
+summaries; `aside` is for actions. (6) `HealthSummary` renders health as the tag and the reasons as one
+muted line, on the admin board and the manager cards alike. (7) The sidebar name wraps instead of truncating.
+Green is no longer used for "good" figures; red marks a negative and that is enough.
+**Why**: The audit found the same weaknesses on every list, not just the dashboard: three pills per row,
+unreadable 3 % bars, tiles whose hint repeated the bar caption, summaries flung to the far edge. Fixing
+them per page would have made the dashboard special and left the rest inconsistent.
+**Consequences**: Rule for new work: the normal state is text, the exception is a tag; a bar in a table is
+inline with its percentage; a summary goes in the heading's description, an action in its aside. No page
+sets these with its own `sx`.

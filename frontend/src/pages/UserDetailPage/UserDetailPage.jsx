@@ -33,12 +33,12 @@ const HISTORY_COLUMNS = [
   {
     key: 'hoursCompleted',
     label: 'Completed',
-    render: (p) => <ProgressBar value={p.hoursCompleted} max={p.hoursAssigned} caption={`${formatHours(p.hoursCompleted)} of ${formatHours(p.hoursAssigned)}`} />,
+    render: (p) => <ProgressBar layout="inline" value={p.hoursCompleted} max={p.hoursAssigned} caption={`${formatHours(p.hoursCompleted)} of ${formatHours(p.hoursAssigned)}`} />,
   },
   {
     key: 'isActive',
     label: 'Membership',
-    render: (p) => (p.isActive ? <Tag label="Active" tone="success" dot /> : <Tag label={`Released (${p.releasedReason})`} tone="neutral" />),
+    render: (p) => (p.isActive ? <Tag label="Active" tone="success" variant="quiet" /> : <Tag label={`Released (${p.releasedReason})`} tone="neutral" />),
   },
   { key: 'addedAt', label: 'Joined', nowrap: true, render: (p) => formatDate(p.addedAt) },
   { key: 'releasedAt', label: 'Released', nowrap: true, render: (p) => formatDate(p.releasedAt) },
