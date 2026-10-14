@@ -132,6 +132,8 @@ stays empty (polling `SELECT count(*)` alone can wait forever). Seeded ~10 s aft
 - `bin/proxy-server.js` — 2026-10-14, one line: forward the `Authorization` header (D7).
 - `frontend/package.json` — 2026-10-13, added `@playwright/test@1.56.1` (dev) and the
   `test:e2e` script (user approved).
+- `infra/cloudfront.tf` — 2026-10-14, one `custom_error_response` block mapping S3's 403 to `/index.html`
+  (same as the existing 404 one) so deep links and refreshes work on the hosted app (user approved, C6).
 
 Keep this list updated as new top-level files/folders are added.
 

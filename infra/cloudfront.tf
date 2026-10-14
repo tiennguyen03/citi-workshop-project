@@ -45,6 +45,14 @@ resource "aws_cloudfront_distribution" "this" {
     response_code         = 200
     response_page_path    = "/index.html"
   }
+  # S3 answers 403, not 404, for keys that do not exist, so the React Router paths (/login, /projects/…)
+  # need the same treatment or a refresh on any page except / fails. Approved by the user 2026-10-14 (C6).
+  custom_error_response {
+    error_code            = 403
+    error_caching_min_ttl = 300
+    response_code         = 200
+    response_page_path    = "/index.html"
+  }
 
   # logging_config {
   #   include_cookies = false

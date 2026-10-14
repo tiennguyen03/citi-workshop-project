@@ -249,3 +249,13 @@ client mirrors labels in `utils/projectHealth.js` and never re-sorts. Adding a r
 which word it maps to, in `_health`, with a row in the unit matrix. The seed keeps one finished,
 unarchived project so the demo shows the "Done, not archived" row and can archive it live.
 
+## D22 · 2026-10-14 · One CloudFront rule so the hosted app's routes work (C6)
+**Decision**: `infra/cloudfront.tf` gains a second `custom_error_response` mapping **403** to `/index.html`
+with status 200, beside the boilerplate's 404 rule. Approved by the user with the exact diff.
+**Why**: S3 returns 403, not 404, for keys that do not exist when the bucket blocks public listing, so
+every React Router path except `/` (a refresh on `/projects`, a pasted link to `/login`) came back as a
+CloudFront 403 page. The app itself was fine: starting at `/` and navigating inside it worked.
+**Consequences**: The only infrastructure edit in the project; listed in `CLAUDE.md` under approved
+boilerplate changes. A genuine missing asset now also renders the app shell instead of an error page,
+which is the standard trade-off for single-page apps on CloudFront.
+
