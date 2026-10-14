@@ -72,7 +72,9 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 Servers" = `FLZ38Y`. Never use readable prefixes like `EMP001` — they imply a sequence that caps out. Accounts: `admin` / `Admin123!`;
 everyone else / `Password1!` — managers `priya.natarajan`, `marcus.bell`, `elena.vasquez`;
 employees e.g. `john.doe`, `aisha.rahman`, `daniel.kim`. To reload locally: truncate all tables in
-the `postgres` database and touch `backend/v1/function.py` (hot-reload re-runs the seed).
+the `postgres` database, touch `backend/v1/function.py`, then **call `/api/v1/health` once** — the hot
+reload only re-runs the schema init + seed on the next invocation, so without a request the database
+stays empty (polling `SELECT count(*)` alone can wait forever). Seeded ~10 s after the call.
 
 ## Local tooling (not committed)
 - Backend venv: `backend/v1/.venv` → `.venv/bin/pytest`, `.venv/bin/ruff check .`; Bandit exactly as CI runs it, from the
