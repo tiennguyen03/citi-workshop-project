@@ -25,7 +25,7 @@ export default function useFormState(initialValues) {
       setErrors((prev) => ({ ...prev, [field]: error.message.replace(/^\w+: /, '') }))
       return null
     }
-    return error?.message || 'Something went wrong'
+    return error?.message || 'The server did not answer. Check the connection and try again.'
   }, [])
 
   return { values, errors, setField, setErrors, reset, applyServerError }

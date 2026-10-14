@@ -41,8 +41,9 @@ export default function TeamPage() {
             <Typography variant="overline" color="text.secondary">
               Your manager
             </Typography>
-            <Typography sx={{ fontWeight: 500 }}>
-              {fullName(data.manager)} · {data.manager.jobTitle}
+            <Typography sx={{ fontWeight: 500 }}>{fullName(data.manager)}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {data.manager.jobTitle}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {data.manager.email}

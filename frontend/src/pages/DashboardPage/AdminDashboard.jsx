@@ -66,13 +66,13 @@ export default function AdminDashboard({ data }) {
   return (
     <Stack spacing={3}>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' } }}>
-        <StatCard label="Active projects" value={stats.activeProjects} hint={`${stats.completeProjects} complete · ${stats.archivedProjects} archived`} />
+        <StatCard label="Active projects" value={stats.activeProjects} hint={`${stats.completeProjects} complete, ${stats.archivedProjects} archived`} />
         <StatCard label="Managers" value={stats.users.manager} hint={`${stats.users.admin} admin${stats.users.admin === 1 ? '' : 's'}`} />
         <StatCard label="Employees" value={stats.users.employee} hint="Active accounts" />
         <StatCard
           label="Available"
           value={stats.availableEmployees}
-          hint="Employees not on a project · open list"
+          hint="Employees not on a project. Open the list"
           to="/users?available=true"
           color={stats.availableEmployees > 0 ? 'success.main' : 'text.primary'}
         />

@@ -94,7 +94,7 @@ export default function MilestoneDetailPage() {
           <PageHeader
             back={{ label: project ? project.name : 'Project', to: `/projects/${milestone.projectId}` }}
             title={milestone.name}
-            subtitle={`${formatDate(milestone.startDate)} – ${formatDate(milestone.dueDate)} · ${milestone.goalsDone} of ${milestone.goalsTotal} goals done`}
+            subtitle={`${formatDate(milestone.startDate)} to ${formatDate(milestone.dueDate)}. ${milestone.goalsDone} of ${milestone.goalsTotal} goals done.`}
             actions={
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                 <StatusChip status={milestone.status} size="medium" />

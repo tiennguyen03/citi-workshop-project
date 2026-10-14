@@ -93,17 +93,17 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
                 <StatusChip status={current.status} />
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mb: milestone ? 1 : 2 }}>
-                {formatDate(current.startDate)} – {formatDate(current.endDate)}
+                {`Runs ${formatDate(current.startDate)} to ${formatDate(current.endDate)}`}
                 {milestone ? (
                   <>
-                    {' · now on '}
+                    {', now on '}
                     <Link component={RouterLink} to={`/milestones/${milestone.id}`} underline="hover">
                       {milestone.name}
                     </Link>
-                    {milestone.dueDate && ` · due ${formatDate(milestone.dueDate)}`}
+                    {milestone.dueDate ? `, due ${formatDate(milestone.dueDate)}.` : '.'}
                   </>
                 ) : (
-                  ' · no open milestone assigned'
+                  '. No open milestone is assigned to you yet.'
                 )}
               </Typography>
               {milestone && (
@@ -150,7 +150,7 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
               value={weekHours}
               max={HOURS_PER_WEEK}
               color={overWeek ? 'warning' : 'primary'}
-              caption={overWeek ? `${formatHours(weekHours)} of ${HOURS_PER_WEEK} h · over the ${HOURS_PER_WEEK}-hour week` : `${formatHours(weekHours)} of ${HOURS_PER_WEEK} h`}
+              caption={overWeek ? `${formatHours(weekHours)} of ${HOURS_PER_WEEK} h, over the ${HOURS_PER_WEEK}-hour week` : `${formatHours(weekHours)} of ${HOURS_PER_WEEK} h`}
             />
           }
         />
@@ -191,7 +191,7 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
                       <Link component={RouterLink} to={`/milestones/${g.milestone.id}`} underline="hover" color="inherit">
                         {g.milestone.name}
                       </Link>
-                      {' · due '}
+                      {', due '}
                       {formatDate(g.milestone.dueDate)}
                     </Typography>
                     <DueTag dueDate={g.milestone.dueDate} />

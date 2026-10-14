@@ -75,7 +75,7 @@ function HoursDialog({ open, title, submitLabel, initialHours, capacity, assigne
         >
           {options.map((u) => (
             <MenuItem key={u.id} value={u.id}>
-              {fullName(u)} · {u.jobTitle}
+              {fullName(u)}, {u.jobTitle}
             </MenuItem>
           ))}
         </TextField>

@@ -129,10 +129,10 @@ export default function MilestonesTab({ project, canManage, onChanged, notify })
           </Typography>
           <Stack direction="row" useFlexGap spacing={1} sx={{ flexWrap: 'wrap' }}>
             {people.busy.map((b) => (
-              <Tag key={b.user.id} tone="info" label={`${fullName(b.user)} · ${b.milestone.name}`} />
+              <Tag key={b.user.id} tone="info" label={`${fullName(b.user)} on ${b.milestone.name}`} />
             ))}
             {people.items.map((p) => (
-              <Tag key={p.id} tone="success" label={`${fullName(p)} · available`} />
+              <Tag key={p.id} tone="success" label={`${fullName(p)}, available`} />
             ))}
           </Stack>
         </Paper>

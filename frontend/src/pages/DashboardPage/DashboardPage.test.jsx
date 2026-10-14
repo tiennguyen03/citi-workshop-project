@@ -123,7 +123,7 @@ describe('DashboardPage', () => {
       week: WEEK,
     })
     renderPage({ id: 'EMP001', role: 'employee', firstName: 'Eve' })
-    expect(await screen.findByText('42 h of 40 h · over the 40-hour week')).toBeInTheDocument()
+    expect(await screen.findByText('42 h of 40 h, over the 40-hour week')).toBeInTheDocument()
     expect(screen.getByText('Overdue')).toBeInTheDocument()
   })
 

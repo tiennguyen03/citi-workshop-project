@@ -17,7 +17,7 @@ export default function ErrorAlert({ error, onRetry }) {
         ) : undefined
       }
     >
-      {error.message || 'Something went wrong'}
+      {error.message || 'The server did not answer. Check the connection and try again.'}
     </Alert>
   )
 }

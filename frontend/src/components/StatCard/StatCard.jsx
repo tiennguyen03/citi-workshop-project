@@ -5,17 +5,19 @@ import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 
 /**
- * Single headline number with a label and optional hint. `to` turns the whole card into a link
- * (the number is a shortcut to the list behind it); `footer` sits under the hint, e.g. a ProgressBar.
+ * Single headline figure with a label and optional hint. Tiles sit flat on a tinted ground (no border), so
+ * they read as numbers rather than as yet another card; bordered Paper is kept for sections and tables (D20).
+ * `to` turns the tile into a link (the number is a shortcut to the list behind it); `footer` sits under
+ * the hint, e.g. a ProgressBar.
  */
 export default function StatCard({ label, value, hint, color = 'text.primary', to, footer }) {
-  const linkProps = to ? { component: RouterLink, to, sx: { textDecoration: 'none', color: 'inherit', '&:hover': { borderColor: 'text.secondary' } } } : {}
+  const linkProps = to ? { component: RouterLink, to, sx: { textDecoration: 'none', color: 'inherit', '&:hover': { bgcolor: 'action.selected' } } } : {}
   return (
-    <Paper {...linkProps} sx={{ p: 2.5, minWidth: 0, display: 'block', ...linkProps.sx }}>
+    <Paper {...linkProps} variant="elevation" elevation={0} sx={{ p: 2.5, minWidth: 0, display: 'block', bgcolor: 'background.default', ...linkProps.sx }}>
       <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
         {label}
       </Typography>
-      <Typography variant="h4" component="p" sx={{ color, mt: 0.5, fontVariantNumeric: 'tabular-nums' }} noWrap>
+      <Typography variant="h4" component="p" sx={{ color, mt: 0.5 }} noWrap>
         {value}
       </Typography>
       {hint && (

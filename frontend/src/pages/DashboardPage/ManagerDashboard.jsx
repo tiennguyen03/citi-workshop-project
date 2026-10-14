@@ -154,10 +154,9 @@ export default function ManagerDashboard({ data }) {
                       <Link component={RouterLink} to={`/projects/${p.id}?tab=milestones`} underline="hover" color="inherit" onClick={stop} aria-label={`${p.milestoneCounts.open} open milestones`}>
                         {p.milestoneCounts.open}
                       </Link>
-                      <Typography component="span" variant="caption" color="text.secondary">
-                        {' '}
-                        · {p.milestoneCounts.complete} complete
-                      </Typography>
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      {p.milestoneCounts.complete} complete
                     </Typography>
                   </Box>
                   {p.nextDueDate && (

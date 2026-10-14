@@ -11,7 +11,7 @@ import useNotice from '../../hooks/useNotice.js'
 import useAuth from '../../auth/useAuth.js'
 import * as dashboardApi from '../../services/dashboard.js'
 import { greeting } from '../../utils/format.js'
-import { ROLES, ROLE_LABELS } from '../../utils/roles.js'
+import { ROLES } from '../../utils/roles.js'
 import AdminDashboard from './AdminDashboard.jsx'
 import EmployeeDashboard from './EmployeeDashboard.jsx'
 import ManagerDashboard from './ManagerDashboard.jsx'
@@ -27,7 +27,7 @@ export default function DashboardPage() {
     <>
       <PageHeader
         title={`${greeting()}, ${user.firstName}`}
-        subtitle={`Welcome back · signed in as ${ROLE_LABELS[user.role]}`}
+        subtitle={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
         actions={
           user.role === ROLES.ADMIN ? (
             <Stack direction="row" spacing={1}>

@@ -210,3 +210,22 @@ stays in the services; the client only shows and hides. The audit log's action p
 `GET /audit-log/actions`, backed by the `core.audit.ACTIONS` constant that a unit test keeps equal to the
 route table's `audit=` declarations (slice 9), so the UI can never offer a name the router does not record.
 
+## D20 · 2026-10-14 · Visual identity: a display face for the figures, no template chrome
+**Decision**: Two typefaces with distinct jobs: IBM Plex Serif (500/600) for page titles and headline
+figures — the hours and money the product exists to show — and Inter for everything else. Both are
+self-hosted from `frontend/src/assets/fonts` (OFL), so the app looks the same offline. Small labels
+(stat labels, field labels, table headers) are sentence case, not tracked capitals. Facts are written as
+sentences or stacked lines, never joined with " · ". Stat tiles sit flat on a tinted ground; bordered
+Paper is reserved for sections and tables; tables keep a tinted header band — three levels, not one card.
+Neutrals are a real ink (blue-black `#1A2233`, dark ground `#0B1220`) rather than a tinted `#111`.
+The login is a two-part screen: the three pillars set as type on the left, the form on the right.
+**Why**: An evaluation against Anthropic's `frontend-design` skill found the app clean but templated:
+four of its five "generated page" tells were present (tracked caps labels, middle-dot meta strings,
+one card for everything, tinted near-black) and nothing was memorable. The user asked for all
+recommendations. The brief's own words still win: "neat, minimal, sophisticated" (D17) is kept, and
+the boldness is spent in one place, the figures.
+**Consequences**: Use `variant="h1…h4"` for anything that should be in the display face; never set a
+font family in a component. New labels are sentence case by default (the `overline` token does it).
+Do not reintroduce " · " joins; write a sentence or stack two lines. Adding a font means adding a
+`.woff2` under `src/assets/fonts` and an `@font-face` in `index.css`, nothing in `package.json`.
+

@@ -45,15 +45,21 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
   without reseeding; it adds a few `e2e.*`/`mgr.*`/`emp.*` users each run (reseed to clear). Results go to
   `node_modules/.cache/e2e-results` (gitignored).
 
-## Visual system (ui-refresh, 2026-10-13)
+## Visual system (ui-refresh 2026-10-13, identity pass D20 2026-10-14)
 - `src/theme.js` is the only place for colours/typography: ink primary, soft status tints, 1px borders
   instead of shadows, `cssVariables` + `colorSchemes` (light/dark, class selector; toggle in the sidebar).
   Use `(theme.vars || theme).palette…` or `utils/theme.js` `tint()` in components so tests (no provider) pass.
+- Two faces (D20): IBM Plex Serif for `h1`–`h4` (page titles, headline figures), Inter for everything else.
+  Never set `fontFamily` in a component; pick the variant. Fonts are self-hosted (`src/assets/fonts`,
+  `@font-face` in `index.css`); no Google Fonts request. Small labels (`overline`, table headers) are
+  sentence case by token; write labels in sentence case. Never join facts with " · ": write a sentence
+  ("Oct 5 to Dec 18, 2026, managed by …") or stack two lines.
+- Three container levels: `StatCard` is a flat tile on `background.default` (no border); sections are
+  bordered `Paper`; tables keep the tinted header band. Don't wrap a tile in another card.
 - Status/role labels use `components/Tag` (`tone` = neutral|primary|accent|success|warning|error|info),
   not MUI `Chip`. Read-only label/value groups use `components/FieldList`. Page titles use
   `PageHeader` (`back={{ label, to|onClick }}` for the back link). Brand = `components/BrandMark`.
-- Paper defaults to `variant="outlined"`; tables scroll sideways under 640px; headings use Inter
-  (Google Fonts `@import` in `index.css`, falls back to the system font if offline).
+- Paper defaults to `variant="outlined"`; tables scroll sideways under 640px.
 - In browser scripts, click nav links inside `getByRole('navigation', { name: 'Main navigation' })` —
   the dashboard shortcut cards are links with the same names.
 - Urgency cues come from `components/DueTag` (`dueDate`, `isOpen`, `soonDays` — `null` for overdue-only,

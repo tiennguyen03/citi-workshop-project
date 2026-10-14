@@ -106,7 +106,7 @@ export default function ProjectDetailPage() {
           <PageHeader
             back={{ label: 'All projects', to: '/projects' }}
             title={project.name}
-            subtitle={`${formatDate(project.startDate)} – ${formatDate(project.endDate)} · managed by ${fullName(project.manager)}`}
+            subtitle={`${formatDate(project.startDate)} to ${formatDate(project.endDate)}, managed by ${fullName(project.manager)}`}
             actions={
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                 <StatusChip status={project.status} archived={project.archived} size="medium" />

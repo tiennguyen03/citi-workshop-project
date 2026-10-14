@@ -2,40 +2,44 @@ import { createTheme } from '@mui/material/styles'
 
 /**
  * Application theme (context/coding-rules.md: palette/typography decisions live here, not in
- * components). Minimal, neutral look: one ink-coloured primary, soft tints for status, 1px
- * borders instead of shadows, and light/dark colour schemes driven by CSS variables.
+ * components). Two faces with distinct jobs (decisions.md D20): IBM Plex Serif carries page titles
+ * and headline figures — the hours and money the product is about — and Inter does everything else.
+ * Neutrals are a real ink (blue-black), not a tinted #111. Small labels are sentence case, never
+ * tracked capitals. 1px borders instead of shadows; light/dark via CSS variables.
  */
 const FONT_FAMILY = ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'].join(',')
+export const DISPLAY_FAMILY = ['"IBM Plex Serif"', 'Georgia', '"Times New Roman"', 'serif'].join(',')
+const display = { fontFamily: DISPLAY_FAMILY, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }
 
 const theme = createTheme({
   cssVariables: { colorSchemeSelector: 'class' },
   colorSchemes: {
     light: {
       palette: {
-        primary: { main: '#1B1F27', light: '#3D4350', dark: '#0B0D11', contrastText: '#FFFFFF' },
+        primary: { main: '#1C2538', light: '#3A4661', dark: '#0F1526', contrastText: '#FFFFFF' },
         secondary: { main: '#4F46E5', light: '#6366F1', dark: '#4338CA', contrastText: '#FFFFFF' },
         success: { main: '#16A34A', light: '#4ADE80', dark: '#15803D' },
         warning: { main: '#D97706', light: '#FBBF24', dark: '#B45309' },
         error: { main: '#DC2626', light: '#F87171', dark: '#B91C1C' },
         info: { main: '#2563EB', light: '#60A5FA', dark: '#1D4ED8' },
-        background: { default: '#F6F7F9', paper: '#FFFFFF' },
-        text: { primary: '#15171C', secondary: '#6B7280', disabled: '#A1A6B0' },
-        divider: '#E6E8EC',
-        action: { hover: 'rgba(21, 23, 28, 0.04)', selected: 'rgba(21, 23, 28, 0.06)' },
+        background: { default: '#F4F6FA', paper: '#FFFFFF' },
+        text: { primary: '#1A2233', secondary: '#65708A', disabled: '#9AA3B5' },
+        divider: '#E3E7EF',
+        action: { hover: 'rgba(26, 34, 51, 0.04)', selected: 'rgba(26, 34, 51, 0.06)' },
       },
     },
     dark: {
       palette: {
-        primary: { main: '#F4F4F5', light: '#FFFFFF', dark: '#D4D4D8', contrastText: '#111214' },
+        primary: { main: '#EEF1F6', light: '#FFFFFF', dark: '#CBD2DF', contrastText: '#0B1220' },
         secondary: { main: '#818CF8', light: '#A5B4FC', dark: '#6366F1', contrastText: '#0B0D11' },
         success: { main: '#22C55E', light: '#4ADE80', dark: '#16A34A' },
         warning: { main: '#F59E0B', light: '#FBBF24', dark: '#D97706' },
         error: { main: '#EF4444', light: '#F87171', dark: '#DC2626' },
         info: { main: '#60A5FA', light: '#93C5FD', dark: '#3B82F6' },
-        background: { default: '#0F1115', paper: '#161920' },
-        text: { primary: '#F1F2F4', secondary: '#9AA0AC', disabled: '#5F6675' },
-        divider: '#272B35',
-        action: { hover: 'rgba(241, 242, 244, 0.05)', selected: 'rgba(241, 242, 244, 0.08)' },
+        background: { default: '#0B1220', paper: '#121B2E' },
+        text: { primary: '#EEF1F6', secondary: '#98A3B8', disabled: '#5C6980' },
+        divider: '#25304A',
+        action: { hover: 'rgba(238, 241, 246, 0.05)', selected: 'rgba(238, 241, 246, 0.08)' },
       },
     },
   },
@@ -43,10 +47,10 @@ const theme = createTheme({
   typography: {
     fontFamily: FONT_FAMILY,
     fontSize: 14,
-    h1: { fontSize: '2rem', fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.2 },
-    h2: { fontSize: '1.75rem', fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.25 },
-    h3: { fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.3 },
-    h4: { fontSize: '1.375rem', fontWeight: 600, letterSpacing: '-0.015em', lineHeight: 1.3 },
+    h1: { ...display, fontSize: '2.25rem', letterSpacing: '-0.01em', lineHeight: 1.15 },
+    h2: { ...display, fontSize: '1.875rem', letterSpacing: '-0.01em', lineHeight: 1.2 },
+    h3: { ...display, fontSize: '1.625rem', letterSpacing: '-0.005em', lineHeight: 1.25 },
+    h4: { ...display, fontSize: '1.5rem', lineHeight: 1.25 },
     h5: { fontSize: '1.125rem', fontWeight: 600, letterSpacing: '-0.01em', lineHeight: 1.4 },
     h6: { fontSize: '1rem', fontWeight: 600, lineHeight: 1.5 },
     subtitle1: { fontSize: '0.9375rem', fontWeight: 500, lineHeight: 1.5 },
@@ -54,7 +58,9 @@ const theme = createTheme({
     body1: { fontSize: '0.9375rem', lineHeight: 1.6 },
     body2: { fontSize: '0.875rem', lineHeight: 1.55 },
     caption: { fontSize: '0.75rem', lineHeight: 1.5 },
-    overline: { fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', lineHeight: 1.5, textTransform: 'uppercase' },
+    // "overline" is the small label above a value or a field. Sentence case on purpose: tracked capitals
+    // are the commonest tell of a templated page and are the least legible text on it.
+    overline: { fontSize: '0.75rem', fontWeight: 500, letterSpacing: 0, lineHeight: 1.5, textTransform: 'none' },
     button: { fontWeight: 600, textTransform: 'none', letterSpacing: 0 },
   },
   components: {
@@ -98,10 +104,10 @@ const theme = createTheme({
       styleOverrides: {
         root: ({ theme: t }) => ({ borderBottomColor: t.vars.palette.divider, padding: '14px 16px' }),
         head: ({ theme: t }) => ({
-          fontSize: '0.6875rem',
-          fontWeight: 600,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
+          fontSize: '0.75rem',
+          fontWeight: 500,
+          letterSpacing: 0,
+          textTransform: 'none',
           color: t.vars.palette.text.secondary,
           backgroundColor: t.vars.palette.background.default,
           borderBottomColor: t.vars.palette.divider,

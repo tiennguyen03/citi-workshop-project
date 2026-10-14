@@ -3,14 +3,20 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import useAuth from '../../auth/useAuth.js'
 import BrandMark from '../../components/BrandMark/BrandMark.jsx'
 
-/** Username + password sign-in (ui-flow.md F1). */
+/** The three things the tool measures (requirements.md: time, cost, resources). Set as type: this is the identity. */
+const PILLARS = [
+  ['Time', 'Hours planned against hours logged, week by week.'],
+  ['Cost', 'Salaries against budget, as the hours come in.'],
+  ['Resources', 'Who is free, who is stretched, and who is on what.'],
+]
+
+/** Username + password sign-in (ui-flow.md F1). Statement on the left, form on the right; stacked on phones. */
 export default function LoginPage() {
   const { status, login } = useAuth()
   const navigate = useNavigate()
@@ -43,60 +49,78 @@ export default function LoginPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'background.default',
-        px: 2,
-        py: 6,
-      }}
-    >
-      <Box sx={{ mb: 4 }}>
-        <BrandMark size={36} />
-      </Box>
-      <Paper component="form" onSubmit={handleSubmit} noValidate sx={{ p: { xs: 3, sm: 4 }, width: '100%', maxWidth: 400 }}>
-        <Stack spacing={2.5}>
-          <Box>
-            <Typography variant="h4" component="h1">
-              Sign in
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Use the account your admin created for you.
-            </Typography>
+    <Box sx={{ minHeight: '100%', display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1.1fr) minmax(0, 1fr)' }, bgcolor: 'background.default' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: 4,
+          p: { xs: 3, sm: 4, md: 6 },
+          borderRight: { md: '1px solid' },
+          borderColor: { md: 'divider' },
+        }}
+      >
+        <BrandMark size={32} />
+        <Box>
+          <Typography variant="h1" component="p" sx={{ fontSize: { xs: '2.25rem', md: '3rem' }, maxWidth: '12ch' }}>
+            Every project, measured three ways.
+          </Typography>
+          <Box component="dl" sx={{ m: 0, mt: { xs: 3, md: 5 }, display: { xs: 'none', md: 'grid' }, gap: 2.5, maxWidth: 460 }}>
+            {PILLARS.map(([term, detail]) => (
+              <Box key={term} sx={{ display: 'grid', gridTemplateColumns: '8rem 1fr', gap: 2, alignItems: 'baseline' }}>
+                <Typography component="dt" variant="h4">
+                  {term}
+                </Typography>
+                <Typography component="dd" variant="body1" color="text.secondary" sx={{ m: 0 }}>
+                  {detail}
+                </Typography>
+              </Box>
+            ))}
           </Box>
-          {error && <Alert severity="error">{error}</Alert>}
-          <TextField
-            label="Username"
-            name="username"
-            autoComplete="username"
-            autoFocus
-            required
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={pending}
-          />
-          <TextField
-            label="Password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={pending}
-          />
-          <Button type="submit" variant="contained" size="large" disabled={!canSubmit}>
-            {pending ? 'Signing in…' : 'Sign in'}
-          </Button>
-        </Stack>
-      </Paper>
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 3 }}>
-        Time · Cost · Resources, in one place.
-      </Typography>
+        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', md: 'block' } }}>
+          An internal tool. Accounts are created by an admin.
+        </Typography>
+      </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 3, sm: 4, md: 6 }, bgcolor: 'background.paper' }}>
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%', maxWidth: 380 }}>
+          <Stack spacing={2.5}>
+            <Box>
+              <Typography variant="h3" component="h1">
+                Sign in
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Use the account your admin created for you.
+              </Typography>
+            </Box>
+            {error && <Alert severity="error">{error}</Alert>}
+            <TextField
+              label="Username"
+              name="username"
+              autoComplete="username"
+              autoFocus
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={pending}
+            />
+            <TextField
+              label="Password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={pending}
+            />
+            <Button type="submit" variant="contained" size="large" disabled={!canSubmit}>
+              {pending ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
     </Box>
   )
 }

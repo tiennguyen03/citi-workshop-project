@@ -49,7 +49,7 @@ export default function OverviewTab({ project }) {
             { label: 'Manager', value: fullName(project.manager) },
             { label: 'Start', value: formatDate(project.startDate) },
             { label: 'End', value: formatDate(project.endDate) },
-            { label: 'Milestones', value: `${project.milestoneCounts.complete} complete · ${project.milestoneCounts.open} open` },
+            { label: 'Milestones', value: `${project.milestoneCounts.complete} complete, ${project.milestoneCounts.open} open` },
             { label: 'Project ID', value: project.id },
           ]}
         />
