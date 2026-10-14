@@ -16,6 +16,13 @@ const PILLARS = [
   ['Resources', 'Who is free, who is stretched, and who is on what.'],
 ]
 
+/** Login-only input treatment: a firmer resting border and a 2 px primary focus ring, so the form reads as the thing to do. */
+const FIELD_SX = {
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'text.disabled' },
+  '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
+  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderWidth: 2, borderColor: 'primary.main' },
+}
+
 /** Username + password sign-in (ui-flow.md F1). Statement on the left, form on the right; stacked on phones. */
 export default function LoginPage() {
   const { status, login } = useAuth()
@@ -49,51 +56,56 @@ export default function LoginPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100%', display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1.1fr) minmax(0, 1fr)' }, bgcolor: 'background.default' }}>
+    <Box sx={{ minHeight: '100%', display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' }, bgcolor: 'background.default' }}>
+      {/* Statement. Its content hugs the centre line (right-aligned block) so the two halves read as one composition at any width. */}
       <Box
+        component="section"
+        aria-label="About Project Tracker"
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between',
-          gap: 4,
-          p: { xs: 3, sm: 4, md: 6 },
+          px: { xs: 3, sm: 5, md: 6, lg: 8 },
+          py: { xs: 3, sm: 4, md: 5 },
           borderRight: { md: '1px solid' },
-          borderColor: { md: 'divider' },
+          borderBottom: { xs: '1px solid', md: 'none' },
+          borderColor: { xs: 'divider', md: 'divider' },
         }}
       >
-        {/* One measure for brand, statement and footer, centred in the panel but left-aligned inside it */}
-        <Box sx={{ width: '100%', maxWidth: 640, mx: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 4, flexGrow: 1 }}>
+        <Box sx={{ width: '100%', maxWidth: 560, ml: { md: 'auto' }, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
           <BrandMark size={32} />
-          <Box>
-            <Typography variant="h1" component="p" sx={{ fontSize: { xs: '2.25rem', md: '3rem' }, maxWidth: '24ch', textWrap: 'balance' }}>
+          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', py: { xs: 3, md: 8 } }}>
+            <Typography variant="h1" component="p" sx={{ fontSize: { xs: '2.25rem', sm: '2.75rem', lg: '3.25rem' }, maxWidth: '18ch', textWrap: 'balance' }}>
               Every project, measured three ways.
             </Typography>
-            <Box component="dl" sx={{ m: 0, mt: { xs: 3, md: 5 }, display: { xs: 'none', md: 'grid' }, gap: 2 }}>
-              {PILLARS.map(([term, detail]) => (
-                <Box key={term} sx={{ display: 'grid', gridTemplateColumns: '8.5rem 1fr', columnGap: 2, alignItems: 'baseline' }}>
-                  <Typography component="dt" variant="h4">
-                    {term}
-                  </Typography>
-                  <Typography component="dd" variant="body1" color="text.secondary" sx={{ m: 0, whiteSpace: 'nowrap' }}>
-                    {detail}
-                  </Typography>
-                </Box>
-              ))}
+            {/* One grid for all three rows: the term column is as wide as "Resources", so each row stays a unit and the descriptions still line up */}
+            <Box
+              component="dl"
+              sx={{ m: 0, mt: { xs: 3, md: 4 }, display: { xs: 'none', sm: 'grid' }, gridTemplateColumns: 'max-content minmax(0, 1fr)', columnGap: 2.5, rowGap: 1.5, alignItems: 'baseline' }}
+            >
+              {PILLARS.map(([term, detail]) => [
+                <Typography key={`${term}-dt`} component="dt" variant="h4">
+                  {term}
+                </Typography>,
+                <Typography key={`${term}-dd`} component="dd" variant="body1" color="text.secondary" sx={{ m: 0 }}>
+                  {detail}
+                </Typography>,
+              ])}
             </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: { xs: 3, sm: 5 }, pt: 2.5, borderTop: '1px solid', borderColor: 'divider' }}>
+              An internal tool. Accounts are created by an admin.
+            </Typography>
           </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', md: 'block' } }}>
-            An internal tool. Accounts are created by an admin.
-          </Typography>
         </Box>
       </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 3, sm: 4, md: 6 }, bgcolor: 'background.paper' }}>
-        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%', maxWidth: 380 }}>
-          <Stack spacing={2.5}>
+      {/* Form. Left-aligned to the centre line to mirror the statement; no card, the white panel is the container. */}
+      <Box sx={{ display: 'flex', alignItems: 'center', px: { xs: 3, sm: 5, md: 6, lg: 8 }, py: { xs: 4, sm: 5, md: 5 }, bgcolor: 'background.paper' }}>
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%', maxWidth: 440, mr: { md: 'auto' } }}>
+          <Stack spacing={3}>
             <Box>
               <Typography variant="h3" component="h1">
                 Sign in
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
                 Use the account your admin created for you.
               </Typography>
             </Box>
@@ -104,9 +116,11 @@ export default function LoginPage() {
               autoComplete="username"
               autoFocus
               required
+              size="medium"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={pending}
+              sx={FIELD_SX}
             />
             <TextField
               label="Password"
@@ -114,11 +128,13 @@ export default function LoginPage() {
               type="password"
               autoComplete="current-password"
               required
+              size="medium"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={pending}
+              sx={FIELD_SX}
             />
-            <Button type="submit" variant="contained" size="large" disabled={!canSubmit}>
+            <Button type="submit" variant="contained" color="primary" size="large" disabled={!canSubmit} sx={{ mt: 0.5, minHeight: 48 }}>
               {pending ? 'Signing in…' : 'Sign in'}
             </Button>
           </Stack>
