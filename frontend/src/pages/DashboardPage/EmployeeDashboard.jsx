@@ -10,6 +10,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
 import DataTable from '../../components/DataTable/DataTable.jsx'
+import DueTag from '../../components/DueTag/DueTag.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
@@ -17,6 +18,9 @@ import Tag from '../../components/Tag/Tag.jsx'
 import * as milestonesApi from '../../services/milestones.js'
 import { formatDate, formatHours } from '../../utils/format.js'
 import TimeEntryDialog from '../ProjectDetailPage/TimeEntryDialog.jsx'
+
+/** The working week every employee is measured against (requirements.md: 40-hour week). */
+const HOURS_PER_WEEK = 40
 
 const PAST_COLUMNS = [
   { key: 'name', label: 'Project' },
@@ -30,6 +34,8 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
   const [logging, setLogging] = useState(false)
   const [ticked, setTicked] = useState({})
   const { currentProject: current, openGoals, pastProjects, hoursThisWeek, week } = data
+  const weekHours = Number(hoursThisWeek)
+  const overWeek = weekHours > HOURS_PER_WEEK
 
   async function tick(goal) {
     setTicked((t) => ({ ...t, [goal.id]: true }))
@@ -94,7 +100,20 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
             </Box>
           )}
         </Paper>
-        <StatCard label="Hours this week" value={formatHours(hoursThisWeek)} hint={`${formatDate(week.start)} – ${formatDate(week.end)}`} />
+        <StatCard
+          label="Hours this week"
+          value={formatHours(weekHours)}
+          color={overWeek ? 'warning.main' : 'text.primary'}
+          hint={`${formatDate(week.start)} – ${formatDate(week.end)}`}
+          footer={
+            <ProgressBar
+              value={weekHours}
+              max={HOURS_PER_WEEK}
+              color={overWeek ? 'warning' : 'primary'}
+              caption={overWeek ? `${formatHours(weekHours)} of ${HOURS_PER_WEEK} h · over the ${HOURS_PER_WEEK}-hour week` : `${formatHours(weekHours)} of ${HOURS_PER_WEEK} h`}
+            />
+          }
+        />
       </Box>
 
       <Paper sx={{ p: 3 }}>
@@ -127,13 +146,16 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
                 />
                 <Box sx={{ minWidth: 0, flexGrow: 1 }}>
                   <Typography>{g.title}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    <Link component={RouterLink} to={`/milestones/${g.milestone.id}`} underline="hover" color="inherit">
-                      {g.milestone.name}
-                    </Link>
-                    {' · due '}
-                    {formatDate(g.milestone.dueDate)}
-                  </Typography>
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      <Link component={RouterLink} to={`/milestones/${g.milestone.id}`} underline="hover" color="inherit">
+                        {g.milestone.name}
+                      </Link>
+                      {' · due '}
+                      {formatDate(g.milestone.dueDate)}
+                    </Typography>
+                    <DueTag dueDate={g.milestone.dueDate} />
+                  </Stack>
                 </Box>
               </Box>
             ))}

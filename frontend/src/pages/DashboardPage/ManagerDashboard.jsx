@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
+import Link from '@mui/material/Link'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
@@ -27,6 +28,9 @@ const TEAM_COLUMNS = [
   { key: 'hoursThisWeek', label: 'Hours this week', align: 'right', render: (t) => formatHours(t.hoursThisWeek) },
 ]
 
+/** Inner links on a clickable card: let the link navigate without the card also firing. */
+const stop = (e) => e.stopPropagation()
+
 /** Manager landing: one card per managed project and the team's availability (ui-flow.md › Per-role landing). */
 export default function ManagerDashboard({ data }) {
   const navigate = useNavigate()
@@ -48,17 +52,19 @@ export default function ManagerDashboard({ data }) {
             {projects.map((p) => (
               <Paper
                 key={p.id}
-                component={RouterLink}
-                to={`/projects/${p.id}`}
-                sx={{ p: 2.5, display: 'block', textDecoration: 'none', color: 'inherit', '&:hover': { borderColor: 'text.secondary' } }}
+                onClick={() => navigate(`/projects/${p.id}`)}
+                sx={{ p: 2.5, display: 'block', cursor: 'pointer', '&:hover': { borderColor: 'text.secondary' } }}
               >
                 <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
                   <Box sx={{ minWidth: 0 }}>
-                    <Typography sx={{ fontWeight: 600 }} noWrap>
+                    <Link component={RouterLink} to={`/projects/${p.id}`} underline="hover" color="inherit" sx={{ fontWeight: 600, display: 'block' }} noWrap onClick={stop}>
                       {p.name}
-                    </Typography>
+                    </Link>
                     <Typography variant="caption" color="text.secondary">
-                      {formatDate(p.startDate)} – {formatDate(p.endDate)} · {p.memberCount} member{p.memberCount === 1 ? '' : 's'}
+                      {formatDate(p.startDate)} – {formatDate(p.endDate)} ·{' '}
+                      <Link component={RouterLink} to={`/projects/${p.id}?tab=members`} underline="hover" color="inherit" onClick={stop}>
+                        {p.memberCount} member{p.memberCount === 1 ? '' : 's'}
+                      </Link>
                     </Typography>
                   </Box>
                   <Stack direction="row" spacing={0.75} sx={{ flexShrink: 0 }}>
@@ -83,7 +89,9 @@ export default function ManagerDashboard({ data }) {
                       Open milestones
                     </Typography>
                     <Typography sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                      {p.milestoneCounts.open}
+                      <Link component={RouterLink} to={`/projects/${p.id}?tab=milestones`} underline="hover" color="inherit" onClick={stop} aria-label={`${p.milestoneCounts.open} open milestones`}>
+                        {p.milestoneCounts.open}
+                      </Link>
                       <Typography component="span" variant="caption" color="text.secondary">
                         {' '}
                         · {p.milestoneCounts.complete} complete

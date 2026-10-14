@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthContext } from '../../auth/authContext.js'
 import * as projectsApi from '../../services/projects.js'
+import { addDays, todayISO } from '../../utils/dates.js'
 import ProjectsPage from './ProjectsPage.jsx'
 
 vi.mock('../../services/projects.js')
@@ -22,10 +23,10 @@ const PROJECT = {
   capacityHours: 480,
 }
 
-function renderPage(role) {
+function renderPage(role, url = '/projects') {
   return render(
     <AuthContext.Provider value={{ status: 'authed', user: { id: 'ME0001', role }, login: vi.fn(), logout: vi.fn(), updateUser: vi.fn() }}>
-      <MemoryRouter initialEntries={['/projects']}>
+      <MemoryRouter initialEntries={[url]}>
         <Routes>
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/new" element={<p>new project form</p>} />
@@ -61,6 +62,38 @@ describe('ProjectsPage', () => {
     expect(await screen.findByText('No archived projects.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /new project/i }))
     expect(screen.getByText('new project form')).toBeInTheDocument()
+  })
+
+  it('flags an active project past its end date', async () => {
+    projectsApi.list.mockResolvedValue({ items: [{ ...PROJECT, endDate: addDays(todayISO(), -1) }, { ...PROJECT, id: 'PRJ002', name: 'On time', endDate: addDays(todayISO(), 30) }], total: 2 })
+    renderPage('manager')
+    await screen.findByText('On time')
+    expect(screen.getAllByText('Past end date')).toHaveLength(1)
+  })
+
+  it('narrows the list by search and status, mirrored in the URL', async () => {
+    const user = userEvent.setup()
+    projectsApi.list.mockResolvedValue({
+      items: [PROJECT, { ...PROJECT, id: 'PRJ002', name: 'Customer Portal', status: 'complete', manager: { id: 'MGR002', firstName: 'Marcus', lastName: 'Bell' } }],
+      total: 2,
+    })
+    renderPage('admin')
+    await screen.findByText('Customer Portal')
+    await user.type(screen.getByRole('searchbox', { name: /search/i }), 'bell')
+    expect(screen.queryByText('Decommission 1,000 Servers')).not.toBeInTheDocument()
+    expect(screen.getByText('Customer Portal')).toBeInTheDocument()
+    await user.click(screen.getByRole('combobox', { name: /status/i }))
+    await user.click(await screen.findByRole('option', { name: 'Active' }))
+    expect(await screen.findByText('No projects match your filters.')).toBeInTheDocument()
+    expect(projectsApi.list).toHaveBeenCalledTimes(1) // filtering is client-side
+  })
+
+  it('reads filters from the URL', async () => {
+    projectsApi.list.mockResolvedValue({ items: [PROJECT, { ...PROJECT, id: 'PRJ002', name: 'Customer Portal', status: 'complete' }], total: 2 })
+    renderPage('admin', '/projects?status=complete')
+    expect(await screen.findByText('Customer Portal')).toBeInTheDocument()
+    expect(screen.queryByText('Decommission 1,000 Servers')).not.toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: /status/i })).toHaveTextContent('Complete')
   })
 
   it('shows the employee empty state and errors', async () => {

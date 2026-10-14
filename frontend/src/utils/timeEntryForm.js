@@ -1,8 +1,6 @@
-/** Today as YYYY-MM-DD in the browser's local time zone (no UTC shift). */
-export function todayISO(now = new Date()) {
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-}
+import { todayISO } from './dates.js'
+
+export { todayISO }
 
 /** Client-side checks mirroring the API contract for time entries. Returns {field: message}. */
 export function validateTimeEntry(values, project, today = todayISO()) {

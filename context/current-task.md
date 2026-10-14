@@ -2,7 +2,7 @@
 
 > Only one feature is "current" at a time. Update this file when starting, progressing or finishing.
 
-## Status: ⏸ Awaiting approval of `/context` (no implementation code written)
+## Status: 🔨 Slice 7 (UX signals) in progress on `slice-7-signals`
 
 ## Plan (3 days) — each item is a thin vertical slice
 
@@ -14,18 +14,35 @@
 | 3 | Projects: CRUD, archive/unarchive, members + hours, capacity/stats, ProjectsPage, ProjectFormPage, ProjectDetailPage (Overview + Members tabs) | 2 AM | **done** |
 | 4 | Milestones & goals: endpoints, Milestones tab, MilestoneDetailPage, goal toggling, project complete | 2 PM | **done** |
 | 5 | Time entries: endpoints, Time tab, dashboard per role (~~seed data~~ done early) | 3 AM | **done** |
-| 6 | Hardening: tests to target, responsive pass, README, deploy to AWS, smoke test, known gaps | 3 PM | **in progress** (deploy deferred by user) |
+| 6 | Hardening: tests to target, responsive pass, README, deploy to AWS, smoke test, known gaps | 3 PM | **paused** (deploy + README location deferred by user) |
+| 7 | UX signals (frontend only): overdue / due-soon / past-end tags, 40 h week bar, clickable dashboard counts, `?tab=` deep links, search + filters on Projects/Users mirrored in the URL, milestone ordering with "Next due", capacity hint when assigning hours, this-week / last-week filter on the Time tab | post-demo prep | **in progress** |
+| 8 | Dashboards: manager "Due soon" + current milestone per report + zero-hour cue; admin recent activity + wider attention reasons; employee teammates + recent entries (`GET /dashboard` grows) | — | planned |
+| 9 | People & audit: user page "Reports to" + project history; audit log action/actor pickers (`GET /users/{id}` grows, `GET /audit-log/actions`) | — | planned |
 
-## Current slice: 6 — Hardening (deploy deferred by the user on 2026-10-13)
+## Current slice: 7 — UX signals (plan: `~/.claude/plans/shiny-singing-simon.md`, approved 2026-10-14)
 
-**Done**: responsive + dark-mode pass (96 screens: every page × 3 roles × 390/1360 px × light/dark; no page overflow, no console errors); known gaps recorded as D18.
-**Remaining, each needs a decision**
-- Project README → where it lives (root README is boilerplate).
-- Deploy to AWS + Lambda memory check + smoke test → user said "not yet".
-**Progress**: responsive/dark pass ✔ · known gaps ✔ · password change + admin reset ✔ · browser suite in repo ✔
+**Acceptance**: every role sees overdue / due-soon cues wherever a due date is shown; employee week reads "x of 40 h";
+admin "Available" and manager "N members / open milestones" are links; Projects and Users have search + filters
+that survive in the URL; milestones list open-first by due date with a "Next due" marker; assigning hours shows
+project capacity so far and warns (not blocks) past it; Time tab filters this/last week. No API change (D19).
+**Done**: `utils/dates.js`, `DueTag`, `ListToolbar`, `useUrlFilters`, `listFilters`, `milestones` helpers (+ unit tests);
+StatCard `to`/`footer`, ProgressBar `color`; all pages wired; 83 frontend tests, ESLint clean; 12 e2e green
+(3 new assertions in `time-dashboards.spec.js`); 92-screen walk (3 roles × 23 pages × 1360/390 px × light/dark) with
+no overflow and no console errors; D19 written; CLAUDE.md notes. Seed tweak so the demo shows the cues: "Account &
+billing pages" (Customer Portal) is now open past its due date → **Overdue**; "Schema mapping" (Data Warehouse) is due
+2026-10-17 → **Due in N days**.
+**Remaining**: commit + push on request.
 **Blockers**: none.
 
+## Slice 6 leftovers (need a decision)
+- Project README → where it lives (root README is boilerplate).
+- Deploy to AWS + Lambda memory check + smoke test → user said "not yet".
+
 ## Watch list
+- E2E flake: `auth.spec.js › admin deactivates a user…` timed out (45 s) twice, each time on the first full run right after
+  the stack was disturbed (Vite re-optimising after edits, or a Lambda hot reload after a reseed); it passed on every rerun,
+  on three consecutive full runs, and when the hot reload was forced deliberately. Not reproduced on demand; if it returns,
+  keep the `trace.zip` from `node_modules/.cache/e2e-results` before rerunning.
 - LocalStack reports `Max Memory Used: 128 MB` for the Lambda (pydantic + psycopg at cold start). May be LocalStack's reporting quirk, but verify real memory on the first AWS deploy (slice 6); if tight, drop pydantic for hand-written validators (D3 fallback).
 - `start-dev.sh` vendors Python deps with the PATH `pip` (Python 3.14) → silently fails for the 3.13 Lambda. Workaround documented in `CLAUDE.md`; re-run the venv vendoring whenever `requirements.txt` changes.
 
@@ -37,6 +54,7 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-14 · **Slice 7 built** (branch `slice-7-signals`, D19). Frontend-only: `DueTag` (Overdue / Due today / Due in N days; "Past end date" on projects) on the project list and header, milestones tab and page, and the employee's goal list; employee "Hours this week" measured against the 40-hour week; admin "Available" count and manager "N members" / "open milestones" are links (`?tab=` deep links on the project page); search + status filter on Projects and search + role + "Available only" + "Show deactivated" on Users, mirrored in the URL; milestones ordered open-first by due date with a "Next due" marker; hours dialog shows project capacity so far and warns (not blocks) past it; Time tab This week / Last week / All. 83 frontend tests (+29), 12 e2e, 92-screen walk clean. Demo seed: one overdue and one due-soon milestone.
 - 2026-10-13 · **Browser suite in the repo** (`frontend/e2e/`, `@playwright/test@1.56.1` approved by the user). 12 self-contained tests (each spec builds its own office through the API): auth + lockout + audit filter + password change/reset, project form validation, staffing, archive/unarchive, completion gating, milestone life cycle with the one-open-milestone picker, time logging on dashboard and Time tab, manager/admin dashboards, phone width. `npm run test:e2e`.
 - 2026-10-13 · **Password change** (branch `slice-6-hardening`). `POST /auth/change-password` (self; current password required, ≥ 8 chars, must differ) and admin temporary reset via `PATCH /users/{id} {password}`; profile page "Password" card, "Reset password" dialog on the admin's user page. The new test caught the audit sanitiser only stripping a key named exactly `password`, so `currentPassword` would have been stored in plaintext — it now drops any key containing "password" or "secret". 96 backend tests (97%), 54 frontend, 7-step browser walkthrough.
 - 2026-10-13 · **Slice 6 part 1** (branch `slice-6-hardening`): responsive + dark-mode pass over 96 screens. Fixes: project tabs scroll on narrow screens (the Time tab was unreachable at 390 px); `DataTable` columns can declare `nowrap`, applied to date and name columns (milestone rows were 151 px tall on phones because dates wrapped). Known gaps written as decisions.md D18.

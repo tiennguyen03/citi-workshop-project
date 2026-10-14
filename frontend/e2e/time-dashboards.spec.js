@@ -10,7 +10,8 @@ test.beforeAll(async () => {
   // tiny budget + a well-paid employee so one logged day pushes it over budget (admin attention list)
   project = await createProject(office.admin, office.manager.id, { budget: 300 })
   await addMember(office.manager.token, project.id, office.emp1.id, 160)
-  const milestone = await createMilestone(office.manager.token, project.id, { assigneeIds: [office.emp1.id] })
+  // due date already in the past so the urgency cues (Overdue / Next due) have something to show
+  const milestone = await createMilestone(office.manager.token, project.id, { assigneeIds: [office.emp1.id], dueDate: '2026-10-10' })
   await api('POST', `/milestones/${milestone.id}/goals`, { title: 'Ship the thing', assigneeId: office.emp1.id }, office.manager.token)
 })
 
@@ -20,6 +21,7 @@ test('employee: dashboard shows the project, ticks a goal, logs time; Time tab e
   await expect(page.getByText('My current project')).toBeVisible()
   await expect(page.getByRole('link', { name: project.name }).first()).toBeVisible()
   await expect(page.getByText(/now on Phase 1/)).toBeVisible()
+  await expect(page.getByText('Overdue').first()).toBeVisible()
 
   await page.getByRole('checkbox', { name: 'Complete goal Ship the thing' }).click()
   await toast(page, 'Done: Ship the thing')
@@ -55,7 +57,16 @@ test('manager: dashboard cards and team hours; Time tab shows everyone, filters,
   await expect(teamRow.getByRole('cell', { name: '7 h', exact: true })).toBeVisible()
   await expect(page.getByRole('row', { name: new RegExp(fullName(emp2)) }).getByText('Available')).toBeVisible()
 
+  // the member count on the card is a deep link into the Members tab
+  await page.getByRole('link', { name: '1 member' }).click()
+  await expect(page).toHaveURL(/tab=members/)
+  await expect(page.getByRole('tab', { name: /members/i })).toHaveAttribute('aria-selected', 'true')
+
   await openProject(page, project.id, project.name)
+  await page.getByRole('tab', { name: /milestones/i }).click()
+  const phase1 = page.getByRole('row', { name: /Phase 1/ })
+  await expect(phase1.getByText('Next due')).toBeVisible()
+  await expect(phase1.getByText('Overdue')).toBeVisible()
   await page.getByRole('tab', { name: 'Time' }).click()
   await expect(page.getByRole('columnheader', { name: 'Person' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Log time' })).toHaveCount(0)

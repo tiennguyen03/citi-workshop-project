@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthContext } from '../../auth/authContext.js'
 import * as projectsApi from '../../services/projects.js'
 import * as usersApi from '../../services/users.js'
+import { addDays, todayISO } from '../../utils/dates.js'
 import ProjectDetailPage from './ProjectDetailPage.jsx'
 
 vi.mock('../../services/projects.js')
@@ -37,10 +38,10 @@ const MEMBER = {
   costConsumed: 500,
 }
 
-function renderPage(user) {
+function renderPage(user, url = '/projects/PRJ001') {
   return render(
     <AuthContext.Provider value={{ status: 'authed', user, login: vi.fn(), logout: vi.fn(), updateUser: vi.fn() }}>
-      <MemoryRouter initialEntries={['/projects/PRJ001']}>
+      <MemoryRouter initialEntries={[url]}>
         <Routes>
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
         </Routes>
@@ -112,6 +113,37 @@ describe('ProjectDetailPage', () => {
     await user.click(within(dialog).getByRole('button', { name: /add to project/i }))
     await waitFor(() => expect(projectsApi.addMember).toHaveBeenCalledWith('PRJ001', { userId: 'EMP002', hoursAssigned: 80 }))
     expect(await screen.findByText('Added Max New')).toBeInTheDocument()
+  })
+
+  it('opens the tab named in the URL and flags a project past its end date', async () => {
+    projectsApi.get.mockResolvedValue({ ...WITH_COSTS, endDate: addDays(todayISO(), -2) })
+    renderPage({ id: 'MGR001', role: 'manager' }, '/projects/PRJ001?tab=members')
+    await screen.findByRole('heading', { name: 'Decommission 1,000 Servers' })
+    expect(screen.getByRole('tab', { name: /members/i })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
+    expect(screen.getByText('Past end date')).toBeInTheDocument()
+  })
+
+  it('warns, without blocking, when assigned hours would exceed the project capacity', async () => {
+    const user = userEvent.setup()
+    projectsApi.get.mockResolvedValue({ ...WITH_COSTS, hoursAssigned: 300 })
+    projectsApi.addMember.mockResolvedValue({ ...MEMBER, user: { id: 'EMP002', firstName: 'Max', lastName: 'New' }, hoursAssigned: 40 })
+    renderPage({ id: 'MGR001', role: 'manager' }, '/projects/PRJ001?tab=members')
+    await screen.findByRole('heading', { name: 'Decommission 1,000 Servers' })
+    await user.click(await screen.findByRole('button', { name: /add member/i }))
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByText(/Project so far: 300 h assigned of 320 h capacity/)).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('combobox', { name: /employee/i }))
+    await user.click(await screen.findByRole('option', { name: /Max New/ }))
+    const hours = within(dialog).getByLabelText(/hours assigned/i, { selector: 'input' })
+    await user.clear(hours)
+    await user.type(hours, '20')
+    expect(within(dialog).queryByText(/above the project capacity/)).not.toBeInTheDocument()
+    await user.clear(hours)
+    await user.type(hours, '40')
+    expect(await within(dialog).findByText(/bring assigned hours to 340 h, above the project capacity of 320 h/)).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: /add to project/i }))
+    await waitFor(() => expect(projectsApi.addMember).toHaveBeenCalledWith('PRJ001', { userId: 'EMP002', hoursAssigned: 40 }))
   })
 
   it('rejects hours above capacity before calling the API', async () => {

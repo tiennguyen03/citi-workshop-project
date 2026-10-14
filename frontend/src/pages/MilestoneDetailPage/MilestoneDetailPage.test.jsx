@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthContext } from '../../auth/authContext.js'
 import * as milestonesApi from '../../services/milestones.js'
 import * as projectsApi from '../../services/projects.js'
+import { addDays, todayISO } from '../../utils/dates.js'
 import MilestoneDetailPage from './MilestoneDetailPage.jsx'
 
 vi.mock('../../services/milestones.js')
@@ -41,7 +42,7 @@ const MILESTONE = {
 }
 
 function renderPage(user) {
-  render(
+  return render(
     <AuthContext.Provider value={{ status: 'authed', user, login: vi.fn(), logout: vi.fn(), updateUser: vi.fn() }}>
       <MemoryRouter initialEntries={['/milestones/MIL001']}>
         <Routes>
@@ -95,6 +96,19 @@ describe('MilestoneDetailPage', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Mark complete' }))
     await waitFor(() => expect(milestonesApi.complete).toHaveBeenCalledWith('MIL001'))
     expect(await screen.findByText('Milestone completed')).toBeInTheDocument()
+  })
+
+  it('shows Overdue in the header for an open milestone past its due date, never for a completed one', async () => {
+    projectsApi.get.mockResolvedValue(PROJECT)
+    milestonesApi.get.mockResolvedValue({ ...MILESTONE, dueDate: addDays(todayISO(), -2) })
+    const { unmount } = renderPage({ id: 'MGR001', role: 'manager' })
+    await screen.findByRole('heading', { name: 'Inventory' })
+    expect(await screen.findByText('Overdue')).toBeInTheDocument()
+    unmount()
+    milestonesApi.get.mockResolvedValue({ ...MILESTONE, dueDate: addDays(todayISO(), -2), status: 'complete', completedAt: '2026-10-10T10:00:00Z' })
+    renderPage({ id: 'MGR001', role: 'manager' })
+    await screen.findByRole('heading', { name: 'Inventory' })
+    expect(screen.queryByText('Overdue')).not.toBeInTheDocument()
   })
 
   it('is read-only on an archived project', async () => {

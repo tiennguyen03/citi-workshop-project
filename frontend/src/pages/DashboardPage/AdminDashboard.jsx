@@ -44,7 +44,8 @@ export default function AdminDashboard({ data }) {
         <StatCard
           label="Available"
           value={stats.availableEmployees}
-          hint="Employees not on a project"
+          hint="Employees not on a project · open list"
+          to="/users?available=true"
           color={stats.availableEmployees > 0 ? 'success.main' : 'text.primary'}
         />
       </Box>

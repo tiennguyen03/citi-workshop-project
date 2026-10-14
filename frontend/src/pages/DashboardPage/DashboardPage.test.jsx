@@ -54,6 +54,7 @@ describe('DashboardPage', () => {
     })
     renderPage({ id: 'ADM001', role: 'admin', firstName: 'System' })
     expect(await screen.findByText('12')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Available/ })).toHaveAttribute('href', '/users?available=true')
     expect(screen.getByText('Over budget')).toBeInTheDocument()
     expect(screen.getByText('-$150')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /new project/i })).toBeInTheDocument()
@@ -76,6 +77,29 @@ describe('DashboardPage', () => {
     expect(screen.getByText('40 h completed of 160 h capacity')).toBeInTheDocument()
     expect(screen.getByText('Available')).toBeInTheDocument()
     expect(screen.getByText('16 h')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Decommission' })).toHaveAttribute('href', '/projects/PRJ001')
+    expect(screen.getByRole('link', { name: '3 members' })).toHaveAttribute('href', '/projects/PRJ001?tab=members')
+    expect(screen.getByRole('link', { name: '2 open milestones' })).toHaveAttribute('href', '/projects/PRJ001?tab=milestones')
+  })
+
+  it('measures the employee week against 40 hours and flags overdue goals', async () => {
+    dashboardApi.get.mockResolvedValue({
+      role: 'employee',
+      currentProject: { ...CARD, myHoursAssigned: 80, myHoursCompleted: 20, currentMilestone: null },
+      pastProjects: [],
+      openGoals: [{ id: 'GOL001', title: 'Export CMDB', milestone: { id: 'MIL001', name: 'Inventory', dueDate: '2020-01-01' }, project: { id: 'PRJ001', name: 'Decommission' } }],
+      hoursThisWeek: 42,
+      week: WEEK,
+    })
+    renderPage({ id: 'EMP001', role: 'employee', firstName: 'Eve' })
+    expect(await screen.findByText('42 h of 40 h · over the 40-hour week')).toBeInTheDocument()
+    expect(screen.getByText('Overdue')).toBeInTheDocument()
+  })
+
+  it('shows the error state when the dashboard cannot load', async () => {
+    dashboardApi.get.mockRejectedValue(new Error('Could not reach the server'))
+    renderPage({ id: 'EMP001', role: 'employee', firstName: 'Eve' })
+    expect(await screen.findByText('Could not reach the server')).toBeInTheDocument()
   })
 
   it('lets an employee tick a goal and log time from the landing page', async () => {

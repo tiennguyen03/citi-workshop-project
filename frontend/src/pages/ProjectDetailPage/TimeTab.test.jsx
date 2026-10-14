@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { AuthContext } from '../../auth/authContext.js'
 import * as timeEntriesApi from '../../services/timeEntries.js'
 import TimeTab from './TimeTab.jsx'
-import { todayISO } from '../../utils/timeEntryForm.js'
+import { todayISO, weekRange } from '../../utils/dates.js'
 
 vi.mock('../../services/timeEntries.js')
 
@@ -98,5 +98,18 @@ describe('TimeTab', () => {
     await user.click(screen.getByRole('combobox', { name: /person/i }))
     await user.click(await screen.findByRole('option', { name: 'Max New' }))
     await waitFor(() => expect(timeEntriesApi.list).toHaveBeenLastCalledWith('PRJ001', { userId: 'EMP002' }))
+  })
+
+  it('narrows the entries to this or last week', async () => {
+    const user = userEvent.setup()
+    renderTab({ id: 'EMP001', role: 'employee' })
+    await screen.findByText('12 h')
+    await user.click(screen.getByRole('button', { name: 'This week' }))
+    await waitFor(() => expect(timeEntriesApi.list).toHaveBeenLastCalledWith('PRJ001', { userId: undefined, ...weekRange('this') }))
+    await user.click(screen.getByRole('button', { name: 'Last week' }))
+    await waitFor(() => expect(timeEntriesApi.list).toHaveBeenLastCalledWith('PRJ001', { userId: undefined, ...weekRange('last') }))
+    expect(screen.getByText(/entries last week/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'All' }))
+    await waitFor(() => expect(timeEntriesApi.list).toHaveBeenLastCalledWith('PRJ001', { userId: undefined }))
   })
 })

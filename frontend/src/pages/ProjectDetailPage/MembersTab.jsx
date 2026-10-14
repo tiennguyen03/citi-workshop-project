@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
+import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import IconButton from '@mui/material/IconButton'
@@ -8,6 +9,7 @@ import Stack from '@mui/material/Stack'
 import Switch from '@mui/material/Switch'
 import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove'
@@ -22,13 +24,15 @@ import * as projectsApi from '../../services/projects.js'
 import { formatHours, formatMoney } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 
-function HoursDialog({ open, title, submitLabel, initialHours, capacity, options, onClose, onSubmit }) {
+function HoursDialog({ open, title, submitLabel, initialHours, capacity, assignedSoFar, projectCapacity, options, onClose, onSubmit }) {
   const [userId, setUserId] = useState('')
   const [hours, setHours] = useState(String(initialHours ?? 0))
   const [error, setError] = useState(null)
   const [fieldError, setFieldError] = useState(null)
   const [pending, setPending] = useState(false)
   const needsUser = Boolean(options)
+  const wouldBeAssigned = Number(assignedSoFar) + (Number(hours) || 0)
+  const overCapacity = Number(projectCapacity) > 0 && wouldBeAssigned > Number(projectCapacity)
 
   async function submit() {
     const value = Number(hours)
@@ -87,6 +91,14 @@ function HoursDialog({ open, title, submitLabel, initialHours, capacity, options
         slotProps={{ htmlInput: { min: 0, max: capacity, step: 0.25 } }}
         required
       />
+      <Typography variant="caption" color="text.secondary">
+        Project so far: {formatHours(assignedSoFar)} assigned of {formatHours(projectCapacity)} capacity{needsUser ? ' (after adding this member)' : ''}.
+      </Typography>
+      {overCapacity && (
+        <Alert severity="warning">
+          This would bring assigned hours to {formatHours(wouldBeAssigned)}, above the project capacity of {formatHours(projectCapacity)}. You can still save it.
+        </Alert>
+      )}
     </FormDialog>
   )
 }
@@ -96,6 +108,8 @@ HoursDialog.propTypes = {
   submitLabel: PropTypes.node.isRequired,
   initialHours: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   capacity: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+  assignedSoFar: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+  projectCapacity: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
   options: PropTypes.arrayOf(PropTypes.object),
   onClose: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
@@ -199,6 +213,8 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
           title="Add member"
           submitLabel="Add to project"
           capacity={project.capacityHoursPerMember ?? capacity}
+          assignedSoFar={project.hoursAssigned}
+          projectCapacity={Number(project.capacityHours) + Number(project.capacityHoursPerMember ?? capacity)}
           options={available?.items ?? []}
           onClose={() => setAdding(false)}
           onSubmit={async ({ userId, hoursAssigned }) => {
@@ -216,6 +232,8 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
           submitLabel="Save"
           initialHours={editing.hoursAssigned}
           capacity={editing.capacityHours}
+          assignedSoFar={Number(project.hoursAssigned) - Number(editing.hoursAssigned)}
+          projectCapacity={project.capacityHours}
           onClose={() => setEditing(null)}
           onSubmit={async ({ hoursAssigned }) => {
             await projectsApi.updateMember(project.id, editing.user.id, { hoursAssigned })

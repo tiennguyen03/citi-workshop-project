@@ -159,8 +159,8 @@ MILESTONES = [
         "5T6FZ2",
         "Account & billing pages",
         "Rebuild the highest-traffic flows.",
-        date(2026, 10, 12),
-        date(2026, 11, 13),
+        date(2026, 9, 21),
+        date(2026, 10, 9),  # slipped: still open past its due date, so the demo shows an "Overdue" cue
         "open",
         2,
     ),
@@ -180,7 +180,7 @@ MILESTONES = [
         "Schema mapping",
         "Map legacy tables to lakehouse models.",
         date(2026, 10, 12),
-        date(2026, 10, 30),
+        date(2026, 10, 17),  # due within the week, so the demo shows a "Due in N days" cue
         "open",
         1,
     ),

@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import * as milestonesApi from '../../services/milestones.js'
+import { addDays, todayISO } from '../../utils/dates.js'
 import MilestonesTab from './MilestonesTab.jsx'
 
 vi.mock('../../services/milestones.js')
@@ -58,6 +59,27 @@ describe('MilestonesTab', () => {
     expect(screen.queryByRole('button', { name: /new milestone/i })).not.toBeInTheDocument()
     await user.click(screen.getByText('Inventory'))
     expect(await screen.findByText('milestone page')).toBeInTheDocument()
+  })
+
+  it('orders open milestones by due date with urgency cues, completed ones last', async () => {
+    const today = todayISO()
+    milestonesApi.list.mockResolvedValue({
+      items: [
+        { ...MILESTONE, id: 'MIL003', name: 'Wrap up', status: 'complete', dueDate: addDays(today, -20), completedAt: '2026-10-01T10:00:00Z' },
+        { ...MILESTONE, id: 'MIL002', name: 'Power-down', dueDate: addDays(today, 3) },
+        { ...MILESTONE, id: 'MIL001', name: 'Inventory', dueDate: addDays(today, -1) },
+      ],
+      total: 3,
+    })
+    renderTab(false)
+    await screen.findByText('Wrap up')
+    const names = screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[0].textContent)
+    expect(names[0]).toMatch(/^InventoryNext due/)
+    expect(names[1]).toMatch(/^Power-down/)
+    expect(names[2]).toMatch(/^Wrap up/)
+    expect(screen.getByText('Overdue')).toBeInTheDocument()
+    expect(screen.getByText('Due in 3 days')).toBeInTheDocument()
+    expect(screen.getAllByText('Next due')).toHaveLength(1)
   })
 
   it('lets a manager create a milestone, offering only free members', async () => {

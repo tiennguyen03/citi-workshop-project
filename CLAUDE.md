@@ -38,6 +38,8 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
   `tests/`, `requirements*.txt`, `pyproject.toml`, `.gitignore`). Everything else inside it is vendored by `start-dev.sh`.
 - `frontend/vitest.config.js`, `frontend/src/{auth,components,hooks,pages,services,test,utils}/`,
   `frontend/src/theme.js`; `App.jsx`, `main.jsx`, `index.css` replaced (Vite demo removed).
+  Slice 7 added `utils/dates.js` (all calendar-date math; `todayISO` is re-exported from `timeEntryForm.js`),
+  `utils/listFilters.js`, `utils/milestones.js`, `hooks/useUrlFilters.js`, `components/{DueTag,ListToolbar}`.
 - `frontend/playwright.config.js`, `frontend/e2e/` — browser suite (`npm run test:e2e` with the local stack up).
   Each spec creates its own manager/employees/projects through the API (`e2e/support/api.js`), so it reruns
   without reseeding; it adds a few `e2e.*`/`mgr.*`/`emp.*` users each run (reseed to clear). Results go to
@@ -54,6 +56,14 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
   (Google Fonts `@import` in `index.css`, falls back to the system font if offline).
 - In browser scripts, click nav links inside `getByRole('navigation', { name: 'Main navigation' })` —
   the dashboard shortcut cards are links with the same names.
+- Urgency cues come from `components/DueTag` (`dueDate`, `isOpen`, `soonDays` — `null` for overdue-only,
+  `overdueLabel`/`overdueTone` for "Past end date"); never compare dates inline. Date math only through
+  `utils/dates.js` (`todayISO`, `addDays`, `daysUntil`, `dueStatus`, `weekRange`), never `new Date('YYYY-MM-DD')`.
+- List pages use `ListToolbar` (search + controls) with `useUrlFilters(FILTER_DEFAULTS)` (module-level
+  constant) so filters are deep-linkable; filtering itself is pure (`utils/listFilters.js`). The project
+  page's tab is `?tab=members|milestones|time`; link to it instead of asking the user to click a tab.
+- `StatCard` takes `to` (whole card becomes a link) and `footer` (e.g. a `ProgressBar`); `ProgressBar`
+  takes `color` to pin the bar colour (default `auto`: amber ≥ 90 %, red > 100 %).
 
 ## Demo data
 `backend/v1/app/core/seed.py` loads on a database that has only the bootstrap admin

@@ -20,10 +20,13 @@ const EMPLOYEE = {
   currentProject: null,
 }
 
-function renderPage(role = 'admin') {
+const RETIRED = { ...EMPLOYEE, id: 'EMP009', firstName: 'Old', lastName: 'Timer', email: 'old@x.com', isActive: false }
+const BUSY = { ...EMPLOYEE, id: 'EMP002', firstName: 'Max', lastName: 'New', email: 'max@x.com', currentProject: { id: 'PRJ001', name: 'Decommission' } }
+
+function renderPage(role = 'admin', url = '/users') {
   return render(
     <AuthContext.Provider value={{ status: 'authed', user: { id: 'ME0001', role }, login: vi.fn(), logout: vi.fn(), updateUser: vi.fn() }}>
-      <MemoryRouter initialEntries={['/users']}>
+      <MemoryRouter initialEntries={[url]}>
         <Routes>
           <Route path="/users" element={<UsersPage />} />
           <Route path="/users/:id" element={<p>detail page</p>} />
@@ -52,6 +55,29 @@ describe('UsersPage', () => {
     renderPage('manager')
     expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /new user/i })).not.toBeInTheDocument()
+  })
+
+  it('hides deactivated accounts until asked, and searches by email', async () => {
+    const user = userEvent.setup()
+    usersApi.list.mockResolvedValue({ items: [MANAGER, EMPLOYEE, RETIRED], total: 3 })
+    renderPage('admin')
+    await screen.findByText('Eve Employee')
+    expect(screen.queryByText('Old Timer')).not.toBeInTheDocument()
+    await user.click(screen.getByLabelText(/show deactivated/i))
+    expect(await screen.findByText('Old Timer')).toBeInTheDocument()
+    expect(screen.getByText('3 of 3 users')).toBeInTheDocument()
+    await user.type(screen.getByRole('searchbox', { name: /search/i }), 'old@')
+    expect(screen.queryByText('Eve Employee')).not.toBeInTheDocument()
+    expect(screen.getByText('Old Timer')).toBeInTheDocument()
+  })
+
+  it('shows only free employees when linked with ?available=true', async () => {
+    usersApi.list.mockResolvedValue({ items: [MANAGER, EMPLOYEE, BUSY], total: 3 })
+    renderPage('admin', '/users?available=true')
+    expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
+    expect(screen.queryByText('Max New')).not.toBeInTheDocument()
+    expect(screen.queryByText('Mia Manager')).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/available only/i)).toBeChecked()
   })
 
   it('shows the empty state and the error state', async () => {

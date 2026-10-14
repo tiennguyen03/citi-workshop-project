@@ -7,6 +7,7 @@ import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx'
+import DueTag from '../../components/DueTag/DueTag.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import FieldList from '../../components/FieldList/FieldList.jsx'
 import NoticeSnackbar from '../../components/NoticeSnackbar/NoticeSnackbar.jsx'
@@ -97,6 +98,7 @@ export default function MilestoneDetailPage() {
             actions={
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                 <StatusChip status={milestone.status} size="medium" />
+                <DueTag dueDate={milestone.dueDate} isOpen={isOpen && projectWritable} size="medium" />
                 {canManage && projectWritable && isOpen && (
                   <Button variant="outlined" onClick={() => setEditOpen(true)}>
                     Edit

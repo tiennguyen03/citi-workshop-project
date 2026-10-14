@@ -6,6 +6,8 @@ import IconButton from '@mui/material/IconButton'
 import MenuItem from '@mui/material/MenuItem'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
+import ToggleButton from '@mui/material/ToggleButton'
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
@@ -18,15 +20,19 @@ import StatCard from '../../components/StatCard/StatCard.jsx'
 import useApi from '../../hooks/useApi.js'
 import useAuth from '../../auth/useAuth.js'
 import * as timeEntriesApi from '../../services/timeEntries.js'
+import { weekRange } from '../../utils/dates.js'
 import { formatDate, formatHours } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 import { sumHours } from '../../utils/timeEntryForm.js'
+
+const RANGE_LABELS = { this: 'this week', last: 'last week' }
 import TimeEntryDialog from './TimeEntryDialog.jsx'
 
 /** Logged time for a project: members see their own entries, managers/admins everyone's (ui-flow.md F6/F7). */
 export default function TimeTab({ project, canManage, onChanged, notify }) {
   const { user: me } = useAuth()
   const [userId, setUserId] = useState('')
+  const [range, setRange] = useState('all') // 'all' | 'this' | 'last'
   const [logging, setLogging] = useState(false)
   const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
@@ -36,8 +42,8 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
   const canLog = writable && project.myMembership?.isActive === true
 
   const { data, loading, error, refetch } = useApi(
-    () => timeEntriesApi.list(project.id, { userId: userId || undefined }),
-    [project.id, userId],
+    () => timeEntriesApi.list(project.id, { userId: userId || undefined, ...(range === 'all' ? {} : weekRange(range)) }),
+    [project.id, userId, range],
   )
   const rows = data?.items ?? []
   const people = canManage ? [...new Map(rows.map((e) => [e.user.id, e.user])).values()] : []
@@ -105,21 +111,28 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
 
   return (
     <>
-      <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
-        {canManage ? (
-          <TextField select label="Person" value={userId} onChange={(e) => setUserId(e.target.value)} sx={{ width: 220 }}>
-            <MenuItem value="">Everyone</MenuItem>
-            {people.map((p) => (
-              <MenuItem key={p.id} value={p.id}>
-                {fullName(p)}
-              </MenuItem>
-            ))}
-          </TextField>
-        ) : (
-          <Typography variant="body2" color="text.secondary">
-            {canLog ? 'Your logged time on this project.' : 'Your logged time on this project (read-only).'}
-          </Typography>
-        )}
+      <Stack direction="row" useFlexGap spacing={2} sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
+        <Stack direction="row" useFlexGap spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+          {canManage ? (
+            <TextField select label="Person" size="small" value={userId} onChange={(e) => setUserId(e.target.value)} sx={{ width: 220 }}>
+              <MenuItem value="">Everyone</MenuItem>
+              {people.map((p) => (
+                <MenuItem key={p.id} value={p.id}>
+                  {fullName(p)}
+                </MenuItem>
+              ))}
+            </TextField>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              {canLog ? 'Your logged time on this project.' : 'Your logged time on this project (read-only).'}
+            </Typography>
+          )}
+          <ToggleButtonGroup exclusive size="small" value={range} onChange={(_e, v) => v && setRange(v)} aria-label="Date range">
+            <ToggleButton value="this">This week</ToggleButton>
+            <ToggleButton value="last">Last week</ToggleButton>
+            <ToggleButton value="all">All</ToggleButton>
+          </ToggleButtonGroup>
+        </Stack>
         {canLog && (
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setLogging(true)}>
             Log time
@@ -127,7 +140,11 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
         )}
       </Stack>
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, mb: 2 }}>
-        <StatCard label="Hours logged" value={formatHours(sumHours(rows))} hint={`${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}${canManage && userId ? ' for this person' : ''}`} />
+        <StatCard
+          label="Hours logged"
+          value={formatHours(sumHours(rows))}
+          hint={`${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}${range !== 'all' ? ` ${RANGE_LABELS[range]}` : ''}${canManage && userId ? ' for this person' : ''}`}
+        />
         {!canManage && project.myMembership && (
           <StatCard label="Assigned to you" value={formatHours(project.myMembership.hoursAssigned)} hint={`${formatHours(project.myMembership.hoursCompleted)} completed`} />
         )}

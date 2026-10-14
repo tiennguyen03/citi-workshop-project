@@ -192,3 +192,19 @@ with the workaround in place so nobody mistakes it for an oversight.
 three pillars (time, cost, resources) the assignment is graded on.
 **Consequences**: Reviewers should treat these as roadmap, not defects. The table is the checklist for
 a post-workshop hardening pass.
+
+## D19 · 2026-10-14 · UX signals are computed client-side; list filters live in the URL
+**Decision**: Urgency cues (milestone "Overdue" / "Due in N days", project "Past end date", the
+40-hour week bar, the "Next due" marker) are derived in the browser from the calendar dates the API
+already returns, using the browser's clock (`utils/dates.js`, `components/DueTag`). Search and filters
+on the Projects and Users lists run client-side over the whole list and are mirrored in the query
+string (`hooks/useUrlFilters`), so a filtered view is a shareable link (e.g. `/users?available=true`).
+The project page keeps its tab in `?tab=`. Dashboards keep returning pre-computed lists; slice 8 extends
+those payloads rather than moving the cue logic server-side.
+**Why**: No new endpoint or round trip for what is purely presentation; the D18 time-zone caveat
+(server vs browser "today") already applies and is acceptable for a day-granular cue. Lists are returned
+whole (D18 pagination), so filtering in the browser is free and instant.
+**Consequences**: If pagination ever lands, search/status/role move to query params on the list
+endpoints and `useUrlFilters` keeps the same shape. Anything that must be *enforced* (not just shown)
+stays in the services; the client only shows and hides.
+

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx'
+import DueTag from '../../components/DueTag/DueTag.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import NoticeSnackbar from '../../components/NoticeSnackbar/NoticeSnackbar.jsx'
 import PageHeader from '../../components/PageHeader/PageHeader.jsx'
@@ -25,12 +26,25 @@ import OverviewTab from './OverviewTab.jsx'
 import TimeTab from './TimeTab.jsx'
 import ProjectEditDialog from './ProjectEditDialog.jsx'
 
-/** Project detail with Overview, Members, Milestones and Time tabs. */
+const TABS = ['overview', 'members', 'milestones', 'time']
+
+/** Project detail with Overview, Members, Milestones and Time tabs. The tab lives in `?tab=` so it can be linked to. */
 export default function ProjectDetailPage() {
   const { id } = useParams()
   const { user: me } = useAuth()
   const { notice, notify, clear } = useNotice()
-  const [tab, setTab] = useState('overview')
+  const [params, setParams] = useSearchParams()
+  const tab = TABS.includes(params.get('tab')) ? params.get('tab') : 'overview'
+  const setTab = (value) =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (value === 'overview') next.delete('tab')
+        else next.set('tab', value)
+        return next
+      },
+      { replace: true },
+    )
   const [editOpen, setEditOpen] = useState(false)
   const [confirm, setConfirm] = useState(null) // 'complete' | 'archive' | 'unarchive'
   const [pending, setPending] = useState(false)
@@ -96,6 +110,7 @@ export default function ProjectDetailPage() {
             actions={
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                 <StatusChip status={project.status} archived={project.archived} size="medium" />
+                <DueTag dueDate={project.endDate} isOpen={project.status === 'active' && !project.archived} soonDays={null} overdueLabel="Past end date" overdueTone="warning" size="medium" />
                 {writable && (
                   <Button variant="outlined" onClick={() => setEditOpen(true)}>
                     Edit

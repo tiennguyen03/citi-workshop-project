@@ -10,6 +10,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
 import DataTable from '../../components/DataTable/DataTable.jsx'
+import DueTag from '../../components/DueTag/DueTag.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
@@ -17,18 +18,23 @@ import Tag from '../../components/Tag/Tag.jsx'
 import useApi from '../../hooks/useApi.js'
 import * as milestonesApi from '../../services/milestones.js'
 import { formatDate } from '../../utils/format.js'
+import { nextDueId, sortMilestones } from '../../utils/milestones.js'
 import { fullName, initials } from '../../utils/roles.js'
 import MilestoneDialog from './MilestoneDialog.jsx'
 
-const COLUMNS = [
+/** Columns depend on which open milestone is due first, so they are built per render. */
+const buildColumns = (nextDue) => [
   {
     key: 'name',
     label: 'Milestone',
     render: (m) => (
       <>
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-          {m.name}
-        </Typography>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            {m.name}
+          </Typography>
+          {m.id === nextDue && <Tag label="Next due" tone="primary" />}
+        </Stack>
         {m.description && (
           <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', maxWidth: 360 }}>
             {m.description}
@@ -37,7 +43,16 @@ const COLUMNS = [
       </>
     ),
   },
-  { key: 'status', label: 'Status', render: (m) => <StatusChip status={m.status} /> },
+  {
+    key: 'status',
+    label: 'Status',
+    render: (m) => (
+      <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+        <StatusChip status={m.status} />
+        <DueTag dueDate={m.dueDate} isOpen={m.status === 'open'} />
+      </Stack>
+    ),
+  },
   { key: 'dates', label: 'Dates', nowrap: true, render: (m) => `${formatDate(m.startDate)} – ${formatDate(m.dueDate)}` },
   {
     key: 'goals',
@@ -82,7 +97,8 @@ export default function MilestonesTab({ project, canManage, onChanged, notify })
     () => (canManage && !project.archived ? milestonesApi.availableAssignees(project.id) : Promise.resolve(null)),
     [project.id, canManage, project.archived],
   )
-  const rows = data?.items ?? []
+  const rows = sortMilestones(data?.items ?? [])
+  const columns = buildColumns(nextDueId(rows))
 
   return (
     <>
@@ -98,7 +114,7 @@ export default function MilestonesTab({ project, canManage, onChanged, notify })
       </Stack>
       <ErrorAlert error={error} onRetry={refetch} />
       <DataTable
-        columns={COLUMNS}
+        columns={columns}
         rows={rows}
         getRowKey={(m) => m.id}
         loading={loading}
