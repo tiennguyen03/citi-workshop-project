@@ -61,27 +61,30 @@ export default function LoginPage() {
           borderColor: { md: 'divider' },
         }}
       >
-        <BrandMark size={32} />
-        <Box>
-          <Typography variant="h1" component="p" sx={{ fontSize: { xs: '2.25rem', md: '3rem' }, maxWidth: '12ch' }}>
-            Every project, measured three ways.
-          </Typography>
-          <Box component="dl" sx={{ m: 0, mt: { xs: 3, md: 5 }, display: { xs: 'none', md: 'grid' }, gap: 2.5, maxWidth: 460 }}>
-            {PILLARS.map(([term, detail]) => (
-              <Box key={term} sx={{ display: 'grid', gridTemplateColumns: '8rem 1fr', gap: 2, alignItems: 'baseline' }}>
-                <Typography component="dt" variant="h4">
-                  {term}
-                </Typography>
-                <Typography component="dd" variant="body1" color="text.secondary" sx={{ m: 0 }}>
-                  {detail}
-                </Typography>
-              </Box>
-            ))}
+        {/* One measure for brand, statement and footer, centred in the panel but left-aligned inside it */}
+        <Box sx={{ width: '100%', maxWidth: 640, mx: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 4, flexGrow: 1 }}>
+          <BrandMark size={32} />
+          <Box>
+            <Typography variant="h1" component="p" sx={{ fontSize: { xs: '2.25rem', md: '3rem' }, maxWidth: '24ch', textWrap: 'balance' }}>
+              Every project, measured three ways.
+            </Typography>
+            <Box component="dl" sx={{ m: 0, mt: { xs: 3, md: 5 }, display: { xs: 'none', md: 'grid' }, gap: 2 }}>
+              {PILLARS.map(([term, detail]) => (
+                <Box key={term} sx={{ display: 'grid', gridTemplateColumns: '8.5rem 1fr', columnGap: 2, alignItems: 'baseline' }}>
+                  <Typography component="dt" variant="h4">
+                    {term}
+                  </Typography>
+                  <Typography component="dd" variant="body1" color="text.secondary" sx={{ m: 0, whiteSpace: 'nowrap' }}>
+                    {detail}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
           </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', md: 'block' } }}>
+            An internal tool. Accounts are created by an admin.
+          </Typography>
         </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', md: 'block' } }}>
-          An internal tool. Accounts are created by an admin.
-        </Typography>
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 3, sm: 4, md: 6 }, bgcolor: 'background.paper' }}>
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%', maxWidth: 380 }}>
