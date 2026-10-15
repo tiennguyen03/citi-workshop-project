@@ -25,7 +25,12 @@ def test_seed_loads_once_and_respects_invariants():
     assert trail[0]["occurred_at"] < trail[-1]["occurred_at"]
     assert all(r["occurred_at"].timestamp() <= __import__("time").time() for r in trail)  # never dated in the future
     # M8: at most one active project per employee (the partial index would have refused otherwise)
-    assert db.query_one("SELECT COUNT(*) AS n FROM project_members WHERE is_active")["n"] == 8
+    assert db.query_one("SELECT COUNT(*) AS n FROM project_members WHERE is_active")["n"] == 10
+    # D29: dependency chains point inside their own project and never loop
+    chains = db.query(
+        "SELECT m.id, m.project_id, b.project_id AS blocker_project FROM milestones m JOIN milestones b ON b.id = m.blocked_by_id"
+    )
+    assert len(chains) == 5 and all(c["project_id"] == c["blocker_project"] for c in chains)
     # M13a: at most one open milestone per employee per project
     dup = db.query(
         "SELECT project_id, user_id FROM milestone_assignees WHERE is_open GROUP BY 1, 2 HAVING COUNT(*) > 1"

@@ -104,3 +104,8 @@ Projects list, the manager card, the employee's Current project card and the pro
 shows "—  No goals configured". Hours keep their own bars and their own words: "Capacity used" (project logged over
 capacity), "Assigned hours used" (a person's logged over assigned), "This week" (logged over 40 h), "Hours logged" on the
 Overview. Cost stays logged hours × salary / 2,080.
+
+### Milestone dependencies (D29)
+The milestone dialog has a "Waits on" select over the project's other milestones. A waiting milestone shows "Waits on
+X" beside its name while X is open (quiet warning cue) and "After X" once X is complete; its page shows a "Waits on"
+fact with a link, an info banner while blocked, and a disabled "Mark complete" whose tooltip names the blocker.

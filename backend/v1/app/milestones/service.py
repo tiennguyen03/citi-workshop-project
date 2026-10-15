@@ -4,7 +4,7 @@ from typing import Any
 
 from app.core import permissions
 from app.core.actor import Actor
-from app.core.errors import Conflict, Forbidden, MilestoneConflict, NotFound, ValidationError
+from app.core.errors import Conflict, Forbidden, MilestoneBlocked, MilestoneConflict, NotFound, ValidationError
 from app.core.ids import new_id
 from app.core.paging import DEFAULT_LIMIT, page
 from app.milestones import repository as default_repo
@@ -74,6 +74,38 @@ def _assert_no_open_conflicts(project_id: str, user_ids: list[str], repo, *, exc
         )
 
 
+def _assert_blocker(project_id: str, milestone_id: str | None, blocked_by_id: str | None, repo) -> None:
+    """
+    A blocker must exist, belong to the same project, not be the milestone itself and not close a cycle (D29).
+    Walked up the chain, which is short in practice; a cycle would otherwise let two milestones wait on each other.
+    """
+    if blocked_by_id is None:
+        return
+    if blocked_by_id == milestone_id:
+        raise ValidationError("A milestone cannot wait on itself", field="blockedById")
+    seen: set[str] = set()
+    current = blocked_by_id
+    while current is not None:
+        blocker = repo.find_by_id(current)
+        if blocker is None or blocker["project_id"] != project_id:
+            raise ValidationError("The blocking milestone must belong to the same project", field="blockedById")
+        if blocker["id"] == milestone_id or current in seen:
+            raise ValidationError(
+                f"'{blocker['name']}' already waits on this milestone; that would be a loop", field="blockedById"
+            )
+        seen.add(current)
+        current = blocker.get("blocked_by_id")
+
+
+def _assert_not_blocked(milestone: dict[str, Any]) -> None:
+    """A milestone cannot be completed while the one it waits on is still open (D29)."""
+    if milestone.get("blocked_by_id") and milestone.get("blocked_by_status") == STATUS_OPEN:
+        raise MilestoneBlocked(
+            f"'{milestone['blocked_by_name']}' must be completed first",
+            {"blockedBy": {"id": milestone["blocked_by_id"], "name": milestone["blocked_by_name"]}},
+        )
+
+
 def _shape_many(rows: list[dict[str, Any]], repo) -> list[dict[str, Any]]:
     ids = [r["id"] for r in rows]
     assignees = repo.assignees_for(ids)
@@ -127,6 +159,7 @@ def create_milestone(actor: Actor, project_id: str, dto: CreateMilestoneRequest,
     _assert_dates_within_project(project, dto.start_date, dto.due_date)
     _assert_members(project_id, dto.assignee_ids, repo)
     _assert_no_open_conflicts(project_id, dto.assignee_ids, repo)
+    _assert_blocker(project_id, None, dto.blocked_by_id, repo)
     milestone_id = new_id()
     while repo.find_by_id(milestone_id) is not None:  # pragma: no cover - 1 in 10^9
         milestone_id = new_id()
@@ -139,6 +172,7 @@ def create_milestone(actor: Actor, project_id: str, dto: CreateMilestoneRequest,
             "start_date": dto.start_date,
             "due_date": dto.due_date,
             "sort_order": repo.next_sort_order(project_id),
+            "blocked_by_id": dto.blocked_by_id,
         }
     )
     repo.replace_assignees(milestone_id, project_id, dto.assignee_ids, is_open=True)
@@ -156,6 +190,8 @@ def update_milestone(actor: Actor, milestone_id: str, dto: UpdateMilestoneReques
     start = fields.get("start_date", milestone["start_date"])
     due = fields.get("due_date", milestone["due_date"])
     _assert_dates_within_project(project, start, due)
+    if "blocked_by_id" in fields:
+        _assert_blocker(project["id"], milestone_id, fields["blocked_by_id"], repo)
 
     if new_assignees is not None:
         current = repo.assignee_ids(milestone_id)
@@ -177,6 +213,7 @@ def complete_milestone(actor: Actor, milestone_id: str, repo=default_repo) -> di
     _assert_project_writable(project)
     if milestone["status"] == STATUS_COMPLETE:
         raise Conflict("This milestone is already complete")
+    _assert_not_blocked(milestone)
     open_goals = repo.open_goal_count(milestone_id)
     repo.set_status(milestone_id, STATUS_COMPLETE)
     return {**_shape_one(milestone_id, repo), "details": {"openGoals": open_goals}}

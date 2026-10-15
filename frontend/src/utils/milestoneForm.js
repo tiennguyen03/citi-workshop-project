@@ -31,6 +31,7 @@ export function toMilestoneValues(milestone) {
     startDate: String(milestone.startDate).slice(0, 10),
     dueDate: String(milestone.dueDate).slice(0, 10),
     assigneeIds: milestone.assignees.map((a) => a.id),
+    blockedById: milestone.blockedBy?.id ?? '',
   }
 }
 
@@ -43,6 +44,7 @@ export function milestoneChanges(original, values) {
   if (values.dueDate !== original.dueDate) changes.dueDate = values.dueDate
   const same = values.assigneeIds.length === original.assigneeIds.length && values.assigneeIds.every((id) => original.assigneeIds.includes(id))
   if (!same) changes.assigneeIds = values.assigneeIds
+  if ((values.blockedById || '') !== (original.blockedById || '')) changes.blockedById = values.blockedById || null
   return changes
 }
 

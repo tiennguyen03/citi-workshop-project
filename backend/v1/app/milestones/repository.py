@@ -10,9 +10,10 @@ MILESTONE_SELECT = sql.SQL(
     """
     SELECT m.id, m.project_id, m.name, m.description, m.start_date, m.due_date, m.status, m.completed_at,
            m.sort_order, m.created_at, m.updated_at,
+           m.blocked_by_id, b.name AS blocked_by_name, b.status AS blocked_by_status,
            (SELECT COUNT(*) FROM goals g WHERE g.milestone_id = m.id) AS goals_total,
            (SELECT COUNT(*) FROM goals g WHERE g.milestone_id = m.id AND g.is_done) AS goals_done
-    FROM milestones m
+    FROM milestones m LEFT JOIN milestones b ON b.id = m.blocked_by_id
     {where}
     ORDER BY {order}
     {paging}
@@ -25,7 +26,7 @@ PROJECT_ORDER = sql.SQL(
 )
 DEFAULT_ORDER = sql.SQL("m.sort_order, m.start_date, m.name")
 NO_PAGING = sql.SQL("")
-UPDATABLE_COLUMNS = frozenset({"name", "description", "start_date", "due_date"})
+UPDATABLE_COLUMNS = frozenset({"name", "description", "start_date", "due_date", "blocked_by_id"})
 
 USER_COLS = sql.SQL("u.id, u.first_name, u.last_name, u.email, u.job_title, u.role")
 
@@ -38,6 +39,15 @@ def list_by_project(project_id: str, *, limit: int | None = None, offset: int = 
     return db.query(
         MILESTONE_SELECT.format(where=sql.SQL("WHERE m.project_id = %(pid)s"), order=PROJECT_ORDER, paging=paging),
         {"pid": project_id, "limit": limit, "offset": offset},
+        conn=conn,
+    )
+
+
+def dependants(milestone_id: str, conn=None) -> list[dict[str, Any]]:
+    """Milestones that wait on this one, with their state (D29)."""
+    return db.query(
+        "SELECT id, name, status FROM milestones WHERE blocked_by_id = %s ORDER BY due_date, name",
+        (milestone_id,),
         conn=conn,
     )
 
@@ -76,8 +86,9 @@ def next_sort_order(project_id: str, conn=None) -> int:
 def insert(row: dict[str, Any], conn=None) -> None:
     db.execute(
         """
-        INSERT INTO milestones (id, project_id, name, description, start_date, due_date, sort_order)
-        VALUES (%(id)s, %(project_id)s, %(name)s, %(description)s, %(start_date)s, %(due_date)s, %(sort_order)s)
+        INSERT INTO milestones (id, project_id, name, description, start_date, due_date, sort_order, blocked_by_id)
+        VALUES (%(id)s, %(project_id)s, %(name)s, %(description)s, %(start_date)s, %(due_date)s, %(sort_order)s,
+                %(blocked_by_id)s)
         """,
         row,
         conn=conn,

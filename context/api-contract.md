@@ -11,7 +11,7 @@ JSON. All endpoints except `POST /auth/login` require `Authorization: Bearer <jw
   ```json
   { "error": { "code": "VALIDATION_ERROR", "message": "end_date must be on or after start_date", "details": { "field": "end_date" } } }
   ```
-  Codes: `VALIDATION_ERROR` 400 · `UNAUTHENTICATED` 401 · `FORBIDDEN` 403 · `NOT_FOUND` 404 · `CONFLICT` 409 · `PROJECT_CONFLICT` 409 (employee already on an active project; `details.userIds`, `details.projectId`) · `MILESTONE_CONFLICT` 409 (employee already on an open milestone in this project) · `INTERNAL` 500.
+  Codes: `VALIDATION_ERROR` 400 · `UNAUTHENTICATED` 401 · `FORBIDDEN` 403 · `NOT_FOUND` 404 · `CONFLICT` 409 · `PROJECT_CONFLICT` 409 (employee already on an active project; `details.userIds`, `details.projectId`) · `MILESTONE_CONFLICT` 409 (employee already on an open milestone in this project) · `MILESTONE_BLOCKED` 409 (the milestone waits on one that is still open; `details.blockedBy`) · `INTERNAL` 500.
 - Lists return `{ "items": [...], "total": n }`. Filtering via query params where listed. Users, projects, time entries and the audit log page (`Page<T>` below); milestones and members are returned whole.
 - `UserSummary` = `{id, firstName, lastName, email, jobTitle, role}` (no salary). `UserFull` = UserSummary + `salary, managerId, isActive, username`. Salary is included only when the actor is admin or the user's manager.
 - Field names are camelCase on the wire; snake_case in the database. Handlers do the mapping via DTOs.
@@ -92,6 +92,7 @@ ProjectStats    {capacityHours, hoursAssigned, hoursCompleted, budget?, costCons
 | Method | Path | Body | Response | Who |
 |---|---|---|---|---|
 | GET | `/projects/{id}/milestones?limit=25&offset=0` | — | `200 Page<Milestone> & {nextDueId: string\|null}` in reading order: open by due date, then completed by completion date (D28) | project viewers |
+| | *Dependencies (D29)* | `POST`/`PATCH` milestone bodies accept `blockedById: string\|null` (same project, not itself, no loop → `400`) | `Milestone` carries `blockedBy: {id, name, status}\|null` and `blocked` (true while the blocker is open); `POST /milestones/{id}/complete` → `409 MILESTONE_BLOCKED` with `details.blockedBy` while blocked | |
 | POST | `/projects/{id}/milestones` | `{name, description?, startDate, dueDate, assigneeIds?: []}` | `201 Milestone` · `409 MILESTONE_CONFLICT` if any assignee is already on an open milestone in this project (`details.userIds`, `details.milestoneId`) | admin; project manager |
 | GET | `/milestones/{id}` | — | `200 Milestone (with goals, assignees)` | project viewers |
 | PATCH | `/milestones/{id}` | `{name?, description?, startDate?, dueDate?, assigneeIds?}` | `200 Milestone` · `409 MILESTONE_CONFLICT` as above (only for *newly added* assignees) | admin; project manager |

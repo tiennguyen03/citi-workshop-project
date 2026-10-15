@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link as RouterLink, useParams } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
+import Link from '@mui/material/Link'
 import Paper from '@mui/material/Paper'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
@@ -105,9 +107,13 @@ export default function MilestoneDetailPage() {
                   </Button>
                 )}
                 {canManage && projectWritable && isOpen && (
-                  <Button variant="contained" onClick={() => setConfirm('complete')}>
-                    Mark complete
-                  </Button>
+                  <Tooltip title={milestone.blocked ? `Complete '${milestone.blockedBy.name}' first` : ''}>
+                    <span>
+                      <Button variant="contained" onClick={() => setConfirm('complete')} disabled={milestone.blocked}>
+                        Mark complete
+                      </Button>
+                    </span>
+                  </Tooltip>
                 )}
                 {canManage && projectWritable && !isOpen && (
                   <Button variant="outlined" onClick={() => setConfirm('reopen')}>
@@ -122,6 +128,15 @@ export default function MilestoneDetailPage() {
               This project is {project.archived ? 'archived' : 'complete'}, so the milestone is read-only.
             </Alert>
           )}
+          {isOpen && milestone.blocked && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Waits on{' '}
+              <Link component={RouterLink} to={`/milestones/${milestone.blockedBy.id}`} underline="hover" color="inherit">
+                {milestone.blockedBy.name}
+              </Link>
+              , which is still open. Goals can be worked on; the milestone cannot be marked complete yet.
+            </Alert>
+          )}
           {!isOpen && projectWritable && (
             <Alert severity="success" sx={{ mb: 2 }}>
               Completed on {formatDateTime(milestone.completedAt)}. Reopen it to change goals.
@@ -134,6 +149,19 @@ export default function MilestoneDetailPage() {
                 { label: 'Start', value: formatDate(milestone.startDate) },
                 { label: 'Due', value: formatDate(milestone.dueDate) },
                 { label: 'Completed', value: milestone.completedAt ? formatDate(milestone.completedAt) : '—' },
+                {
+                  label: 'Waits on',
+                  value: milestone.blockedBy ? (
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                      <Link component={RouterLink} to={`/milestones/${milestone.blockedBy.id}`} underline="hover" color="inherit">
+                        {milestone.blockedBy.name}
+                      </Link>
+                      <StatusChip status={milestone.blockedBy.status} />
+                    </Stack>
+                  ) : (
+                    'Nothing'
+                  ),
+                },
               ]}
             />
             <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mt: 2.5 }}>

@@ -27,6 +27,7 @@ class CreateMilestoneRequest(RequestModel):
     start_date: date
     due_date: date
     assignee_ids: list[str] = Field(default_factory=list, max_length=50)
+    blocked_by_id: str | None = Field(default=None, pattern=f"^{ID_PATTERN}$")
 
     @field_validator("assignee_ids")
     @classmethod
@@ -51,6 +52,7 @@ class UpdateMilestoneRequest(RequestModel):
     start_date: date | None = None
     due_date: date | None = None
     assignee_ids: list[str] | None = Field(default=None, max_length=50)
+    blocked_by_id: str | None = Field(default=None, pattern=f"^{ID_PATTERN}$")  # explicit null clears the link
 
     _ids = field_validator("assignee_ids")(CreateMilestoneRequest._ids.__func__)  # type: ignore[attr-defined]
 
@@ -116,4 +118,11 @@ def milestone_shape(
         "goals": [goal_shape(g) for g in goals],
         "goalsDone": row["goals_done"],
         "goalsTotal": row["goals_total"],
+        # D29: the one milestone this waits on; `blocked` is true while that milestone is still open
+        "blockedBy": (
+            {"id": row["blocked_by_id"], "name": row["blocked_by_name"], "status": row["blocked_by_status"]}
+            if row.get("blocked_by_id")
+            else None
+        ),
+        "blocked": bool(row.get("blocked_by_id")) and row.get("blocked_by_status") == "open",
     }

@@ -116,7 +116,8 @@ describe('MilestonesTab', () => {
         startDate: defaultMilestoneStart(PROJECT),
         dueDate: '2026-10-23',
         assigneeIds: ['EMP002'],
-      }),
+      blockedById: null,
+    }),
     )
     await waitFor(() => expect(notify).toHaveBeenCalledWith("Created milestone 'Power-down'"))
   })

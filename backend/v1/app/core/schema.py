@@ -143,6 +143,8 @@ MIGRATIONS: list[str] = [
     # slice 3: why a membership ended, so un-archiving can re-claim exactly the people archiving released
     "ALTER TABLE project_members ADD COLUMN IF NOT EXISTS released_reason TEXT "
     "CHECK (released_reason IN ('removed', 'completed', 'archived'))",
+    # slice 18 (D29): a milestone may wait on one other milestone of the same project
+    "ALTER TABLE milestones ADD COLUMN IF NOT EXISTS blocked_by_id TEXT NULL REFERENCES milestones(id)",
 ]
 
 TABLES_IN_DEPENDENCY_ORDER = (

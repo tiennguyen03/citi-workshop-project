@@ -90,3 +90,9 @@ class MilestoneConflict(Conflict):
     """409 — employee is already on another open milestone in this project (M13a / D14)."""
 
     code = "MILESTONE_CONFLICT"
+
+
+class MilestoneBlocked(Conflict):
+    """409 — the milestone waits on another that is still open (D29)."""
+
+    code = "MILESTONE_BLOCKED"

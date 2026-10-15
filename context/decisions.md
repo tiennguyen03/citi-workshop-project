@@ -376,3 +376,17 @@ already carries the tab). The in-memory sorter `utils/milestones.js` is gone.
 small. Ordering had to move with the page cut, or page 2 would start a new "open first" sequence.
 **Consequences**: Any client that needs every milestone asks with `limit=100` and walks pages. The "Next due" marker
 comes from the API, so it is correct on every page. Members stay whole (one team).
+
+## D29 · 2026-10-15 · Milestone dependencies: one "waits on" link, gating completion
+**Decision**: A milestone may wait on one other milestone of the same project (`milestones.blocked_by_id`, an additive
+migration). The service refuses a blocker from another project, the milestone itself, or any link that would close a
+loop (it walks the chain). While the blocker is open the milestone is `blocked`: goals can still be worked on, but
+`POST /milestones/{id}/complete` answers `409 MILESTONE_BLOCKED` naming the blocker, and the page disables "Mark
+complete" with that reason. Completing the blocker unblocks it; reopening a blocker does not reopen its dependants.
+The Milestones tab shows "Waits on X" as a quiet warning cue while blocked and "After X" once X is complete; the
+milestone page lists "Waits on" as a fact with a link. Demo data: Decommission's power-down and batch 2 wait on batch
+1, and a new project, Office Relocation (manager ravi.mehta, team chloe.martin and samuel.osei), is a four-step chain.
+**Why**: The ACME brief asked for a dependency chain between deliverables; the project-level gate (no completion with
+open milestones) could not express "this phase cannot finish before that one".
+**Consequences**: One blocker per milestone keeps the model a chain, not a graph; fan-in would need a join table.
+Health does not yet read dependencies (a blocked milestone behind an overdue one is a natural future reason).

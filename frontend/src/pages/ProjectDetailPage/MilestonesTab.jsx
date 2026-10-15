@@ -27,7 +27,20 @@ const buildColumns = (nextDue) => [
   {
     key: 'name',
     label: 'Milestone',
-    render: (m) => <TitleCell title={m.name} caption={m.description} captionNoWrap adornment={m.id === nextDue && <Tag label="Next due" tone="primary" />} />,
+    render: (m) => (
+      <TitleCell
+        title={m.name}
+        caption={m.description}
+        captionNoWrap
+        adornment={
+          <>
+            {m.id === nextDue && <Tag label="Next due" tone="primary" />}
+            {/* D29: a dependency reads as supporting text; it only turns into a cue while it actually blocks */}
+            {m.blockedBy && (m.blocked ? <Tag label={`Waits on ${m.blockedBy.name}`} tone="warning" variant="quiet" /> : <Tag label={`After ${m.blockedBy.name}`} variant="quiet" />)}
+          </>
+        }
+      />
+    ),
   },
   {
     key: 'status',

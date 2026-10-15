@@ -11,9 +11,10 @@ import useApi from '../../hooks/useApi.js'
 import useFormState from '../../hooks/useFormState.js'
 import * as milestonesApi from '../../services/milestones.js'
 import { conflictMessage, defaultMilestoneStart, milestoneChanges, toMilestoneValues, validateMilestone } from '../../utils/milestoneForm.js'
+import { formatDate } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 
-const EMPTY = { name: '', description: '', startDate: '', dueDate: '', assigneeIds: [] }
+const EMPTY = { name: '', description: '', startDate: '', dueDate: '', assigneeIds: [], blockedById: '' }
 
 /**
  * Create or edit a milestone (ui-flow.md F5). Assignees come from `available-assignees`:
@@ -28,6 +29,9 @@ export default function MilestoneDialog({ open, project, milestone = null, onClo
     () => (open ? milestonesApi.availableAssignees(project.id, milestone?.id) : Promise.resolve(null)),
     [open, project.id, milestone?.id],
   )
+  // the other milestones of this project, for "Waits on" (D29); the API refuses loops and other projects
+  const { data: others } = useApi(() => (open ? milestonesApi.list(project.id, { limit: 100 }) : Promise.resolve(null)), [open, project.id])
+  const candidates = (others?.items ?? []).filter((m) => m.id !== milestone?.id)
   const free = people?.items ?? []
   const busy = people?.busy ?? []
   const everyone = [...free, ...busy.map((b) => b.user)]
@@ -56,6 +60,7 @@ export default function MilestoneDialog({ open, project, milestone = null, onClo
           startDate: values.startDate,
           dueDate: values.dueDate,
           assigneeIds: values.assigneeIds,
+          blockedById: values.blockedById || null,
         })
       }
       onSaved(saved)
@@ -141,6 +146,23 @@ export default function MilestoneDialog({ open, project, milestone = null, onClo
             </Typography>
           </MenuItem>
         )}
+      </TextField>
+      <TextField
+        select
+        name="blockedById"
+        label="Waits on"
+        value={values.blockedById}
+        onChange={(e) => setField('blockedById', e.target.value)}
+        error={Boolean(errors.blockedById)}
+        helperText={errors.blockedById ?? 'Cannot be completed until that milestone is complete.'}
+        disabled={pending}
+      >
+        <MenuItem value="">Nothing, it can be completed at any time</MenuItem>
+        {candidates.map((m) => (
+          <MenuItem key={m.id} value={m.id}>
+            <ListItemText primary={m.name} secondary={m.status === 'complete' ? 'complete' : `due ${formatDate(m.dueDate)}`} />
+          </MenuItem>
+        ))}
       </TextField>
     </FormDialog>
   )

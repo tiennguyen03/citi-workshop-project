@@ -111,7 +111,8 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 (skipped when `SEED_DEMO_DATA=false`, which the tests set). Seed IDs are fixed but production-style
 (random-looking, same alphabet as `ids.new_id`); e.g. john.doe = `7NW8G4`, PRJ "Decommission 1,000
 Servers" = `FLZ38Y`. Never use readable prefixes like `EMP001` — they imply a sequence that caps out. Accounts: `admin` / `Admin123!`;
-everyone else / `Password1!` — managers `priya.natarajan`, `marcus.bell`, `elena.vasquez`;
+everyone else / `Password1!` — managers `priya.natarajan`, `marcus.bell`, `elena.vasquez`, `ravi.mehta` (Office
+  Relocation `H4RL9Q`, a four-milestone dependency chain, D29; team `chloe.martin`, `samuel.osei`);
 employees e.g. `john.doe`, `aisha.rahman`, `daniel.kim`. To reload locally: truncate all tables in
 the `postgres` database, touch `backend/v1/function.py`, then **call `/api/v1/health` once** — the hot
 reload only re-runs the schema init + seed on the next invocation, so without a request the database

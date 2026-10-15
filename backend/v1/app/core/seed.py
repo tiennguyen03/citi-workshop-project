@@ -23,6 +23,7 @@ MANAGERS = [
     ("ULMSS7", "priya.natarajan", "Priya", "Natarajan", "Infrastructure Manager", 142000),
     ("WHCV59", "marcus.bell", "Marcus", "Bell", "Digital Products Manager", 138000),
     ("YN2WBZ", "elena.vasquez", "Elena", "Vasquez", "Data Platform Manager", 145000),
+    ("K3PD7R", "ravi.mehta", "Ravi", "Mehta", "Facilities Programme Manager", 131000),
 ]
 EMPLOYEES = [
     ("7NW8G4", "john.doe", "John", "Doe", "Systems Engineer", 98000, "ULMSS7"),
@@ -37,6 +38,8 @@ EMPLOYEES = [
     ("8EUCPU", "mei.chen", "Mei", "Chen", "Analytics Engineer", 104000, "YN2WBZ"),
     ("K7KZ3K", "lucas.ferreira", "Lucas", "Ferreira", "Database Administrator", 112000, "YN2WBZ"),
     ("FA6N7E", "olivia.bennett", "Olivia", "Bennett", "Junior Data Engineer", 72000, "YN2WBZ"),
+    ("P9WQ2H", "chloe.martin", "Chloe", "Martin", "Workplace Coordinator", 68000, "K3PD7R"),
+    ("6TZK4M", "samuel.osei", "Samuel", "Osei", "Logistics Lead", 84000, "K3PD7R"),
 ]
 
 # id, name, description, budget, start, end, manager, status, archived
@@ -86,6 +89,17 @@ PROJECTS = [
         "complete",
         False,  # finished but not yet archived: the admin dashboard's "Done, not archived" row
     ),
+    (
+        "H4RL9Q",
+        "Office Relocation",
+        "Move the regional office to the new floor: pack, move, set up, reopen. Each phase waits on the previous one.",
+        60000,
+        date(2026, 10, 1),
+        date(2026, 11, 20),
+        "K3PD7R",
+        "active",
+        False,
+    ),
 ]
 
 # project, user, hours_assigned, is_active, released_reason
@@ -100,10 +114,12 @@ MEMBERS = [
     ("P2YYU6", "8EUCPU", 360, True, None),
     ("56WSAB", "86KB5B", 240, False, "completed"),
     ("56WSAB", "4RGC6E", 200, False, "completed"),  # Liam moved on to the portal afterwards
+    ("H4RL9Q", "P9WQ2H", 220, True, None),
+    ("H4RL9Q", "6TZK4M", 260, True, None),
 ]
 # Available (no active project): Grace, Hannah, Lucas, Olivia
 
-# id, project, name, description, start, due, status, sort_order
+# id, project, name, description, start, due, status, sort_order, blocked_by (D29: waits on this milestone)
 MILESTONES = [
     (
         "VQ6L33",
@@ -114,6 +130,7 @@ MILESTONES = [
         date(2026, 10, 16),
         "complete",
         1,
+        None,
     ),
     (
         "8LWT5H",
@@ -124,6 +141,7 @@ MILESTONES = [
         date(2026, 11, 13),
         "open",
         2,
+        None,
     ),
     (
         "R2E86D",
@@ -134,6 +152,7 @@ MILESTONES = [
         date(2026, 11, 27),
         "open",
         3,
+        "8LWT5H",
     ),
     (
         "CWAC8H",
@@ -144,6 +163,7 @@ MILESTONES = [
         date(2026, 12, 18),
         "open",
         4,
+        "8LWT5H",
     ),
     (
         "VT5FWB",
@@ -154,6 +174,7 @@ MILESTONES = [
         date(2026, 10, 9),
         "complete",
         1,
+        None,
     ),
     (
         "2ZJ3R6",
@@ -164,6 +185,7 @@ MILESTONES = [
         date(2026, 10, 9),  # slipped: still open past its due date, so the demo shows an "Overdue" cue
         "open",
         2,
+        None,
     ),
     (
         "BKXFXD",
@@ -174,6 +196,7 @@ MILESTONES = [
         date(2026, 12, 11),
         "open",
         3,
+        None,
     ),
     (
         "VQX63A",
@@ -184,6 +207,7 @@ MILESTONES = [
         date(2026, 10, 17),  # due within the week, so the demo shows a "Due in N days" cue
         "open",
         1,
+        None,
     ),
     (
         "ZME8H9",
@@ -194,6 +218,7 @@ MILESTONES = [
         date(2027, 1, 29),
         "open",
         2,
+        None,
     ),
     (
         "2L7UCF",
@@ -204,6 +229,7 @@ MILESTONES = [
         date(2026, 7, 10),
         "complete",
         1,
+        None,
     ),
     (
         "QQRUZE",
@@ -214,11 +240,59 @@ MILESTONES = [
         date(2026, 8, 28),
         "complete",
         2,
+        None,
+    ),
+    (
+        "NQ7H3V",
+        "H4RL9Q",
+        "Pack and label",
+        "Every desk, crate and cable labelled with its new location.",
+        date(2026, 10, 1),
+        date(2026, 10, 9),
+        "complete",
+        1,
+        None,
+    ),
+    (
+        "B8KD2X",
+        "H4RL9Q",
+        "Move day",
+        "Movers take everything across over the weekend.",
+        date(2026, 10, 12),
+        date(2026, 10, 16),
+        "open",
+        2,
+        "NQ7H3V",
+    ),
+    (
+        "T4MW9P",
+        "H4RL9Q",
+        "Unpack and set up",
+        "Desks, network, printers and meeting rooms working on the new floor.",
+        date(2026, 10, 19),
+        date(2026, 10, 30),
+        "open",
+        3,
+        "B8KD2X",
+    ),
+    (
+        "L6YR5C",
+        "H4RL9Q",
+        "Reopen the office",
+        "Staff back in, old floor handed back to the landlord.",
+        date(2026, 11, 2),
+        date(2026, 11, 20),
+        "open",
+        4,
+        "T4MW9P",
     ),
 ]
 
 # milestone, user  — at most one OPEN milestone per user per project (M13a)
 ASSIGNEES = [
+    ("NQ7H3V", "6TZK4M"),
+    ("B8KD2X", "6TZK4M"),
+    ("T4MW9P", "P9WQ2H"),
     ("VQ6L33", "7NW8G4"),
     ("VQ6L33", "DREBQG"),
     ("8LWT5H", "7NW8G4"),
@@ -258,6 +332,13 @@ GOALS = [
     ("7GV7ZW", "ZME8H9", "Backfill 5 years of history", None, False),
     ("JX9Y6E", "2L7UCF", "Pilot 50 users", "86KB5B", True),
     ("2L9U9R", "QQRUZE", "Decommission concentrators", "86KB5B", True),
+    ("W5TQ8N", "NQ7H3V", "Label every crate", "6TZK4M", True),
+    ("D9HX4K", "NQ7H3V", "Confirm mover schedule", "6TZK4M", True),
+    ("F2VN7M", "B8KD2X", "Load and transport crates", "6TZK4M", False),
+    ("R8CJ3L", "B8KD2X", "Sign off the inventory on arrival", "6TZK4M", False),
+    ("M3ZP6T", "T4MW9P", "Set up desks and meeting rooms", "P9WQ2H", False),
+    ("X7QW2D", "T4MW9P", "Bring the network up", None, False),
+    ("H6LS4W", "L6YR5C", "Hand the old floor back", None, False),
 ]
 
 # id, project, user, date, hours, note  (dates ≤ 2026-10-13, within each project's range)
@@ -284,6 +365,9 @@ TIME_ENTRIES = [
     ("8BEU72", "56WSAB", "86KB5B", date(2026, 6, 2), 8, "Pilot setup"),
     ("3K4SHL", "56WSAB", "86KB5B", date(2026, 7, 20), 8, "Cutover support"),
     ("A8XEHY", "56WSAB", "4RGC6E", date(2026, 8, 10), 8, "Concentrator decommission"),
+    ("E4KT9S", "H4RL9Q", "6TZK4M", date(2026, 10, 6), 8, "Crate labelling"),
+    ("U2MB7Y", "H4RL9Q", "6TZK4M", date(2026, 10, 8), 6, "Mover walkthrough"),
+    ("C7NV3G", "H4RL9Q", "P9WQ2H", date(2026, 10, 9), 4, "Floor plan sign-off"),
 ]
 
 
@@ -335,7 +419,7 @@ def load(conn=None) -> None:
                 (pid, uid, hours, is_active, is_active, reason),
                 conn=connection,
             )
-        for mid, pid, name, description, start, due, status, order in MILESTONES:
+        for mid, pid, name, description, start, due, status, order, _blocked_by in MILESTONES:
             db.execute(
                 """
                 INSERT INTO milestones
@@ -345,6 +429,9 @@ def load(conn=None) -> None:
                 (mid, pid, name, description, start, due, status, status, order),
                 conn=connection,
             )
+        for mid, *_rest, blocked_by in MILESTONES:
+            if blocked_by:
+                db.execute("UPDATE milestones SET blocked_by_id = %s WHERE id = %s", (blocked_by, mid), conn=connection)
         milestone_meta = {m[0]: (m[1], m[6]) for m in MILESTONES}
         for mid, uid in ASSIGNEES:
             pid, status = milestone_meta[mid]
@@ -432,7 +519,7 @@ def _audit_trail(connection) -> list[tuple]:
                 201,
             )
         )
-    for mid, pid, name, _d, start, due, status, _order in MILESTONES:
+    for mid, pid, name, _d, start, due, status, _order, _blocked_by in MILESTONES:
         rows.append(
             (
                 at(start - timedelta(days=3), 11),

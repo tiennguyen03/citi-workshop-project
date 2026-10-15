@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { addMember, createProject, fullName, makeOffice } from './support/api.js'
+import { addMember, createMilestone, createProject, fullName, makeOffice, unique } from './support/api.js'
 import { confirmDialog, openProject, signIn, signOut, toast } from './support/ui.js'
 
 let office
@@ -76,4 +76,32 @@ test('milestone life cycle: create with assignee, goals, employee ticks own, com
 
   await openProject(page, project.id, project.name)
   await expect(page.getByRole('button', { name: 'Mark complete' })).toBeEnabled()
+})
+
+test('a milestone that waits on another cannot be completed first; the chain shows on the tab', async ({ page }) => {
+  const { manager, admin } = office
+  const chained = await createProject(admin, manager.id, { name: `E2E chain ${unique('dep')}` })
+  const pack = await createMilestone(manager.token, chained.id, { name: 'Pack', dueDate: '2026-10-09' })
+  const move = await createMilestone(manager.token, chained.id, { name: 'Move', startDate: '2026-10-12', dueDate: '2026-10-16', blockedById: pack.id })
+
+  await signIn(page, manager.username)
+  await openProject(page, chained.id, chained.name)
+  await page.getByRole('tab', { name: /milestones/i }).click()
+  await expect(page.getByText('Waits on Pack')).toBeVisible()
+
+  await page.goto(`/milestones/${move.id}`)
+  await expect(page.getByRole('heading', { name: 'Move' })).toBeVisible()
+  await expect(page.getByText(/which is still open/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Mark complete' })).toBeDisabled()
+
+  await page.goto(`/milestones/${pack.id}`)
+  await page.getByRole('button', { name: 'Mark complete' }).click()
+  await confirmDialog(page, 'Mark complete')
+  await toast(page, 'Milestone completed')
+
+  await page.goto(`/milestones/${move.id}`)
+  await expect(page.getByRole('button', { name: 'Mark complete' })).toBeEnabled()
+  await openProject(page, chained.id, chained.name)
+  await page.getByRole('tab', { name: /milestones/i }).click()
+  await expect(page.getByText('After Pack')).toBeVisible()
 })

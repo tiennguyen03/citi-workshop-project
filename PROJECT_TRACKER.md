@@ -14,7 +14,9 @@ Design notes, contract and decisions live in [`context/`](context/); this file i
 |---|---|---|---|
 | Admin | `admin` | `Admin123!` | Dashboard health board, Users, Audit log, archiving |
 | Manager | `marcus.bell` | `Password1!` | Two projects (one at risk, one complete), Due soon, My team |
-| Manager | `priya.natarajan` | `Password1!` | One on-track project with four milestones |
+| Manager | `priya.natarajan` | `Password1!` | One on-track project with four milestones, two of which wait on "Migrate workloads — batch 1" |
+| Manager | `ravi.mehta` | `Password1!` | Office Relocation: a four-step chain (pack → move → unpack → reopen) where each milestone waits on the previous one |
+| Employee | `samuel.osei` | `Password1!` | On Office Relocation, assigned to the blocked "Move day" milestone |
 | Employee | `john.doe` | `Password1!` | Current project, goals, logging time |
 
 Every other seeded person also signs in with `Password1!`.
@@ -118,6 +120,7 @@ without reseeding; reseed afterwards to clear them.
   measure (capacity used, assigned hours used, this week's workload), so a manager can compare work done with
   time and money spent.
 - A project cannot be completed while a milestone is open; a completed project can be archived.
+- A milestone may wait on one other milestone of its project and cannot be completed before it; loops are refused.
 - Every action by every role is written to the audit log with actor, action, entity and a summary;
   only admins read it; nothing in it is ever edited.
 
