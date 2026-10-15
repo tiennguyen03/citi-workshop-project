@@ -14,9 +14,17 @@ MILESTONE_SELECT = sql.SQL(
            (SELECT COUNT(*) FROM goals g WHERE g.milestone_id = m.id AND g.is_done) AS goals_done
     FROM milestones m
     {where}
-    ORDER BY m.sort_order, m.start_date, m.name
+    ORDER BY {order}
+    {paging}
     """
 )
+# the reading order of a project's milestones (D23/D28): open ones first, soonest due first; completed ones after,
+# most recently completed first. The same order the UI used to apply in memory, now applied where the page is cut.
+PROJECT_ORDER = sql.SQL(
+    "(m.status <> 'open'), CASE WHEN m.status = 'open' THEN m.due_date END, m.completed_at DESC, m.sort_order, m.name"
+)
+DEFAULT_ORDER = sql.SQL("m.sort_order, m.start_date, m.name")
+NO_PAGING = sql.SQL("")
 UPDATABLE_COLUMNS = frozenset({"name", "description", "start_date", "due_date"})
 
 USER_COLS = sql.SQL("u.id, u.first_name, u.last_name, u.email, u.job_title, u.role")
@@ -25,14 +33,36 @@ USER_COLS = sql.SQL("u.id, u.first_name, u.last_name, u.email, u.job_title, u.ro
 # ---- milestones -------------------------------------------------------------
 
 
-def list_by_project(project_id: str, conn=None) -> list[dict[str, Any]]:
+def list_by_project(project_id: str, *, limit: int | None = None, offset: int = 0, conn=None) -> list[dict[str, Any]]:
+    paging = sql.SQL("LIMIT %(limit)s OFFSET %(offset)s") if limit is not None else NO_PAGING
     return db.query(
-        MILESTONE_SELECT.format(where=sql.SQL("WHERE m.project_id = %(pid)s")), {"pid": project_id}, conn=conn
+        MILESTONE_SELECT.format(where=sql.SQL("WHERE m.project_id = %(pid)s"), order=PROJECT_ORDER, paging=paging),
+        {"pid": project_id, "limit": limit, "offset": offset},
+        conn=conn,
     )
 
 
+def count_by_project(project_id: str, conn=None) -> int:
+    return db.query_one("SELECT COUNT(*) AS n FROM milestones WHERE project_id = %s", (project_id,), conn=conn)["n"]
+
+
+def next_due_id(project_id: str, conn=None) -> str | None:
+    """The open milestone due soonest, whichever page it sits on."""
+    row = db.query_one(
+        "SELECT id FROM milestones WHERE project_id = %s AND status = 'open' "
+        "ORDER BY due_date, sort_order, name LIMIT 1",
+        (project_id,),
+        conn=conn,
+    )
+    return row["id"] if row else None
+
+
 def find_by_id(milestone_id: str, conn=None) -> dict[str, Any] | None:
-    rows = db.query(MILESTONE_SELECT.format(where=sql.SQL("WHERE m.id = %(id)s")), {"id": milestone_id}, conn=conn)
+    rows = db.query(
+        MILESTONE_SELECT.format(where=sql.SQL("WHERE m.id = %(id)s"), order=DEFAULT_ORDER, paging=NO_PAGING),
+        {"id": milestone_id},
+        conn=conn,
+    )
     return rows[0] if rows else None
 
 

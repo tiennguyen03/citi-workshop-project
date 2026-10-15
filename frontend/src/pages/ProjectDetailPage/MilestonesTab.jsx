@@ -18,7 +18,7 @@ import Tag from '../../components/Tag/Tag.jsx'
 import useApi from '../../hooks/useApi.js'
 import * as milestonesApi from '../../services/milestones.js'
 import { formatDate, formatRatio } from '../../utils/format.js'
-import { nextDueId, sortMilestones } from '../../utils/milestones.js'
+import { PAGE_SIZE, PAGE_SIZE_OPTIONS } from '../../components/DataTable/paging.js'
 import { fullName, initials } from '../../utils/roles.js'
 import MilestoneDialog from './MilestoneDialog.jsx'
 
@@ -78,19 +78,26 @@ export default function MilestonesTab({ project, canManage, onChanged, notify })
   const [creating, setCreating] = useState(false)
   const writable = canManage && !project.archived && project.status === 'active'
 
-  const { data, loading, error, refetch } = useApi(() => milestonesApi.list(project.id), [project.id])
+  // the tab keeps its own page (the project page's URL already carries the tab); the server orders and cuts the list
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(PAGE_SIZE)
+  const { data, loading, error, refetch } = useApi(
+    () => milestonesApi.list(project.id, { limit: pageSize, offset: page * pageSize }),
+    [project.id, page, pageSize],
+  )
   const { data: people, refetch: refetchPeople } = useApi(
     () => (canManage && !project.archived ? milestonesApi.availableAssignees(project.id) : Promise.resolve(null)),
     [project.id, canManage, project.archived],
   )
-  const rows = sortMilestones(data?.items ?? [])
-  const columns = buildColumns(nextDueId(rows))
+  const rows = data?.items ?? []
+  const total = data?.total ?? 0
+  const columns = buildColumns(data?.nextDueId ?? null)
 
   return (
     <>
       <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
         <Typography variant="body2" color="text.secondary">
-          {rows.length === 0 ? 'Break the project into phases, each with its own goals and people.' : 'Click a milestone to manage its goals.'}
+          {total === 0 && !loading ? 'Break the project into phases, each with its own goals and people.' : 'Click a milestone to manage its goals.'}
         </Typography>
         {writable && (
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreating(true)}>
@@ -106,7 +113,16 @@ export default function MilestonesTab({ project, canManage, onChanged, notify })
         loading={loading}
         emptyMessage="No milestones yet."
         onRowClick={(m) => navigate(`/milestones/${m.id}`)}
-        size="small"
+        pagination={{
+          page,
+          pageSize,
+          total,
+          onPageChange: setPage,
+          onPageSizeChange: (size) => {
+            setPageSize(size)
+            setPage(0)
+          },
+        }}
       />
       {writable && people && people.items.length > 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>

@@ -91,7 +91,7 @@ ProjectStats    {capacityHours, hoursAssigned, hoursCompleted, budget?, costCons
 
 | Method | Path | Body | Response | Who |
 |---|---|---|---|---|
-| GET | `/projects/{id}/milestones` | — | `200 {items: Milestone[]}` | project viewers |
+| GET | `/projects/{id}/milestones?limit=25&offset=0` | — | `200 Page<Milestone> & {nextDueId: string\|null}` in reading order: open by due date, then completed by completion date (D28) | project viewers |
 | POST | `/projects/{id}/milestones` | `{name, description?, startDate, dueDate, assigneeIds?: []}` | `201 Milestone` · `409 MILESTONE_CONFLICT` if any assignee is already on an open milestone in this project (`details.userIds`, `details.milestoneId`) | admin; project manager |
 | GET | `/milestones/{id}` | — | `200 Milestone (with goals, assignees)` | project viewers |
 | PATCH | `/milestones/{id}` | `{name?, description?, startDate?, dueDate?, assigneeIds?}` | `200 Milestone` · `409 MILESTONE_CONFLICT` as above (only for *newly added* assignees) | admin; project manager |

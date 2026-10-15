@@ -176,7 +176,7 @@ with the workaround in place so nobody mistakes it for an oversight.
 | Forced password rotation | Users change their own password on the profile page (`POST /auth/change-password`, current password required) and admins can set a temporary one (`PATCH /users/{id} {password}`). Nothing forces a change on first login. | A `must_change_password` flag set by the admin reset, checked by the login response. |
 | Session expiry | JWT lives 8 h; no refresh. A `401` from any call clears the session and sends the user to the login page. | Sliding refresh token or a shorter token with silent renewal. |
 | Email / notifications | Nothing is sent. Email addresses are stored for identification only. | SES on milestone due dates, goal assignment, budget overrun. |
-| Pagination | ~~Only the audit log pages.~~ Closed by D23 (slice 13): users, projects, time entries and the audit log page on the server (`limit` ≤ 100). Milestones and members are still returned whole (bounded by one project). | Page milestones/members if a project ever has hundreds. |
+| Pagination | ~~Only the audit log pages.~~ Closed by D23 (slice 13) and D28: users, projects, time entries, the audit log and a project's milestones page on the server (`limit` ≤ 100). Members are still returned whole (bounded by one project's team). | Page members if a team ever has hundreds. |
 | Time zones | Dates are calendar dates (`DATE`), no time of day. "Today" and "this week" use the Lambda's clock (UTC) on the server and the browser's clock in the client, so near midnight the two can disagree by a day. | Pass the client's date as a query param, or store the user's time zone. |
 | Hours per day cap | At most 24 h per entry; no cap on the sum of entries per day. | Reject when a day's total would exceed 24 h. |
 | Capacity model | Weekdays × 8 h per member for the whole project, from the day they joined is **not** considered; public holidays and leave are ignored (D9). | Pro-rate by membership dates; a holiday calendar table. |
@@ -365,3 +365,14 @@ side by side ("Project progress 30 %, Capacity used 80 %, Budget consumed 85 %")
 **Consequences**: Labels: "Progress" means goals; hours columns are "Capacity used" or "Assigned hours used"; the
 employee tile is "Assigned hours used", not "My progress"; the Overview tile is "Hours logged". `hoursCompleted`
 stays on the wire for compatibility. Per-person history keeps hours only (effort, not completion).
+
+## D28 · 2026-10-15 · A project's milestones page on the server, in reading order
+**Decision**: `GET /projects/{id}/milestones` takes `limit`/`offset` like every other list and returns a `Page` plus
+`nextDueId`, the open milestone due soonest regardless of which page it sits on. The server orders the list the way
+the tab read it: open milestones first, soonest due first, then completed ones, most recently completed first. The
+Milestones tab pages at 10 / 25 / 50 with the shared footer and keeps its page in memory (the project page's URL
+already carries the tab). The in-memory sorter `utils/milestones.js` is gone.
+**Why**: D23 left milestones whole because a project bounds them; a 500-milestone project showed that bound is not
+small. Ordering had to move with the page cut, or page 2 would start a new "open first" sequence.
+**Consequences**: Any client that needs every milestone asks with `limit=100` and walks pages. The "Next due" marker
+comes from the API, so it is correct on every page. Members stay whole (one team).

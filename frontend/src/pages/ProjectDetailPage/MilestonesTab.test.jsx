@@ -43,7 +43,7 @@ function renderTab(canManage) {
 describe('MilestonesTab', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    milestonesApi.list.mockResolvedValue({ items: [MILESTONE], total: 1 })
+    milestonesApi.list.mockResolvedValue({ items: [MILESTONE], total: 1, nextDueId: 'MIL001' })
     milestonesApi.availableAssignees.mockResolvedValue({
       items: [MAX],
       busy: [{ user: EVE, milestone: { id: 'MIL001', name: 'Inventory' } }],
@@ -63,18 +63,23 @@ describe('MilestonesTab', () => {
     expect(await screen.findByText('milestone page')).toBeInTheDocument()
   })
 
-  it('orders open milestones by due date with urgency cues, completed ones last', async () => {
+  it('shows the server\'s reading order with urgency cues and the next-due marker it names, and pages', async () => {
     const today = todayISO()
     milestonesApi.list.mockResolvedValue({
       items: [
-        { ...MILESTONE, id: 'MIL003', name: 'Wrap up', status: 'complete', dueDate: addDays(today, -20), completedAt: '2026-10-01T10:00:00Z' },
-        { ...MILESTONE, id: 'MIL002', name: 'Power-down', dueDate: addDays(today, 3) },
         { ...MILESTONE, id: 'MIL001', name: 'Inventory', dueDate: addDays(today, -1) },
+        { ...MILESTONE, id: 'MIL002', name: 'Power-down', dueDate: addDays(today, 3) },
+        { ...MILESTONE, id: 'MIL003', name: 'Wrap up', status: 'complete', dueDate: addDays(today, -20), completedAt: '2026-10-01T10:00:00Z' },
       ],
-      total: 3,
+      total: 12,
+      nextDueId: 'MIL001',
     })
     renderTab(false)
     await screen.findByText('Wrap up')
+    expect(milestonesApi.list).toHaveBeenCalledWith('PRJ001', { limit: 10, offset: 0 })
+    expect(screen.getByText('1–10 of 12')).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('button', { name: /next page/i }))
+    await waitFor(() => expect(milestonesApi.list).toHaveBeenLastCalledWith('PRJ001', { limit: 10, offset: 10 }))
     const names = screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[0].textContent)
     expect(names[0]).toMatch(/^InventoryNext due/)
     expect(names[1]).toMatch(/^Power-down/)

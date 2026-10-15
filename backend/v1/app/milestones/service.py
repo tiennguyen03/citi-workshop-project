@@ -6,6 +6,7 @@ from app.core import permissions
 from app.core.actor import Actor
 from app.core.errors import Conflict, Forbidden, MilestoneConflict, NotFound, ValidationError
 from app.core.ids import new_id
+from app.core.paging import DEFAULT_LIMIT, page
 from app.milestones import repository as default_repo
 from app.milestones.schemas import (
     STATUS_COMPLETE,
@@ -87,9 +88,13 @@ def _shape_one(milestone_id: str, repo) -> dict[str, Any]:
 # ---- read ------------------------------------------------------------------------
 
 
-def list_milestones(actor: Actor, project_id: str, repo=default_repo) -> list[dict[str, Any]]:
+def list_milestones(
+    actor: Actor, project_id: str, *, limit: int = DEFAULT_LIMIT, offset: int = 0, repo=default_repo
+) -> dict[str, Any]:
+    """One page of a project's milestones in reading order (open first by due date), plus the id of the next due."""
     projects.require_visible(actor, project_id)
-    return _shape_many(repo.list_by_project(project_id), repo)
+    items = _shape_many(repo.list_by_project(project_id, limit=limit, offset=offset), repo)
+    return page(items, repo.count_by_project(project_id), limit, offset, nextDueId=repo.next_due_id(project_id))
 
 
 def get_milestone(actor: Actor, milestone_id: str, repo=default_repo) -> dict[str, Any]:

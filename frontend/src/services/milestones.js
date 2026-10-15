@@ -1,8 +1,8 @@
 import { api } from './client.js'
 
-/** GET /projects/{id}/milestones → { items, total } */
-export function list(projectId) {
-  return api.get(`/projects/${projectId}/milestones`)
+/** GET /projects/{id}/milestones?limit=&offset= → Page<Milestone> & { nextDueId } (reading order from the server) */
+export function list(projectId, query) {
+  return api.get(`/projects/${projectId}/milestones`, { query })
 }
 
 /** POST /projects/{id}/milestones → Milestone */

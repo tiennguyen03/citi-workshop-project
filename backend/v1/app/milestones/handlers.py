@@ -1,6 +1,7 @@
 """Milestone and goal endpoints (api-contract.md › Milestones & goals)."""
 
 from app.core.dto import parse
+from app.core.paging import parse_page
 from app.http import Request, Response, created, no_content, ok
 from app.milestones import service
 from app.milestones.schemas import CreateGoalRequest, CreateMilestoneRequest, UpdateGoalRequest, UpdateMilestoneRequest
@@ -11,8 +12,8 @@ def _pid(request: Request) -> str:
 
 
 def list_milestones(request: Request) -> Response:
-    items = service.list_milestones(request.require_actor, _pid(request))
-    return ok({"items": items, "total": len(items)})
+    limit, offset = parse_page(request.query)
+    return ok(service.list_milestones(request.require_actor, _pid(request), limit=limit, offset=offset))
 
 
 def create_milestone(request: Request) -> Response:

@@ -76,6 +76,8 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 - In browser scripts, click nav links inside `getByRole('navigation', { name: 'Main navigation' })` —
   the dashboard shortcut cards are links with the same names. Nav has one people entry per role:
   employees "My team" → `/team`, managers "My team" → `/users` (searchable), admins "Users" → `/users`.
+- Milestones page on the server too (D28): `milestonesApi.list(projectId, { limit, offset })` returns a `Page` with
+  `nextDueId`; the tab never sorts in memory.
 - Progress means goals (D27): `components/GoalProgress` is the only way to show project completion
   (`completedGoals`/`totalGoals` from the API, neutral "No goals configured" when there are none). Every hours bar is
   `ProgressBar kind="capacity"` and is labelled as hours ("Capacity used", "Assigned hours used", "Hours logged"),
