@@ -29,7 +29,7 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 - Planning/docs: `context/`.
 
 ## Files created by us so far
-- `CLAUDE.md`, `PROJECT_TRACKER.md` (the solution README: architecture, setup, tests, trade-offs, known gaps)
+- `CLAUDE.md`, `PROJECT_TRACKER.md` (the solution README: architecture, setup, tests, trade-offs, known gaps), `PROJECT_TRACKER.md` (the solution README: architecture, setup, tests, trade-offs, known gaps)
 - `context/` — requirements, architecture, data-model, api-contract, security, ui-flow,
   coding-rules, decisions, current-task
 - `backend/.bandit` — Bandit settings for the workshop's `Security Check - Python` workflow (excludes `tests/`
@@ -148,6 +148,8 @@ stays empty (polling `SELECT count(*)` alone can wait forever). Seeded ~10 s aft
   `test:e2e` script (user approved).
 - `README.md` — 2026-10-14, one pointer line to `PROJECT_TRACKER.md` (the solution's README; the root README is
   boilerplate, so the document lives beside it). User approved.
+- `README.md` — 2026-10-14, one pointer line to `PROJECT_TRACKER.md` (the solution README lives beside the
+  boilerplate one). User approved.
 - `infra/cloudfront.tf` — 2026-10-14, one `custom_error_response` block mapping S3's 403 to `/index.html`
   (same as the existing 404 one) so deep links and refreshes work on the hosted app (user approved, C6).
 

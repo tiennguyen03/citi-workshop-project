@@ -14,7 +14,7 @@
 | 3 | Projects: CRUD, archive/unarchive, members + hours, capacity/stats, ProjectsPage, ProjectFormPage, ProjectDetailPage (Overview + Members tabs) | 2 AM | **done** |
 | 4 | Milestones & goals: endpoints, Milestones tab, MilestoneDetailPage, goal toggling, project complete | 2 PM | **done** |
 | 5 | Time entries: endpoints, Time tab, dashboard per role (~~seed data~~ done early) | 3 AM | **done** |
-| 6 | Hardening: tests to target, responsive pass, README, deploy to AWS, smoke test, known gaps | 3 PM | **deployed 2026-10-14** (README location still open) |
+| 6 | Hardening: tests to target, responsive pass, README, deploy to AWS, smoke test, known gaps | 3 PM | **done** (README = `PROJECT_TRACKER.md` at the root; pointer line in the boilerplate README approved 2026-10-14) |
 | 7 | UX signals (frontend only): overdue / due-soon / past-end tags, 40 h week bar, clickable dashboard counts, `?tab=` deep links, search + filters on Projects/Users mirrored in the URL, milestone ordering with "Next due", capacity hint when assigning hours, this-week / last-week filter on the Time tab | pre-demo | **done** |
 | 8 | Dashboards: manager "Due soon" + current milestone per report + zero-hour cue; admin recent activity + wider attention reasons; employee teammates + recent entries (`GET /dashboard` grows) | pre-demo | **done** |
 | 9 | People & audit: user page "Reports to" + project history; audit log action/actor pickers (`GET /users/{id}` grows, `GET /audit-log/actions`) | pre-demo | **done** |
@@ -34,6 +34,32 @@ SQL with `q` search, users `summary` counts, audit log on the shared parser; con
 133 backend tests (97 %), 93 frontend, 13 e2e; screenshot pass with 144 users / 333 audit rows, no console errors.
 **Remaining**: nothing; hosted site redeployed (backend + frontend) and smoke-tested.
 **Blockers**: none.
+
+## Proposed slice 16 — two differentiators (plan for approval, 2026-10-14)
+
+**A. Milestone dependencies ("blocked by")** — the ACME brief asked for a dependency chain between deliverables.
+- Schema: `milestones.blocked_by_id` (nullable, same project), added by `core/schema.py` with `ADD COLUMN IF NOT EXISTS`.
+- Rules (service): the blocker must belong to the same project and must not create a cycle (walk the chain); a
+  milestone cannot be completed while its blocker is open → `409 MILESTONE_BLOCKED` naming the blocker; a blocker can
+  be reopened (its dependants keep their state).
+- API: milestones carry `blockedBy: {id, name, status} | null`; `POST`/`PATCH` accept `blockedById`. Contract + tests.
+- UI: "Blocked by" select in the milestone dialog (other milestones of the project, excluding itself and its own
+  dependants); Milestones tab shows "Blocked by <name>" as the muted caption and a quiet "Blocked" cue while the
+  blocker is open; milestone page gets a "Blocked by" fact and a disabled Mark complete with the reason. Seed:
+  "Migrate workloads — batch 2" and "Power-down — batch 1" blocked by "Migrate workloads — batch 1".
+- Health: a project whose next due milestone waits on an overdue blocker gets reason `blocked_by_overdue` (at risk).
+
+**B. Manager's call: Red / Amber / Green on milestones (S1)** — the one stretch item the brief named.
+- Schema: `milestones.rag_status` (`red|amber|green`, nullable) and `rag_note` (≤ 200 chars).
+- API: `PATCH /milestones/{id}/rag {status, note}` (manager of the project or admin; audited as `milestone.rag` with a
+  label in `auditActions.js`); milestone rows carry `rag: {status, note, setAt} | null`.
+- UI: on the milestone page a three-way toggle plus a note field ("Manager's call"); Milestones tab shows a
+  red/amber/green dot before the name with the note as a tooltip; the manager card and the admin board add
+  "1 flagged red" to the health reason line (computed health stays the primary signal; the call is the manager's
+  judgement beside it). Seed: "Account & billing pages" amber, note "Vendor API still returning stale balances".
+
+Order: A then B. Each is a thin vertical slice with contract, tests (unit + integration + one e2e each) and a decision
+(D26/D27). Nothing starts until approved; nothing is pushed or deployed until reviewed.
 
 ## Slice 15 — Final polish (user brief 2026-10-14; not a redesign; nothing pushed or deployed until approved)
 
@@ -170,6 +196,7 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-14 · **README (N7)** written as `PROJECT_TRACKER.md` at the repo root: walkthrough accounts, architecture picture, backend/frontend layers, run and deploy commands, test commands and counts, enforced rules, trade-offs, known gaps. One approved pointer line in the boilerplate `README.md`. Slices 14 and 15 pushed; hosted API rebuilt with the workshop scripts.
 - 2026-10-14 · **Project card refinement** (on `slice-15-final-polish`). The manager's project summary is a shared `components/ProjectCard`: name, one health tag with the reason as muted text beneath (Complete takes the slot on a finished project), progress as one unit ("3% complete", raw hours, full bar via `ProgressBar layout="block"`), and a three-column metric row (Budget remaining, Open milestones, Next due) with the due cue as quiet supporting text (`DueTag variant="quiet"`). Lifecycle `Active` left the card.
 - 2026-10-14 · **Slice 15 built** (branch `slice-15-final-polish`, D25; not pushed). One status grammar (quiet dot + text for Active/Open/Complete/200/401; tinted only for urgency), roles at full contrast told apart by the dot, compact table progress (percentage first, raw figures muted, 3 % minimum, green at 100 % for goals), Overview Progress panel folded into the Hours tiles, paging 10/25/50 with the footer only past one page, `ActionIconButton` for every icon action, bare toolbars, `SummaryRow` section summaries, manager Projects without the Manager column, `GET /users` for managers returns reports only, employee dashboard recomposed (Current project / My progress / This week), quiet "You" on the members tab, admin profile without $0, seed writes a dated business audit trail. 103 backend tests (97 %), 103 frontend, 13 e2e; 88-shot matrix clean (1440/390, light/dark).
 - 2026-10-14 · **Login composition**: both halves now hug the centre line (statement right-aligned at 560 px, form left-aligned at 440 px), pillars in one grid sized to the widest term, footer line anchored under the pillars, medium inputs with firmer borders and a 2 px focus ring. Identity (split, serif headline, three pillars) unchanged.
