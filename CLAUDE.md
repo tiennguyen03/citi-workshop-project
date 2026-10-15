@@ -63,7 +63,8 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
   Deactivated, Available, 5xx). `RoleChip`/`StatusChip` apply this. Bars inside table cells use `ProgressBar
   layout="inline"` (percentage first, `formatRatio` raw figures muted, `kind="completion"` for goals); two-line
   cells use `components/TitleCell`; health in a row or card uses `components/HealthSummary`. `SectionHeading`
-  takes `description` (a `components/SummaryRow`, never a sentence) and `aside` for an action only. `StatCard`
+  takes `description` (a `components/SummaryRow`: `measure` = figure then unit, `tally` = category then count, never a
+  sentence) and `aside` for an action only. `StatCard`
   takes `progress={{ value, max, kind }}` and `action` (one button). Icon-only actions use
   `components/ActionIconButton` (tooltip + aria-label + stopPropagation). A project summary card is
   `components/ProjectCard` (name, health tag + muted reason, `ProgressBar layout="block"`, three `FieldList` metrics,

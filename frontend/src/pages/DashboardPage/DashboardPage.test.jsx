@@ -75,7 +75,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('$250')).toBeInTheDocument()
     expect(screen.getByText('of $1,100 planned on active projects')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /4 available/i })).toHaveAttribute('href', '/users?available=true')
-    expect(screen.getByLabelText('Projects by health')).toHaveTextContent(/1\s*At risk\s*1\s*Needs setup\s*1\s*Done, not archived/)
+    expect(screen.getByLabelText('Projects by health')).toHaveTextContent(/At risk\s*1\s*Needs setup\s*1\s*Done, not archived\s*1/)
     expect(screen.getAllByText('At risk')).toHaveLength(2) // the summary row and the board tag
     expect(screen.getAllByText('Needs setup')).toHaveLength(2) // summary row + board tag
     expect(screen.getAllByText('Done, not archived')).toHaveLength(2) // summary row + board tag

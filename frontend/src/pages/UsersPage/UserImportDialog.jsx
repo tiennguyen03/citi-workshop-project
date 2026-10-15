@@ -208,10 +208,11 @@ export default function UserImportDialog({ open, onClose, onImported }) {
               {report && (
                 <>
                   <SummaryRow
+                    variant="tally"
                     aria-label="Import preview"
                     items={[
-                      { key: 'ready', value: summary.valid, label: 'ready', tone: 'success' },
-                      ...(summary.invalid > 0 ? [{ key: 'fix', value: summary.invalid, label: summary.invalid === 1 ? 'needs fixing' : 'need fixing', tone: 'error' }] : []),
+                      { key: 'ready', value: summary.valid, label: 'Ready', tone: 'success' },
+                      ...(summary.invalid > 0 ? [{ key: 'fix', value: summary.invalid, label: 'Need fixing', tone: 'error' }] : []),
                     ]}
                   />
                   <DataTable columns={COLUMNS} rows={report.rows} getRowKey={(r) => r.line} />

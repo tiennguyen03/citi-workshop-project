@@ -24,7 +24,7 @@ describe('UserImportDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Preview' }))
     expect(await screen.findByText('username: already taken')).toBeInTheDocument()
     expect(usersApi.importCsv).toHaveBeenLastCalledWith(expect.any(String), { dryRun: true })
-    expect(screen.getByLabelText('Import preview')).toHaveTextContent(/1\s*ready\s*1\s*needs fixing/)
+    expect(screen.getByLabelText('Import preview')).toHaveTextContent(/Ready\s*1\s*Need fixing\s*1/)
     expect(screen.getByRole('button', { name: 'Import 1' })).toBeDisabled()
 
     // the admin fixes the file and previews again: all ready, import enabled

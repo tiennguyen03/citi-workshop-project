@@ -135,6 +135,7 @@ export default function AdminDashboard({ data }) {
           title="Project health"
           description={
             <SummaryRow
+              variant="tally"
               aria-label="Projects by health"
               items={healthCounts(summary.projects).map(([code, count]) => ({ key: code, value: count, label: HEALTH[code].label, tone: HEALTH[code].tone }))}
             />
