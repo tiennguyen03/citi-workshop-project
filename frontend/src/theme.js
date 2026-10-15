@@ -70,6 +70,15 @@ const theme = createTheme({
         '*:focus-visible': { outlineOffset: 2 },
       },
     },
+    // One keyboard focus ring for every button, icon button, tab, row and menu item (D25): MUI replaces the
+    // browser outline with a ripple, which is easy to miss; the ring is drawn in the ink/primary colour.
+    MuiButtonBase: {
+      styleOverrides: {
+        root: ({ theme: t }) => ({
+          '&.Mui-focusVisible': { outline: `2px solid ${t.vars.palette.primary.main}`, outlineOffset: 2 },
+        }),
+      },
+    },
     MuiPaper: {
       defaultProps: { variant: 'outlined' },
       styleOverrides: { root: { backgroundImage: 'none' } },
