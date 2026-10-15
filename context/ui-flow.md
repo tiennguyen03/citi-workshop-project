@@ -10,11 +10,11 @@ loading skeleton, empty state, and an error `Alert`; every mutation shows a `Sna
 |---|---|---|---|
 | `/login` | LoginPage | public | `POST /auth/login` |
 | `/` | DashboardPage | all | `GET /dashboard` (role-shaped) |
-| `/projects` | ProjectsPage | all | `GET /projects?q=&status=&archived=&limit=&offset=` (archived toggle for admin); filters and `page` in the URL |
+| `/projects` | ProjectsPage | all | `GET /projects?q=&status=&archived=&limit=&offset=` (archived toggle for admin); filters, `page` and `size` in the URL; managers see no Manager column and search by name |
 | (dialog on `/projects` and `/`) | ProjectDialog, create mode | admin | `GET /users?role=manager`, `POST /projects` |
 | `/projects/:id` | ProjectDetailPage | viewers | `GET /projects/{id}`, `/stats`, `/members`, `/milestones`, `/time-entries` |
 | `/milestones/:id` | MilestoneDetailPage | viewers | `GET /milestones/{id}`, goal endpoints |
-| `/users` | UsersPage | admin, manager | `GET /users?q=&role=&available=&inactive=&limit=&offset=` (paged, `page` in the URL; admin subtitle from `summary`), `POST /users` (admin) |
+| `/users` | UsersPage | admin, manager | `GET /users?q=&role=&available=&inactive=&limit=&offset=` (paged, `page`/`size` in the URL; admin subtitle from `summary`; a manager gets direct reports only), `POST /users` (admin) |
 | `/users/:id` | UserDetailPage | per rules | `GET /users/{id}`, `PATCH /users/{id}` |
 | `/team` | TeamPage | manager, employee | `GET /users/{me}/team` |
 | `/profile` | ProfilePage | all | `GET /auth/me`, `PATCH /users/{me}` |
@@ -78,11 +78,14 @@ ProfilePage: first/last name, email editable; username, role, title, manager rea
 ## Components (reusable, no fetching)
 `AppShell`, `RoleGate`, `DataTable` (sortable columns, empty state), `StatCard`, `ProgressBar` (hours/capacity), `StatusChip` (project/milestone status, archived), `FormDialog`, `ConfirmDialog`, `UserSelect`, `ErrorAlert`, `PageHeader`.
 
-### Labels and bars (D24)
-Normal states (Active, Open, a person's role, a 200 result) are quiet dot-and-text labels; exceptions (Overdue,
-At risk, Archived, Deactivated, Available, a failed request) are tinted tags, so one exception stands out in a
-list of normal rows. Roles keep a coloured dot (indigo admin, ink manager, grey employee). Progress inside a table
-row is one line: bar, percentage, raw figures. Health on the admin board and manager cards is the one-word tag
+### Labels, bars, paging and summaries (D24, D25)
+Every status and result value (Active, Open, Complete, a role, 200, 401) is a quiet dot-and-text label whose dot
+carries the colour; tinted tags are kept for urgency and exceptions (Overdue, At risk, Archived, Deactivated,
+Available, a 5xx), so one exception stands out in a list of normal rows. Roles differ by dot only (purple admin,
+blue manager, blue-grey employee). Progress inside a table row leads with the percentage, the raw figures muted
+beside it ("53 / 1,560 h") and the bar beneath; a non-zero value is always visible. Lists page at 10 rows
+(10 / 25 / 50) and the footer appears only when there is a second page; dashboard tables never page. Section
+summaries are structured rows ("● 2 At risk  ● 3 On track", "24 h logged this week") under the section title. Health on the admin board and manager cards is the one-word tag
 with the reasons as a muted line beneath. Section summaries sit under the section title; the right side holds actions.
 
 ### Paged lists (D23)

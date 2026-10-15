@@ -7,8 +7,8 @@ const TONES = { neutral: null, primary: 'primary', accent: 'secondary', success:
 /**
  * Label for statuses and roles. Two weights (D24): `tinted` (soft fill + border) for the exception that should
  * pull the eye — Overdue, At risk, Archived, Deactivated, Available — and `quiet` (a coloured dot and plain text)
- * for the normal state — Active, Employee, a 200 result — so a list of normal rows reads as text and the one
- * exception stands out. The dot keeps the tone, so quiet labels are still telling apart at a glance.
+ * for the normal state — Active, Complete, Employee, a 200 or a 401 result — so a list of normal rows reads as text
+ * and the one exception stands out. Quiet text is always full contrast (D25); only the dot carries the tone.
  */
 export default function Tag({ label, tone = 'neutral', size = 'small', dot = false, variant = 'tinted' }) {
   const color = TONES[tone] ?? null
@@ -32,7 +32,7 @@ export default function Tag({ label, tone = 'neutral', size = 'small', dot = fal
         },
         (theme) =>
           quiet
-            ? { color: color ? 'text.primary' : 'text.secondary', '& .Tag-dot': { bgcolor: color ? paletteColor(theme, color) : 'text.disabled' } }
+            ? { color: 'text.primary', '& .Tag-dot': { bgcolor: color ? paletteColor(theme, color) : 'text.disabled' } }
             : color
               ? {
                   color: paletteColor(theme, color, 'dark'),

@@ -61,7 +61,7 @@ describe('UserDetailPage', () => {
     expect(screen.getByRole('link', { name: 'Mia Manager' })).toHaveAttribute('href', '/users/MGR001')
     expect(screen.getByText('Old portal')).toBeInTheDocument()
     expect(screen.getByText('Released (completed)')).toBeInTheDocument()
-    expect(screen.getByText('30 h of 120 h')).toBeInTheDocument()
+    expect(screen.getByText('30 / 120 h')).toBeInTheDocument()
     expect(screen.getByText('Sep 30, 2026')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'View activity' })).not.toBeInTheDocument()
     await user.click(screen.getByText('Old portal'))

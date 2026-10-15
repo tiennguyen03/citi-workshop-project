@@ -10,6 +10,20 @@ def test_seed_loads_once_and_respects_invariants():
     assert not seed.is_needed(db.get_conn())
 
     assert db.query_one("SELECT COUNT(*) AS n FROM users")["n"] == 1 + len(seed.MANAGERS) + len(seed.EMPLOYEES)
+    # D25: the demo carries the audit trail its facts imply, dated when they happened, with no sign-ins in it
+    trail = db.query("SELECT action, actor_role, occurred_at FROM audit_log ORDER BY occurred_at")
+    assert len(trail) == len(seed.PROJECTS) + len(seed.MEMBERS) + len(seed.MILESTONES) + sum(
+        1 for m in seed.MILESTONES if m[6] == "complete"
+    ) + len(seed.TIME_ENTRIES) + sum(1 for g in seed.GOALS if g[4] and g[3])
+    assert {r["action"] for r in trail} >= {
+        "project.create",
+        "project.member_add",
+        "milestone.create",
+        "time_entry.create",
+    }
+    assert not any(r["action"].startswith("auth.") for r in trail)
+    assert trail[0]["occurred_at"] < trail[-1]["occurred_at"]
+    assert all(r["occurred_at"].timestamp() <= __import__("time").time() for r in trail)  # never dated in the future
     # M8: at most one active project per employee (the partial index would have refused otherwise)
     assert db.query_one("SELECT COUNT(*) AS n FROM project_members WHERE is_active")["n"] == 8
     # M13a: at most one open milestone per employee per project

@@ -18,9 +18,10 @@ test.beforeAll(async () => {
 test('employee: dashboard shows the project, ticks a goal, logs time; Time tab edit', async ({ page }) => {
   const { emp1 } = office
   await signIn(page, emp1.username)
-  await expect(page.getByText('My current project')).toBeVisible()
+  await expect(page.getByText('Current project')).toBeVisible()
   await expect(page.getByRole('link', { name: project.name }).first()).toBeVisible()
-  await expect(page.getByText(/now on Phase 1/)).toBeVisible()
+  await expect(page.getByText('Current milestone')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Phase 1' }).first()).toBeVisible() // the card and the goal both link to it
   await expect(page.getByText('Overdue').first()).toBeVisible()
   await expect(page.getByText('Just you on this milestone')).toBeVisible()
   await expect(page.getByText('Nothing logged yet on this project.')).toBeVisible()
@@ -35,10 +36,10 @@ test('employee: dashboard shows the project, ticks a goal, logs time; Time tab e
   await dialog.getByLabel('Note').fill('Rack audit')
   await dialog.getByRole('button', { name: 'Log time' }).click()
   await toast(page, `Logged 6 h on ${project.name}`)
-  await expect(page.getByText('6 h logged of 160 h assigned to you')).toBeVisible()
+  await expect(page.getByText('6 / 160 h assigned to you')).toBeVisible()
   // the new entry appears under "Recent entries" and can be edited right there
   await expect(page.getByRole('cell', { name: 'Rack audit' })).toBeVisible()
-  await page.getByRole('button', { name: /Edit entry on/ }).click()
+  await page.getByRole('button', { name: /Edit time entry on/ }).click()
   dialog = page.getByRole('dialog')
   await dialog.getByLabel('Note').fill('Rack audit (dashboard edit)')
   await dialog.getByRole('button', { name: 'Save' }).click()
@@ -49,7 +50,7 @@ test('employee: dashboard shows the project, ticks a goal, logs time; Time tab e
   await page.getByRole('tab', { name: 'Time' }).click()
   await expect(page.getByRole('cell', { name: 'Rack audit (dashboard edit)' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Person' })).toHaveCount(0)
-  await page.getByRole('row', { name: /Rack audit/ }).getByRole('button', { name: /Edit entry/ }).click()
+  await page.getByRole('row', { name: /Rack audit/ }).getByRole('button', { name: /Edit time entry/ }).click()
   dialog = page.getByRole('dialog')
   await dialog.getByLabel('Hours').fill('7')
   await dialog.getByRole('button', { name: 'Save' }).click()
@@ -62,7 +63,7 @@ test('manager: dashboard cards and team hours; Time tab shows everyone, filters,
   await signIn(page, manager.username)
   await expect(page.getByText('Your projects')).toBeVisible()
   await expect(page.getByRole('link', { name: new RegExp(project.name) }).first()).toBeVisible()
-  await expect(page.getByText('Over budget').first()).toBeVisible()
+  await expect(page.getByText(/over budget/i).first()).toBeVisible()
   // "Due soon": Phase 1 is overdue, assigned to emp1, and links to the milestone
   const dueRow = page.getByRole('row', { name: /^Phase 1 / }) // the team row also mentions Phase 1, but not first
   await expect(dueRow.getByText('Overdue')).toBeVisible()
@@ -89,7 +90,7 @@ test('manager: dashboard cards and team hours; Time tab shows everyone, filters,
   await page.getByRole('combobox', { name: 'Person' }).click()
   await page.getByRole('option', { name: fullName(emp1) }).click()
   await expect(page.getByRole('cell', { name: 'Rack audit' })).toBeVisible()
-  await page.getByRole('row', { name: /Rack audit/ }).getByRole('button', { name: /Delete entry/ }).click()
+  await page.getByRole('row', { name: /Rack audit/ }).getByRole('button', { name: /Delete time entry/ }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
   await toast(page, 'Time entry deleted')
   await expect(page.getByRole('cell', { name: 'Rack audit' })).toHaveCount(0)

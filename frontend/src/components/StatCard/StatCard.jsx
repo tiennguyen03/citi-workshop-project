@@ -10,9 +10,10 @@ import ProgressBar from '../ProgressBar/ProgressBar.jsx'
  * they read as numbers rather than as yet another card; bordered Paper is kept for sections and tables (D20).
  * The figure is the largest thing on the tile (h3 scale); the label and hint are one muted line each (D24).
  * `to` turns the tile into a link (the number is a shortcut to the list behind it); `progress` draws a bar
- * without a caption (the hint already says the numbers); `footer` is for anything else under the hint.
+ * without a caption (the hint already says the numbers); `footer` is for anything else under the hint; `action`
+ * is the one button that belongs to the figure.
  */
-export default function StatCard({ label, value, hint, color = 'text.primary', to, footer, icon, progress }) {
+export default function StatCard({ label, value, hint, color = 'text.primary', to, footer, icon, progress, action }) {
   const linkProps = to ? { component: RouterLink, to, sx: { textDecoration: 'none', color: 'inherit', '&:hover': { bgcolor: 'action.selected' } } } : {}
   return (
     <Paper {...linkProps} variant="elevation" elevation={0} sx={{ p: 2.5, minWidth: 0, display: 'block', bgcolor: 'background.default', ...linkProps.sx }}>
@@ -32,10 +33,11 @@ export default function StatCard({ label, value, hint, color = 'text.primary', t
       )}
       {progress && (
         <Box sx={{ mt: 1.5 }}>
-          <ProgressBar value={progress.value} max={progress.max} color={progress.color} caption={progress.caption} showCaption={false} />
+          <ProgressBar value={progress.value} max={progress.max} color={progress.color} kind={progress.kind} caption={progress.caption} showCaption={false} />
         </Box>
       )}
       {footer && <Box sx={{ mt: 1.5 }}>{footer}</Box>}
+      {action && <Box sx={{ mt: 2 }}>{action}</Box>}
     </Paper>
   )
 }
@@ -51,7 +53,9 @@ StatCard.propTypes = {
   progress: PropTypes.shape({
     value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
     max: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
-    color: PropTypes.oneOf(['auto', 'primary', 'warning', 'error']),
+    color: PropTypes.oneOf(['auto', 'primary', 'warning', 'error', 'success']),
+    kind: PropTypes.oneOf(['capacity', 'completion']),
     caption: PropTypes.node, // used for the bar's accessible name only
   }),
+  action: PropTypes.node, // a button that belongs to the figure ("Log time" under this week's hours)
 }

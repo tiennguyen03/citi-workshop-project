@@ -75,10 +75,10 @@ describe('DashboardPage', () => {
     expect(screen.getByText('$250')).toBeInTheDocument()
     expect(screen.getByText('of $1,100 planned on active projects')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /4 available/i })).toHaveAttribute('href', '/users?available=true')
-    expect(screen.getByText('1 at risk, 1 needing setup, 1 to close')).toBeInTheDocument()
-    expect(screen.getByText('At risk')).toBeInTheDocument()
-    expect(screen.getByText('Needs setup')).toBeInTheDocument()
-    expect(screen.getByText('Done, not archived')).toBeInTheDocument()
+    expect(screen.getByLabelText('Projects by health')).toHaveTextContent(/1\s*At risk\s*1\s*Needs setup\s*1\s*Done, not archived/)
+    expect(screen.getAllByText('At risk')).toHaveLength(2) // the summary row and the board tag
+    expect(screen.getAllByText('Needs setup')).toHaveLength(2) // summary row + board tag
+    expect(screen.getAllByText('Done, not archived')).toHaveLength(2) // summary row + board tag
     expect(screen.getAllByText('Mia Manager')).toHaveLength(3)
     expect(screen.getByText('Overdue')).toBeInTheDocument() // next due on the at-risk row; complete rows carry no cue
     expect(screen.getByText('Over budget, overdue milestone')).toBeInTheDocument() // reasons as one muted line under the health tag
@@ -113,11 +113,12 @@ describe('DashboardPage', () => {
     })
     renderPage({ id: 'MGR001', role: 'manager', firstName: 'Mia' })
     expect(await screen.findByText('$800')).toBeInTheDocument()
-    expect(screen.getByText('40 h completed of 160 h capacity')).toBeInTheDocument()
+    expect(screen.getByText('40 / 160 h capacity')).toBeInTheDocument()
+    expect(screen.getByText('25%')).toBeInTheDocument()
     expect(screen.getByText('Available')).toBeInTheDocument()
-    expect(screen.getByText('16 h')).toBeInTheDocument()
+    expect(screen.getAllByText('16 h')).toHaveLength(2) // the team summary and Quiet's row
     expect(screen.getByText('On track')).toBeInTheDocument()
-    expect(screen.getByText(/16 h of 80 h logged in the week of/)).toBeInTheDocument() // Eve + Quiet are on a project, Max is not
+    expect(screen.getByLabelText('Team hours this week')).toHaveTextContent(/16 h\s*logged this week\s*80 h\s*capacity for 2 on a project/) // Eve + Quiet are on a project, Max is not
     // due soon: the overdue one is flagged, the unassigned one says so, both link to the milestone
     expect(screen.getAllByText('Overdue')).toHaveLength(2) // card "Next due" + the Due soon row
     expect(screen.getByText('Unassigned')).toBeInTheDocument()
@@ -142,7 +143,7 @@ describe('DashboardPage', () => {
       week: WEEK,
     })
     renderPage({ id: 'EMP001', role: 'employee', firstName: 'Eve' })
-    expect(await screen.findByText(/over the 40-hour week/)).toBeInTheDocument()
+    expect(await screen.findByText(/over the 40-hour week/i)).toBeInTheDocument()
     expect(screen.getByText('Overdue')).toBeInTheDocument()
   })
 
@@ -172,14 +173,15 @@ describe('DashboardPage', () => {
     timeEntriesApi.create.mockResolvedValue({ id: 'TIM001', hours: 3 })
     timeEntriesApi.update.mockResolvedValue({ ...ENTRY, hours: 7 })
     renderPage({ id: 'EMP001', role: 'employee', firstName: 'Eve' })
-    expect(await screen.findByText('20 h logged of 80 h assigned to you')).toBeInTheDocument()
+    expect(await screen.findByText('20 / 80 h assigned to you')).toBeInTheDocument()
+    expect(screen.getByText('25%')).toBeInTheDocument()
     expect(screen.getByText('Old one')).toBeInTheDocument()
-    expect(screen.getByText('With')).toBeInTheDocument()
+    expect(screen.getByText('Working with')).toBeInTheDocument()
     expect(screen.getByText('Max New')).toBeInTheDocument() // the teammate, not me
     expect(screen.queryByText('Eve Employee')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'All my time' })).toHaveAttribute('href', '/projects/PRJ001?tab=time')
     // recent entry can be edited in place
-    await user.click(screen.getByRole('button', { name: 'Edit entry on Oct 5, 2026' }))
+    await user.click(screen.getByRole('button', { name: 'Edit time entry on Oct 5, 2026' }))
     const editDialog = await screen.findByRole('dialog')
     const hoursField = within(editDialog).getByLabelText(/hours/i, { selector: 'input' })
     await user.clear(hoursField)

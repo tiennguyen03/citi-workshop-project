@@ -60,7 +60,7 @@ def test_list_users_scoping(org):
     status, body = call("GET", "/api/v1/users", token=org["admin"])
     assert status == 200 and body["total"] == 6
     status, body = call("GET", "/api/v1/users", token=org["mgr_token"])
-    assert status == 200 and {u["username"] for u in body["items"]} == {"mgr", "emp1", "emp2"}
+    assert status == 200 and {u["username"] for u in body["items"]} == {"emp1", "emp2"}  # reports only, not the manager
     assert call("GET", "/api/v1/users", token=org["e1_token"])[0] == 403
 
 
@@ -95,7 +95,7 @@ def test_users_paging_search_and_people_counts(org):
     assert call("GET", "/api/v1/users", token=admin)[1]["summary"]["employees"] == 2
     # a manager's page is cut from their own people, with no office-wide counts
     mine = call("GET", "/api/v1/users?limit=2&offset=1", token=org["mgr_token"])[1]
-    assert mine["total"] == 3 and len(mine["items"]) == 2 and mine["summary"] is None
+    assert mine["total"] == 2 and len(mine["items"]) == 1 and mine["summary"] is None
     assert [u["username"] for u in call("GET", "/api/v1/users?q=emp2", token=org["mgr_token"])[1]["items"]] == ["emp2"]
 
 

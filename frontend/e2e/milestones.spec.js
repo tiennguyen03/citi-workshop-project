@@ -52,7 +52,7 @@ test('milestone life cycle: create with assignee, goals, employee ticks own, com
   await expect(page.getByText('Record rack IDs')).toBeVisible()
   await page.getByLabel('New goal').fill('Photograph cable trays')
   await page.getByRole('button', { name: 'Add goal' }).click()
-  await expect(page.getByText('0 of 2 done')).toBeVisible()
+  await expect(page.getByText('0 / 2 done')).toBeVisible()
   const milestoneUrl = page.url()
   await signOut(page)
 
@@ -62,7 +62,7 @@ test('milestone life cycle: create with assignee, goals, employee ticks own, com
   await expect(page.getByRole('checkbox', { name: 'Complete goal Photograph cable trays' })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Mark complete' })).toHaveCount(0)
   await page.getByRole('checkbox', { name: 'Complete goal Record rack IDs' }).click()
-  await expect(page.getByText('1 of 2 done')).toBeVisible()
+  await expect(page.getByText('1 / 2 done')).toBeVisible()
   await signOut(page)
 
   await signIn(page, manager.username)

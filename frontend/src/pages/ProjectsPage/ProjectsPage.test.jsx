@@ -48,8 +48,9 @@ describe('ProjectsPage', () => {
     projectsApi.list.mockResolvedValue({ items: [PROJECT], total: 1 })
     renderPage('manager')
     expect(await screen.findByText('Decommission 1,000 Servers')).toBeInTheDocument()
-    expect(screen.getByText('Mia Manager')).toBeInTheDocument()
-    expect(screen.getByText('120 h of 480 h')).toBeInTheDocument()
+    expect(screen.queryByText('Mia Manager')).not.toBeInTheDocument() // a manager's own list has no Manager column
+    expect(screen.getByText('120 / 480 h')).toBeInTheDocument()
+    expect(screen.getByText('25%')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /new project/i })).not.toBeInTheDocument()
     await userEvent.setup().click(screen.getByText('Decommission 1,000 Servers'))
     expect(screen.getByText('project detail')).toBeInTheDocument()
@@ -60,7 +61,7 @@ describe('ProjectsPage', () => {
     projectsApi.list.mockResolvedValue({ items: [], total: 0 })
     renderPage('admin')
     expect(await screen.findByText('No projects yet.')).toBeInTheDocument()
-    expect(projectsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ archived: undefined, limit: 25, offset: 0 }))
+    expect(projectsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ archived: undefined, limit: 10, offset: 0 }))
     await user.click(screen.getByLabelText(/show archived/i))
     await waitFor(() => expect(projectsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ archived: 'true' })))
     expect(await screen.findByText('No archived projects.')).toBeInTheDocument()
@@ -132,11 +133,12 @@ describe('ProjectsPage', () => {
     projectsApi.list.mockResolvedValue({ items: [{ ...PROJECT, id: 'PRJ002', name: 'Customer Portal', status: 'complete' }], total: 26 })
     renderPage('admin', '/projects?status=complete')
     expect(await screen.findByText('Customer Portal')).toBeInTheDocument()
-    expect(projectsApi.list).toHaveBeenCalledWith(expect.objectContaining({ status: 'complete', limit: 25, offset: 0 }))
+    expect(projectsApi.list).toHaveBeenCalledWith(expect.objectContaining({ status: 'complete', limit: 10, offset: 0 }))
     expect(screen.getByRole('combobox', { name: /status/i })).toHaveTextContent('Complete')
-    expect(screen.getByText('1–25 of 26')).toBeInTheDocument()
+    expect(screen.getByText('Mia Manager')).toBeInTheDocument() // admins do see the manager
+    expect(screen.getByText('1–10 of 26')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /next page/i }))
-    await waitFor(() => expect(projectsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'complete', offset: 25 })))
+    await waitFor(() => expect(projectsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'complete', offset: 10 })))
   })
 
   it('shows the employee empty state and errors', async () => {

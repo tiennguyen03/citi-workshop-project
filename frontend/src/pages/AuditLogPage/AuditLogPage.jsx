@@ -5,13 +5,13 @@ import Button from '@mui/material/Button'
 import Collapse from '@mui/material/Collapse'
 import IconButton from '@mui/material/IconButton'
 import MenuItem from '@mui/material/MenuItem'
-import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import DataTable from '../../components/DataTable/DataTable.jsx'
+import { PAGE_SIZE, PAGE_SIZE_OPTIONS } from '../../components/DataTable/paging.js'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import PageHeader from '../../components/PageHeader/PageHeader.jsx'
 import RoleChip from '../../components/RoleChip/RoleChip.jsx'
@@ -25,11 +25,10 @@ import { actionLabel } from '../../utils/auditActions.js'
 import { formatDateTime } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 
-const PAGE_SIZE = 50
 const ENTITY_TYPES = ['', 'user', 'project', 'milestone', 'goal', 'time_entry']
 /** Applied filters live in the URL (`/audit-log?actorId=…` is linked from a user's page); the form holds a draft. */
-const FILTER_DEFAULTS = { entityType: '', action: '', actorId: '', from: '', to: '', page: '1' }
-const { page: _defaultPage, ...appliedDefaults } = FILTER_DEFAULTS
+const FILTER_DEFAULTS = { entityType: '', action: '', actorId: '', from: '', to: '', page: '1', size: String(PAGE_SIZE) }
+const { page: _defaultPage, size: _defaultSize, ...appliedDefaults } = FILTER_DEFAULTS
 
 function DetailsCell({ entry }) {
   const [open, setOpen] = useState(false)
@@ -53,6 +52,16 @@ function DetailsCell({ entry }) {
 DetailsCell.propTypes = {
   entry: PropTypes.shape({ summary: PropTypes.string.isRequired, details: PropTypes.object }).isRequired,
 }
+
+/**
+ * One treatment for an HTTP result (D25): the code as quiet text with its semantic dot — green 2xx, amber 3xx, red 4xx —
+ * and a tinted tag only for a 5xx, the one result that means the system itself failed.
+ */
+function ResultCode({ code }) {
+  const tone = code >= 400 ? 'error' : code >= 300 ? 'warning' : 'success'
+  return <Tag label={code} tone={tone} variant={code >= 500 ? 'tinted' : 'quiet'} />
+}
+ResultCode.propTypes = { code: PropTypes.number.isRequired }
 
 const COLUMNS = [
   {
@@ -89,21 +98,21 @@ const COLUMNS = [
     key: 'statusCode',
     label: 'Result',
     numeric: true,
-    // a 2xx is the normal result (quiet, green dot); a failure is the exception worth a tinted tag
-    render: (e) => <Tag label={e.statusCode} tone={e.statusCode < 400 ? 'success' : 'error'} variant={e.statusCode < 400 ? 'quiet' : 'tinted'} />,
+    render: (e) => <ResultCode code={e.statusCode} />,
   },
 ]
 
 /** Admin-only audit trail with filters and paging, all in the URL (ui-flow.md F11). */
 export default function AuditLogPage() {
   const { filters: applied, setFilters: applyToUrl } = useUrlFilters(FILTER_DEFAULTS)
-  const { page: pageParam, ...appliedFilters } = applied
+  const { page: pageParam, size: sizeParam, ...appliedFilters } = applied
   const page = Math.max(1, Number(pageParam) || 1)
+  const pageSize = PAGE_SIZE_OPTIONS.includes(Number(sizeParam)) ? Number(sizeParam) : PAGE_SIZE
   const [filters, setFilters] = useState(appliedFilters)
 
   const { data, loading, error, refetch } = useApi(
-    () => auditApi.list({ ...appliedFilters, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
-    [appliedFilters, page],
+    () => auditApi.list({ ...appliedFilters, limit: pageSize, offset: (page - 1) * pageSize }),
+    [appliedFilters, page, pageSize],
   )
   const { data: actionsData } = useApi(() => auditApi.actions(), [])
   const { data: peopleData } = useApi(() => usersApi.list({ inactive: 'true', limit: 100 }), [])
@@ -119,8 +128,8 @@ export default function AuditLogPage() {
   return (
     <>
       <PageHeader title="Audit log" subtitle={`${total} recorded actions`} />
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'flex-end' } }}>
+      {/* a compact group of controls, not a band across the page (D25) */}
+      <Stack direction="row" useFlexGap spacing={1.5} sx={{ flexWrap: 'wrap', alignItems: 'center', mb: 2, '& .MuiTextField-root': { width: { xs: '100%', sm: 'auto' } } }}>
           <TextField select label="Entity" value={filters.entityType} onChange={(e) => select('entityType', e.target.value)} sx={{ minWidth: 150 }}>
             {ENTITY_TYPES.map((t) => (
               <MenuItem key={t || 'all'} value={t}>
@@ -164,8 +173,7 @@ export default function AuditLogPage() {
               Clear
             </Button>
           </Stack>
-        </Stack>
-      </Paper>
+      </Stack>
       <ErrorAlert error={error} onRetry={refetch} />
       <DataTable
         columns={COLUMNS}
@@ -174,7 +182,13 @@ export default function AuditLogPage() {
         loading={loading}
         emptyMessage="No actions match these filters."
         size="small"
-        pagination={{ page: page - 1, pageSize: PAGE_SIZE, total, onPageChange: (p) => applyToUrl({ page: String(p + 1) }) }}
+        pagination={{
+          page: page - 1,
+          pageSize,
+          total,
+          onPageChange: (p) => applyToUrl({ page: String(p + 1) }),
+          onPageSizeChange: (size) => applyToUrl({ size: String(size), page: '' }),
+        }}
       />
     </>
   )

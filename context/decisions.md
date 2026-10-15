@@ -297,3 +297,32 @@ them per page would have made the dashboard special and left the rest inconsiste
 **Consequences**: Rule for new work: the normal state is text, the exception is a tag; a bar in a table is
 inline with its percentage; a summary goes in the heading's description, an action in its aside. No page
 sets these with its own `sx`.
+
+## D25 · 2026-10-14 · Final polish: one grammar for status, progress, paging and summaries
+**Decision**: (1) Every status and result value uses the quiet dot-and-text label: Active, Open, Complete, a 200
+and a 401 alike; the semantic colour sits in the dot. Tinted tags are reserved for urgency and exceptions:
+Overdue, Due in N days, At risk, Late, Archived, Deactivated, Available, a 5xx. Quiet text is always full
+contrast; roles differ by dot only (purple admin, blue manager, blue-grey employee). (2) Progress in a table
+row is one compact block: the percentage first in 600, the raw figures ("53 / 1,560 h", `formatRatio`) muted
+beside it, the bar beneath; a non-zero value always draws at least 3 % of the track; `kind="completion"` turns
+green at 100 % (goals), `kind="capacity"` turns amber at 90 % and red past 100 % (hours). (3) Every full-list
+page pages at 10 rows with 10 / 25 / 50 on offer (`components/DataTable/paging.js`); the footer exists only
+when the list is longer than a page; page and size live in the URL beside the filters. Dashboard tables do
+not page. (4) Section summaries are `SummaryRow`s (figure emphasised, label muted, optional semantic dot) in
+`SectionHeading`'s description slot, never a sentence. (5) Icon-only actions go through `ActionIconButton`
+(tooltip, accessible name, one hover treatment, click never bubbles to the row). (6) Filter rows are
+compact control groups, not a bordered band. (7) The project Overview has no standalone Progress panel;
+the Hours tiles carry bar and percentage. (8) A manager's Projects list drops the Manager column and
+searches by name; `GET /users` for a manager returns direct reports only. (9) The employee landing is
+three answers: Current project (structured facts, Open project), My progress (percentage of assigned
+hours), This week (`0 / 40 h`, Log time). (10) The demo seed writes the audit trail its facts imply, dated
+when they would have happened, so Recent activity shows business events. (11) The admin profile hides the
+meaningless $0 salary; the members tab marks the signed-in person's row with a quiet "You".
+**Why**: After D24 the app still mixed generations of the same idea (a quiet Active next to a tinted
+Complete, a quiet 200 next to a pill 401), bars that could not be read, lists paged three different
+ways and summaries written as sentences. Each of those is a shared primitive, so the fix is in the
+primitive and every page follows.
+**Consequences**: Rules for new work: a status is a dot and a word; a bar in a row leads with its
+percentage; a list pages at 10 through `paging.js`; a summary is a `SummaryRow`; an icon action is an
+`ActionIconButton`. The only page-local presentation is the admin health summary's dots, which reuse the
+health tones.

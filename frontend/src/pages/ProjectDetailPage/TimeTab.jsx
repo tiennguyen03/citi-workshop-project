@@ -8,7 +8,6 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
-import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
@@ -19,6 +18,8 @@ import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined'
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
+import ActionIconButton from '../../components/ActionIconButton/ActionIconButton.jsx'
+import { PAGE_SIZE } from '../../components/DataTable/paging.js'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import useApi from '../../hooks/useApi.js'
 import useAuth from '../../auth/useAuth.js'
@@ -29,7 +30,6 @@ import { fullName } from '../../utils/roles.js'
 import { sumHours } from '../../utils/timeEntryForm.js'
 
 const RANGE_LABELS = { this: 'this week', last: 'last week' }
-const PAGE_SIZE = 25
 import TimeEntryDialog from './TimeEntryDialog.jsx'
 
 /** Logged time for a project: members see their own entries, managers/admins everyone's (ui-flow.md F6/F7). */
@@ -58,6 +58,7 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
   )
   const rows = data?.items ?? []
   const total = data?.total ?? 0
+  const filtered = range !== 'all' || Boolean(userId)
   const pickPerson = (id) => {
     setUserId(id)
     setPage(0)
@@ -105,22 +106,13 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
               return (
                 <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
                   {mine && (
-                    <Tooltip title="Edit entry">
-                      <IconButton size="small" aria-label={`Edit entry on ${formatDate(e.entryDate)}`} onClick={() => setEditing(e)} sx={{ color: 'text.secondary' }}>
-                        <EditOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <ActionIconButton label="Edit time entry" aria-label={`Edit time entry on ${formatDate(e.entryDate)}`} onClick={() => setEditing(e)}>
+                      <EditOutlinedIcon fontSize="small" />
+                    </ActionIconButton>
                   )}
-                  <Tooltip title="Delete entry">
-                    <IconButton
-                      size="small"
-                      aria-label={`Delete entry on ${formatDate(e.entryDate)}`}
-                      onClick={() => setDeleting(e)}
-                      sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
-                    >
-                      <DeleteOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                  <ActionIconButton label="Delete time entry" aria-label={`Delete time entry on ${formatDate(e.entryDate)}`} danger onClick={() => setDeleting(e)}>
+                    <DeleteOutlinedIcon fontSize="small" />
+                  </ActionIconButton>
                 </Stack>
               )
             },
@@ -162,14 +154,17 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, mb: 2 }}>
         <StatCard
           icon={<ScheduleOutlinedIcon />}
-          label={total > rows.length ? 'Hours on this page' : 'Hours logged'}
+          label={total > rows.length ? 'Hours on this page' : filtered ? 'Hours in view' : 'Hours logged'}
           value={formatHours(sumHours(rows))}
-          hint={`${total > rows.length ? `${rows.length} of ${total}` : total} entr${total === 1 ? 'y' : 'ies'}${range !== 'all' ? ` ${RANGE_LABELS[range]}` : ''}${canManage && userId ? ' for this person' : ''}`}
+          hint={`${total > rows.length ? `${rows.length} of ${total}` : total} entr${total === 1 ? 'y' : 'ies'}${range !== 'all' ? ` ${RANGE_LABELS[range]}` : ''}${canManage && userId ? ' for this person' : ''}${!filtered && total <= rows.length ? ', all time' : ''}`}
         />
         {!canManage && project.myMembership && (
           <StatCard icon={<FlagOutlinedIcon />} label="Assigned to you" value={formatHours(project.myMembership.hoursAssigned)} hint={`${formatHours(project.myMembership.hoursCompleted)} completed`} />
         )}
-        {canManage && <StatCard icon={<TimerOutlinedIcon />} label="Project total" value={formatHours(project.hoursCompleted)} hint={`of ${formatHours(project.capacityHours)} capacity`} />}
+        {/* the lifetime figure only earns a tile when the one above is a subset of it (D25) */}
+        {canManage && (filtered || total > rows.length) && (
+          <StatCard icon={<TimerOutlinedIcon />} label="Project total" value={formatHours(project.hoursCompleted)} hint={`all time, everyone, of ${formatHours(project.capacityHours)} capacity`} />
+        )}
       </Box>
       <ErrorAlert error={error} onRetry={refetch} />
       <DataTable

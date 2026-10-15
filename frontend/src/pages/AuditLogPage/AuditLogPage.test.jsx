@@ -71,11 +71,11 @@ describe('AuditLogPage', () => {
     const user = userEvent.setup()
     auditApi.list.mockResolvedValue({ items: [ENTRY], total: 60 })
     renderPage()
-    expect(await screen.findByText('1–50 of 60')).toBeInTheDocument()
+    expect(await screen.findByText('1–10 of 60')).toBeInTheDocument()
     auditApi.list.mockResolvedValue({ items: [{ ...ENTRY, id: 2, summary: 'second page' }], total: 60 })
     await user.click(screen.getByRole('button', { name: /next page/i }))
     expect(await screen.findByText('second page')).toBeInTheDocument()
-    expect(auditApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 50, limit: 50 }))
+    expect(auditApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 10, limit: 10 }))
     expect(screen.getByText('url ?page=2')).toBeInTheDocument()
 
     await user.click(screen.getByRole('combobox', { name: /action/i }))

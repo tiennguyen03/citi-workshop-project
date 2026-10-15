@@ -30,3 +30,12 @@ export function greeting(now = new Date()) {
   if (hour < 18) return 'Good afternoon'
   return 'Good evening'
 }
+
+/**
+ * "53 / 1,560 h": the raw figures behind a percentage, unit once at the end (D25). `unit` '' for plain counts.
+ * Hours keep their decimals the way `formatHours` prints them; money is not a ratio, use `formatMoney` twice.
+ */
+export function formatRatio(value, max, unit = 'h') {
+  const num = (n) => Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 })
+  return `${num(value)} / ${num(max)}${unit ? ` ${unit}` : ''}`
+}

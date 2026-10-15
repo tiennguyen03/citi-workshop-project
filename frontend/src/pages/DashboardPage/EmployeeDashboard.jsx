@@ -4,28 +4,28 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
-import IconButton from '@mui/material/IconButton'
 import Link from '@mui/material/Link'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import Tooltip from '@mui/material/Tooltip'
 import AddIcon from '@mui/icons-material/Add'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined'
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
-import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import useAuth from '../../auth/useAuth.js'
+import ActionIconButton from '../../components/ActionIconButton/ActionIconButton.jsx'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
-import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
+import FieldList from '../../components/FieldList/FieldList.jsx'
+import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
+import SummaryRow from '../../components/SummaryRow/SummaryRow.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
 import * as milestonesApi from '../../services/milestones.js'
-import { formatDate, formatHours } from '../../utils/format.js'
+import { formatDate, formatHours, formatRatio } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 import TimeEntryDialog from '../ProjectDetailPage/TimeEntryDialog.jsx'
 
@@ -51,7 +51,7 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
 
   const ENTRY_COLUMNS = [
     { key: 'entryDate', label: 'Date', nowrap: true, render: (e) => formatDate(e.entryDate), width: 140 },
-    { key: 'hours', label: 'Hours', align: 'right', render: (e) => formatHours(e.hours), width: 90 },
+    { key: 'hours', label: 'Hours', numeric: true, render: (e) => formatHours(e.hours), width: 90 },
     { key: 'note', label: 'Note', render: (e) => e.note || <Typography variant="caption" color="text.secondary">—</Typography> },
     {
       key: 'actions',
@@ -59,16 +59,15 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
       align: 'right',
       width: 56,
       render: (e) => (
-        <Tooltip title="Edit entry">
-          <IconButton size="small" aria-label={`Edit entry on ${formatDate(e.entryDate)}`} onClick={() => setEditing(e)} sx={{ color: 'text.secondary' }}>
-            <EditOutlinedIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <ActionIconButton label="Edit time entry" aria-label={`Edit time entry on ${formatDate(e.entryDate)}`} onClick={() => setEditing(e)}>
+          <EditOutlinedIcon fontSize="small" />
+        </ActionIconButton>
       ),
     },
   ]
   const weekHours = Number(hoursThisWeek)
   const overWeek = weekHours > HOURS_PER_WEEK
+  const myPct = current && Number(current.myHoursAssigned) > 0 ? Math.round((Number(current.myHoursCompleted) / Number(current.myHoursAssigned)) * 100) : 0
 
   async function tick(goal) {
     setTicked((t) => ({ ...t, [goal.id]: true }))
@@ -84,57 +83,69 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
 
   return (
     <Stack spacing={3}>
-      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' } }}>
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="overline" color="text.secondary">
-            My current project
+      {/* Three questions, three places (D25): what am I on, how far am I, how much this week. Each has its one action. */}
+      <Box sx={{ display: 'grid', gap: 2, alignItems: 'start', gridTemplateColumns: { xs: '1fr', md: current ? 'minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr)' : 'minmax(0, 2fr) minmax(0, 1fr)' } }}>
+        <Paper sx={{ p: 2.5, display: 'flex', flexDirection: 'column' }}>
+          <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
+            Current project
           </Typography>
           {current ? (
             <>
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 0.5, mb: 0.5 }}>
+              <Stack direction="row" useFlexGap spacing={1.5} sx={{ alignItems: 'center', flexWrap: 'wrap', mt: 0.5 }}>
                 <Link component={RouterLink} to={`/projects/${current.id}`} underline="hover" color="inherit" variant="h5">
                   {current.name}
                 </Link>
                 <StatusChip status={current.status} />
               </Stack>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: milestone ? 1 : 2 }}>
-                {`Runs ${formatDate(current.startDate)} to ${formatDate(current.endDate)}`}
-                {milestone ? (
-                  <>
-                    {', now on '}
-                    <Link component={RouterLink} to={`/milestones/${milestone.id}`} underline="hover">
-                      {milestone.name}
-                    </Link>
-                    {milestone.dueDate ? `, due ${formatDate(milestone.dueDate)}.` : '.'}
-                  </>
-                ) : (
-                  '. No open milestone is assigned to you yet.'
-                )}
-              </Typography>
-              {milestone && (
-                <Stack direction="row" useFlexGap spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap', mb: 2 }}>
-                  <DueTag dueDate={milestone.dueDate} />
-                  <Typography variant="caption" color="text.secondary">
-                    {teammates.length === 0 ? 'Just you on this milestone' : 'With'}
-                  </Typography>
-                  {teammates.map((a) => (
-                    <Tag key={a.id} label={fullName(a)} variant="quiet" />
-                  ))}
-                </Stack>
-              )}
-              <ProgressBar
-                value={current.myHoursCompleted}
-                max={current.myHoursAssigned}
-                caption={`${formatHours(current.myHoursCompleted)} logged of ${formatHours(current.myHoursAssigned)} assigned to you`}
-              />
-              <Stack direction="row" spacing={1} sx={{ mt: 2.5 }}>
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setLogging(true)}>
-                  Log time
-                </Button>
+              <Box sx={{ mt: 2, flexGrow: 1 }}>
+                <FieldList
+                  columns={1}
+                  items={[
+                    {
+                      label: 'Current milestone',
+                      value: milestone ? (
+                        <Link component={RouterLink} to={`/milestones/${milestone.id}`} underline="hover" color="inherit">
+                          {milestone.name}
+                        </Link>
+                      ) : (
+                        'None assigned to you yet'
+                      ),
+                    },
+                    ...(milestone
+                      ? [
+                          {
+                            label: 'Due',
+                            value: (
+                              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                                <span>{milestone.dueDate ? formatDate(milestone.dueDate) : '—'}</span>
+                                <DueTag dueDate={milestone.dueDate} />
+                              </Stack>
+                            ),
+                          },
+                          {
+                            label: 'Working with',
+                            value:
+                              teammates.length === 0 ? (
+                                'Just you on this milestone'
+                              ) : (
+                                <Stack direction="row" useFlexGap spacing={1.5} sx={{ flexWrap: 'wrap' }}>
+                                  {teammates.map((a) => (
+                                    <Tag key={a.id} label={fullName(a)} variant="quiet" />
+                                  ))}
+                                </Stack>
+                              ),
+                          },
+                        ]
+                      : []),
+                    { label: 'Runs', value: `${formatDate(current.startDate)} – ${formatDate(current.endDate)}` },
+                  ]}
+                />
+              </Box>
+              <Box sx={{ mt: 2 }}>
                 <Button variant="outlined" onClick={() => navigate(`/projects/${current.id}`)}>
                   Open project
                 </Button>
-              </Stack>
+              </Box>
             </>
           ) : (
             <Box sx={{ mt: 1 }}>
@@ -145,26 +156,38 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
             </Box>
           )}
         </Paper>
+        {current && (
+          <StatCard
+            icon={<TaskAltOutlinedIcon />}
+            label="My progress"
+            value={`${myPct}%`}
+            hint={`${formatRatio(current.myHoursCompleted, current.myHoursAssigned)} assigned to you`}
+            progress={{ value: current.myHoursCompleted, max: current.myHoursAssigned, kind: 'completion', caption: formatRatio(current.myHoursCompleted, current.myHoursAssigned) }}
+          />
+        )}
         <StatCard
           icon={<ScheduleOutlinedIcon />}
-          label="Hours this week"
-          value={formatHours(weekHours)}
+          label="This week"
+          value={formatRatio(weekHours, HOURS_PER_WEEK)}
           color={overWeek ? 'warning.main' : 'text.primary'}
-          hint={overWeek ? `over the ${HOURS_PER_WEEK}-hour week, ${formatDate(week.start)} – ${formatDate(week.end)}` : `of ${HOURS_PER_WEEK} h, ${formatDate(week.start)} – ${formatDate(week.end)}`}
-          progress={{ value: weekHours, max: HOURS_PER_WEEK, color: overWeek ? 'warning' : 'primary', caption: `${formatHours(weekHours)} of ${HOURS_PER_WEEK} h` }}
+          hint={overWeek ? `Over the ${HOURS_PER_WEEK}-hour week, ${formatDate(week.start)} – ${formatDate(week.end)}` : `${formatDate(week.start)} – ${formatDate(week.end)}`}
+          progress={{ value: weekHours, max: HOURS_PER_WEEK, color: overWeek ? 'warning' : 'primary', caption: formatRatio(weekHours, HOURS_PER_WEEK) }}
+          action={
+            current ? (
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setLogging(true)}>
+                Log time
+              </Button>
+            ) : null
+          }
         />
       </Box>
 
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: 2.5 }}>
         <SectionHeading
           icon={<TaskAltOutlinedIcon />}
           title="My open goals"
           sx={{ mb: 1 }}
-          aside={
-            <Typography variant="body2" color="text.secondary">
-              {openGoals.length === 0 ? 'All clear' : `${openGoals.length} open`}
-            </Typography>
-          }
+          description={openGoals.length === 0 ? 'All clear' : <SummaryRow items={[{ key: 'open', value: openGoals.length, label: openGoals.length === 1 ? 'open goal' : 'open goals' }]} />}
         />
         {openGoals.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
@@ -176,7 +199,7 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
               <Box
                 component="li"
                 key={g.id}
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.75, borderTop: '1px solid', borderColor: 'divider', '&:first-of-type': { borderTop: 0 } }}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5, borderTop: '1px solid', borderColor: 'divider', '&:first-of-type': { borderTop: 0 } }}
               >
                 <Checkbox
                   size="small"
@@ -186,7 +209,7 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
                   slotProps={{ input: { 'aria-label': `Complete goal ${g.title}` } }}
                 />
                 <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                  <Typography>{g.title}</Typography>
+                  <Typography variant="body2">{g.title}</Typography>
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                     <Typography variant="caption" color="text.secondary">
                       <Link component={RouterLink} to={`/milestones/${g.milestone.id}`} underline="hover" color="inherit">
@@ -210,9 +233,9 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
             icon={<ReceiptLongOutlinedIcon />}
             title="Recent entries"
             aside={
-              <Link component={RouterLink} to={`/projects/${current.id}?tab=time`} underline="hover" variant="body2">
+              <Button size="small" component={RouterLink} to={`/projects/${current.id}?tab=time`}>
                 All my time
-              </Link>
+              </Button>
             }
           />
           <DataTable columns={ENTRY_COLUMNS} rows={recentEntries} getRowKey={(e) => e.id} emptyMessage="Nothing logged yet on this project." size="small" />

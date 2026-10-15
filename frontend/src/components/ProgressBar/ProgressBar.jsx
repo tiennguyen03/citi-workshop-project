@@ -3,32 +3,39 @@ import Box from '@mui/material/Box'
 import LinearProgress from '@mui/material/LinearProgress'
 import Typography from '@mui/material/Typography'
 
+/** The smallest bar a non-zero value may draw, so 1 % is visible without pretending to be 10 %. */
+const MIN_VISIBLE = 3
+
 /**
- * Hours-style progress: `value` of `max`, with a caption. `color="auto"` (default) goes amber
- * from 90% and red past 100%; pass a palette colour to pin it.
- * `layout="stacked"` (default) puts the caption under the bar, for tiles and panels.
- * `layout="inline"` puts the bar, the raw figures and the percentage on one line, for table cells (D24):
- * a 3 % bar is invisible on its own, the number is what the reader scans.
+ * Hours-style progress: `value` of `max`.
+ * `kind="capacity"` (default) is spend against a limit: amber from 90 %, red past 100 %.
+ * `kind="completion"` is work done: green at 100 %.
+ * `layout="stacked"` (default) is a tile or panel: bar, caption under it.
+ * `layout="inline"` is the one table treatment (D25): the percentage first (the figure to scan), the raw figures
+ * muted beside it, the bar under both; compact enough for a small row.
  * `showCaption={false}` keeps just the bar (a StatCard's hint already says the numbers).
  */
-export default function ProgressBar({ value, max, caption, color = 'auto', layout = 'stacked', showCaption = true }) {
+export default function ProgressBar({ value, max, caption, color = 'auto', kind = 'capacity', layout = 'stacked', showCaption = true }) {
   const pct = max > 0 ? Math.round((Number(value) / Number(max)) * 100) : 0
-  const clamped = Math.min(pct, 100)
-  const barColor = color !== 'auto' ? color : pct > 100 ? 'error' : pct >= 90 ? 'warning' : 'primary'
+  const drawn = pct <= 0 ? 0 : Math.min(Math.max(pct, MIN_VISIBLE), 100)
+  const auto = kind === 'completion' ? (pct >= 100 ? 'success' : 'primary') : pct > 100 ? 'error' : pct >= 90 ? 'warning' : 'primary'
+  const barColor = color !== 'auto' ? color : auto
   const label = caption ?? `${pct}%`
-  const bar = <LinearProgress variant="determinate" value={clamped} color={barColor} aria-label={`${label}, ${pct}%`} />
+  const bar = <LinearProgress variant="determinate" value={drawn} color={barColor} aria-label={caption ? `${caption}, ${pct}%` : `${pct}%`} />
   if (layout === 'inline') {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 180 }}>
-        <Box sx={{ flexGrow: 1, minWidth: 56 }}>{bar}</Box>
-        <Typography variant="caption" sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', minWidth: '3.5ch', textAlign: 'right', fontWeight: 600 }}>
-          {pct}%
-        </Typography>
-        {showCaption && caption && (
-          <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-            {caption}
+      <Box sx={{ minWidth: 150, maxWidth: 260 }}>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 0.5, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+          <Typography variant="body2" component="span" sx={{ fontWeight: 600, minWidth: '3.5ch', color: barColor === 'primary' ? 'text.primary' : `${barColor}.main` }}>
+            {pct}%
           </Typography>
-        )}
+          {showCaption && caption && (
+            <Typography variant="caption" component="span" color="text.secondary">
+              {caption}
+            </Typography>
+          )}
+        </Box>
+        {bar}
       </Box>
     )
   }
@@ -48,7 +55,8 @@ ProgressBar.propTypes = {
   value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
   max: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
   caption: PropTypes.node,
-  color: PropTypes.oneOf(['auto', 'primary', 'warning', 'error']),
+  color: PropTypes.oneOf(['auto', 'primary', 'warning', 'error', 'success']),
+  kind: PropTypes.oneOf(['capacity', 'completion']),
   layout: PropTypes.oneOf(['stacked', 'inline']),
   showCaption: PropTypes.bool,
 }

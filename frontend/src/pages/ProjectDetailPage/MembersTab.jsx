@@ -10,7 +10,6 @@ import MenuItem from '@mui/material/MenuItem'
 import Stack from '@mui/material/Stack'
 import Switch from '@mui/material/Switch'
 import TextField from '@mui/material/TextField'
-import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
@@ -19,11 +18,14 @@ import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import FormDialog from '../../components/FormDialog/FormDialog.jsx'
+import useAuth from '../../auth/useAuth.js'
+import ActionIconButton from '../../components/ActionIconButton/ActionIconButton.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
+import TitleCell from '../../components/TitleCell/TitleCell.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
 import useApi from '../../hooks/useApi.js'
 import * as projectsApi from '../../services/projects.js'
-import { formatHours, formatMoney } from '../../utils/format.js'
+import { formatHours, formatMoney, formatRatio } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 
 function HoursDialog({ open, title, submitLabel, initialHours, capacity, assignedSoFar, projectCapacity, options, onClose, onSubmit }) {
@@ -119,6 +121,7 @@ HoursDialog.propTypes = {
 
 /** Team table with add / edit hours / release (ui-flow.md F4). */
 export default function MembersTab({ project, canManage, onChanged, notify }) {
+  const { user: me } = useAuth()
   const [showReleased, setShowReleased] = useState(false)
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -142,7 +145,8 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
   }
 
   const columns = [
-    { key: 'name', label: 'Name', nowrap: true, render: (m) => fullName(m.user) },
+    // the signed-in person finds their own row at a glance without a loud badge (D25)
+    { key: 'name', label: 'Name', nowrap: true, render: (m) => (m.user.id === me.id ? <TitleCell title={fullName(m.user)} adornment={<Tag label="You" variant="quiet" tone="primary" />} /> : fullName(m.user)) },
     { key: 'jobTitle', label: 'Job title', render: (m) => m.user.jobTitle },
     {
       key: 'currentMilestone',
@@ -162,7 +166,7 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
     {
       key: 'hoursCompleted',
       label: 'Completed',
-      render: (m) => <ProgressBar layout="inline" value={m.hoursCompleted} max={m.hoursAssigned} caption={`${formatHours(m.hoursCompleted)} of ${formatHours(m.hoursAssigned)}`} />,
+      render: (m) => <ProgressBar layout="inline" value={m.hoursCompleted} max={m.hoursAssigned} caption={formatRatio(m.hoursCompleted, m.hoursAssigned)} />,
     },
     ...(hasCosts ? [{ key: 'costConsumed', label: 'Cost consumed', align: 'right', render: (m) => formatMoney(m.costConsumed) }] : []),
     {
@@ -179,16 +183,12 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
             render: (m) =>
               m.isActive ? (
                 <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
-                  <Tooltip title="Edit assigned hours">
-                    <IconButton size="small" sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary' } }} aria-label={`Edit hours for ${fullName(m.user)}`} onClick={(e) => { e.stopPropagation(); setEditing(m) }}>
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Release from project">
-                    <IconButton size="small" sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }} aria-label={`Release ${fullName(m.user)}`} onClick={(e) => { e.stopPropagation(); setReleasing(m) }}>
-                      <PersonRemoveIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                  <ActionIconButton label="Edit member" aria-label={`Edit hours for ${fullName(m.user)}`} onClick={() => setEditing(m)}>
+                    <EditIcon fontSize="small" />
+                  </ActionIconButton>
+                  <ActionIconButton label="Release member" aria-label={`Release ${fullName(m.user)}`} danger onClick={() => setReleasing(m)}>
+                    <PersonRemoveIcon fontSize="small" />
+                  </ActionIconButton>
                 </Stack>
               ) : null,
           },

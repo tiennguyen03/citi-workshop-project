@@ -146,7 +146,7 @@ export default function MilestoneDetailPage() {
                 </Typography>
               )}
               {milestone.assignees.map((a) => (
-                <Tag key={a.id} label={fullName(a)} tone={a.id === me.id ? 'primary' : 'neutral'} size="medium" />
+                <Tag key={a.id} label={a.id === me.id ? `${fullName(a)} (you)` : fullName(a)} tone={a.id === me.id ? 'primary' : 'neutral'} variant="quiet" size="medium" />
               ))}
             </Stack>
             {project && !canManage && projectWritable && isOpen && !milestone.assignees.some((a) => a.id === me.id) && (

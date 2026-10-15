@@ -22,7 +22,7 @@ import useNotice from '../../hooks/useNotice.js'
 import useAuth from '../../auth/useAuth.js'
 import * as usersApi from '../../services/users.js'
 import { ROLES, ROLE_LABELS, fullName } from '../../utils/roles.js'
-import { formatDate, formatHours, formatMoney } from '../../utils/format.js'
+import { formatDate, formatHours, formatMoney, formatRatio } from '../../utils/format.js'
 import ResetPasswordDialog from './ResetPasswordDialog.jsx'
 
 /** Every project the person has been on (api-contract.md › MembershipHistory), same labels as the project's Members tab. */
@@ -33,7 +33,7 @@ const HISTORY_COLUMNS = [
   {
     key: 'hoursCompleted',
     label: 'Completed',
-    render: (p) => <ProgressBar layout="inline" value={p.hoursCompleted} max={p.hoursAssigned} caption={`${formatHours(p.hoursCompleted)} of ${formatHours(p.hoursAssigned)}`} />,
+    render: (p) => <ProgressBar layout="inline" value={p.hoursCompleted} max={p.hoursAssigned} caption={formatRatio(p.hoursCompleted, p.hoursAssigned)} />,
   },
   {
     key: 'isActive',

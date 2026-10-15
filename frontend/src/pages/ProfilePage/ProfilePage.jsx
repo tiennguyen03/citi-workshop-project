@@ -33,11 +33,12 @@ export default function ProfilePage() {
             { label: 'User ID', value: user.id },
             { label: 'Username', value: user.username },
             { label: 'Job title', value: user.jobTitle },
-            { label: 'Annual salary', value: formatMoney(user.salary) },
+            // the admin account is not costed to any project, so its salary is a meaningless $0 (D25)
+            ...(user.role === 'admin' ? [] : [{ label: 'Annual salary', value: formatMoney(user.salary) }]),
           ]}
         />
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
-          Job title, salary and role are managed by an admin.
+          {user.role === 'admin' ? 'Other admins can change your job title and role from the Users page.' : 'Job title, salary and role are managed by an admin.'}
         </Typography>
       </Paper>
       <Paper sx={{ p: 3 }}>

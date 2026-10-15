@@ -15,8 +15,9 @@ import DueTag from '../../components/DueTag/DueTag.jsx'
 import HealthSummary from '../../components/HealthSummary/HealthSummary.jsx'
 import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
+import SummaryRow from '../../components/SummaryRow/SummaryRow.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
-import { formatDate, formatHours, formatMoney } from '../../utils/format.js'
+import { formatDate, formatHours, formatMoney, formatRatio } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 
 /** The 40-hour week each report is measured against (requirements.md). */
@@ -137,7 +138,7 @@ export default function ManagerDashboard({ data }) {
                     {p.health && <HealthSummary health={p.health} reasons={p.reasons} hideTag={p.health === 'to_close'} align="right" />}
                   </Stack>
                 </Stack>
-                <ProgressBar value={p.hoursCompleted} max={p.capacityHours} caption={`${formatHours(p.hoursCompleted)} completed of ${formatHours(p.capacityHours)} capacity`} />
+                <ProgressBar layout="inline" value={p.hoursCompleted} max={p.capacityHours} caption={`${formatRatio(p.hoursCompleted, p.capacityHours)} capacity`} />
                 <Stack direction="row" useFlexGap spacing={3} sx={{ mt: 1.5, flexWrap: 'wrap' }}>
                   <Box>
                     <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
@@ -195,9 +196,18 @@ export default function ManagerDashboard({ data }) {
           icon={<GroupsOutlinedIcon />}
           title="Your team"
           description={
-            onProject.length > 0
-              ? `${formatHours(teamHours)} of ${formatHours(onProject.length * HOURS_PER_WEEK)} logged in the week of ${formatDate(week.start)} – ${formatDate(week.end)}`
-              : `Week of ${formatDate(week.start)} – ${formatDate(week.end)}`
+            <SummaryRow
+              aria-label="Team hours this week"
+              items={[
+                ...(onProject.length > 0
+                  ? [
+                      { key: 'logged', value: formatHours(teamHours), label: 'logged this week', tone: teamHours === 0 ? 'warning' : 'success' },
+                      { key: 'capacity', value: formatHours(onProject.length * HOURS_PER_WEEK), label: `capacity for ${onProject.length} on a project` },
+                    ]
+                  : []),
+                { key: 'week', value: `${formatDate(week.start)} – ${formatDate(week.end)}`, label: 'this week' },
+              ]}
+            />
           }
         />
         <DataTable

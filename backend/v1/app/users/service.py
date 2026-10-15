@@ -38,7 +38,7 @@ def list_users(
     offset: int = 0,
     repo=default_repo,
 ) -> dict[str, Any]:
-    """One page of users. Admin: everyone (filterable, with people counts). Manager: own reports + self.
+    """One page of users. Admin: everyone (filterable, with people counts). Manager: own direct reports.
     Employee: forbidden (use /team)."""
     if actor.is_employee:
         raise Forbidden("Employees can only view their team")
@@ -54,10 +54,8 @@ def list_users(
         )
         summary = repo.people_counts()
     else:
+        # "My team" is the people who report to this manager; the manager reads their own record on /auth/me (D25)
         rows = repo.list_reports(actor.id)
-        me = repo.find_by_id(actor.id)
-        if me:
-            rows = [me, *rows]
         rows = _with_current_project(rows, repo)
         needle = (q or "").strip().lower()
         rows = [

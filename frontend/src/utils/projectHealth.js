@@ -38,3 +38,9 @@ export function summarizeHealth(counts) {
   const parts = SUMMARY_KEYS.filter(([key]) => Number(counts?.[key]) > 0).map(([key, phrase]) => `${counts[key]} ${phrase}`)
   return parts.length ? parts.join(', ') : 'No projects yet'
 }
+
+/** `[code, count]` pairs in `HEALTH_ORDER`, zero buckets dropped, for a structured summary row. */
+export function healthCounts(counts) {
+  const key = { late: 'late', at_risk: 'atRisk', needs_setup: 'needsSetup', to_close: 'toClose', on_track: 'onTrack' }
+  return HEALTH_ORDER.map((code) => [code, Number(counts?.[key[code]]) || 0]).filter(([, n]) => n > 0)
+}

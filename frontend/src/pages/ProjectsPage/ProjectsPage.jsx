@@ -8,6 +8,7 @@ import Switch from '@mui/material/Switch'
 import TextField from '@mui/material/TextField'
 import AddIcon from '@mui/icons-material/Add'
 import DataTable from '../../components/DataTable/DataTable.jsx'
+import { PAGE_SIZE, PAGE_SIZE_OPTIONS } from '../../components/DataTable/paging.js'
 import DueTag from '../../components/DueTag/DueTag.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import ListToolbar from '../../components/ListToolbar/ListToolbar.jsx'
@@ -20,13 +21,12 @@ import useDebouncedValue from '../../hooks/useDebouncedValue.js'
 import useUrlFilters from '../../hooks/useUrlFilters.js'
 import * as projectsApi from '../../services/projects.js'
 import * as usersApi from '../../services/users.js'
-import { formatDate, formatHours } from '../../utils/format.js'
+import { formatDate, formatRatio } from '../../utils/format.js'
 import { ROLES, fullName } from '../../utils/roles.js'
 import ProjectDialog from './ProjectDialog.jsx'
 
-const PAGE_SIZE = 25
-/** Filters and the page live in the URL (`/projects?status=active&page=2`); the API does the searching and paging. */
-const FILTER_DEFAULTS = { q: '', status: '', archived: '', page: '1' }
+/** Filters, the page and the page size live in the URL (`/projects?status=active&page=2`); the API does the searching and paging. */
+const FILTER_DEFAULTS = { q: '', status: '', archived: '', page: '1', size: String(PAGE_SIZE) }
 
 const COLUMNS = [
   { key: 'name', label: 'Project' },
@@ -40,17 +40,19 @@ const COLUMNS = [
       </Stack>
     ),
   },
-  { key: 'manager', label: 'Manager', render: (p) => fullName(p.manager) },
   { key: 'dates', label: 'Dates', nowrap: true, render: (p) => `${formatDate(p.startDate)} – ${formatDate(p.endDate)}` },
   { key: 'memberCount', label: 'Team', numeric: true },
   {
     key: 'hours',
     label: 'Hours completed',
     render: (p) => (
-      <ProgressBar layout="inline" value={p.hoursCompleted} max={p.capacityHours} caption={`${formatHours(p.hoursCompleted)} of ${formatHours(p.capacityHours)}`} />
+      <ProgressBar layout="inline" value={p.hoursCompleted} max={p.capacityHours} caption={formatRatio(p.hoursCompleted, p.capacityHours)} />
     ),
   },
 ]
+
+/** Admins see who runs each project; a manager's list is all their own, so the column would repeat the subtitle (D25). */
+const MANAGER_COLUMN = { key: 'manager', label: 'Manager', render: (p) => fullName(p.manager) }
 
 const SUBTITLES = {
   admin: 'All projects',
@@ -66,6 +68,7 @@ export default function ProjectsPage() {
   const [creating, setCreating] = useState(false)
   const { filters, setFilters } = useUrlFilters(FILTER_DEFAULTS)
   const page = Math.max(1, Number(filters.page) || 1)
+  const pageSize = PAGE_SIZE_OPTIONS.includes(Number(filters.size)) ? Number(filters.size) : PAGE_SIZE
   const showArchived = filters.archived === 'true'
   const isFiltered = Boolean(filters.q || filters.status)
   const setFilter = (key, value) => setFilters({ [key]: value, page: '' })
@@ -85,13 +88,14 @@ export default function ProjectsPage() {
         archived: showArchived ? 'true' : undefined,
         status: filters.status || undefined,
         q: filters.q || undefined,
-        limit: PAGE_SIZE,
-        offset: (page - 1) * PAGE_SIZE,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
       }),
-    [showArchived, filters.status, filters.q, page],
+    [showArchived, filters.status, filters.q, page, pageSize],
   )
   const rows = data?.items ?? []
   const total = data?.total ?? 0
+  const columns = isAdmin ? [COLUMNS[0], COLUMNS[1], MANAGER_COLUMN, ...COLUMNS.slice(2)] : COLUMNS
   const emptyMessage = isFiltered
     ? 'No projects match your filters.'
     : showArchived
@@ -113,7 +117,7 @@ export default function ProjectsPage() {
           ) : null
         }
       />
-      <ListToolbar search={search} onSearchChange={setSearch} placeholder="Name or manager">
+      <ListToolbar search={search} onSearchChange={setSearch} placeholder={isAdmin ? 'Name or manager' : 'Project name'}>
         <TextField select label="Status" size="small" value={filters.status} onChange={(e) => setFilter('status', e.target.value)} sx={{ width: 160 }}>
           <MenuItem value="">All</MenuItem>
           <MenuItem value="active">Active</MenuItem>
@@ -128,14 +132,20 @@ export default function ProjectsPage() {
       </ListToolbar>
       <ErrorAlert error={error} onRetry={refetch} />
       <DataTable
-        columns={COLUMNS}
+        columns={columns}
         rows={rows}
         getRowKey={(p) => p.id}
         loading={loading}
         emptyMessage={emptyMessage}
         onRowClick={(p) => navigate(`/projects/${p.id}`)}
         size="small"
-        pagination={{ page: page - 1, pageSize: PAGE_SIZE, total, onPageChange: (p) => setFilters({ page: String(p + 1) }) }}
+        pagination={{
+          page: page - 1,
+          pageSize,
+          total,
+          onPageChange: (p) => setFilters({ page: String(p + 1) }),
+          onPageSizeChange: (size) => setFilters({ size: String(size), page: '' }),
+        }}
       />
       {isAdmin && (
         <ProjectDialog

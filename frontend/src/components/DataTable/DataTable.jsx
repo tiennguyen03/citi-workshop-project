@@ -9,15 +9,15 @@ import TableHead from '@mui/material/TableHead'
 import TablePagination from '@mui/material/TablePagination'
 import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
+import { PAGE_SIZE_OPTIONS } from './paging.js'
 
 const SKELETON_ROWS = 4
-const PAGE_SIZE_OPTIONS = [25, 50, 100]
 
 /**
  * Presentational table: column config + rows (small density by default, D24). Shows skeletons while loading and an
  * empty-state message when there are no rows. Never fetches. With `pagination` it adds the
- * "1–25 of 112" footer whenever there are rows (arrows disabled on a single page, so the paging is visible);
- * the page itself is the parent's state (usually the URL), the table only reports clicks.
+ * "1–10 of 112" footer once the list is longer than a page; the page itself is the parent's state (usually the URL),
+ * the table only reports clicks.
  */
 export default function DataTable({
   columns,
@@ -29,7 +29,8 @@ export default function DataTable({
   size = 'small',
   pagination,
 }) {
-  const showFooter = pagination && !loading && (pagination.total > 0 || pagination.page > 0)
+  // the footer exists only when there is something to page to (or back from); a list that fits is just a list
+  const showFooter = pagination && !loading && (pagination.total > pagination.pageSize || pagination.page > 0)
   return (
     <TableContainer component={Paper}>
       <Table size={size} sx={{ minWidth: columns.length > 3 ? 640 : 0 }}>

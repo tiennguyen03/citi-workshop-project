@@ -7,8 +7,10 @@ import IconButton from '@mui/material/IconButton'
 import MenuItem from '@mui/material/MenuItem'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
+import ActionIconButton from '../../components/ActionIconButton/ActionIconButton.jsx'
+import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
+import { formatRatio } from '../../utils/format.js'
 import TextField from '@mui/material/TextField'
-import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
@@ -145,9 +147,13 @@ export default function GoalList({ milestone, canManage, canTick, onChanged, not
         <Typography variant="h6" component="h2">
           Goals
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>
-          {goals.length === 0 ? 'None yet' : `${done} of ${goals.length} done`}
-        </Typography>
+        {goals.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            None yet
+          </Typography>
+        ) : (
+          <ProgressBar layout="inline" kind="completion" value={done} max={goals.length} caption={`${formatRatio(done, goals.length, '')} done`} />
+        )}
       </Stack>
       {goals.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
@@ -189,21 +195,12 @@ export default function GoalList({ milestone, canManage, canTick, onChanged, not
               </Box>
               {canManage && (
                 <Stack direction="row" spacing={0.5}>
-                  <Tooltip title="Edit goal">
-                    <IconButton size="small" aria-label={`Edit goal ${goal.title}`} onClick={() => setEditing(goal)} sx={{ color: 'text.secondary' }}>
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete goal">
-                    <IconButton
-                      size="small"
-                      aria-label={`Delete goal ${goal.title}`}
-                      onClick={() => setDeleting(goal)}
-                      sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                  <ActionIconButton label="Edit goal" aria-label={`Edit goal ${goal.title}`} onClick={() => setEditing(goal)}>
+                    <EditOutlinedIcon fontSize="small" />
+                  </ActionIconButton>
+                  <ActionIconButton label="Delete goal" aria-label={`Delete goal ${goal.title}`} danger onClick={() => setDeleting(goal)}>
+                    <DeleteOutlineIcon fontSize="small" />
+                  </ActionIconButton>
                 </Stack>
               )}
             </Box>

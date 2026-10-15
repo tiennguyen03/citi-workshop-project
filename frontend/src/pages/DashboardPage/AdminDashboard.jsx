@@ -17,10 +17,11 @@ import RoleChip from '../../components/RoleChip/RoleChip.jsx'
 import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
+import SummaryRow from '../../components/SummaryRow/SummaryRow.jsx'
 import TitleCell from '../../components/TitleCell/TitleCell.jsx'
 import { actionLabel } from '../../utils/auditActions.js'
-import { formatDate, formatDateTime, formatHours, formatMoney } from '../../utils/format.js'
-import { summarizeHealth } from '../../utils/projectHealth.js'
+import { formatDate, formatDateTime, formatHours, formatMoney, formatRatio } from '../../utils/format.js'
+import { HEALTH, healthCounts } from '../../utils/projectHealth.js'
 import { fullName } from '../../utils/roles.js'
 
 const BOARD_COLUMNS = [
@@ -30,7 +31,7 @@ const BOARD_COLUMNS = [
     key: 'progress',
     label: 'Progress',
     nowrap: true,
-    render: (p) => <ProgressBar layout="inline" value={p.hoursCompleted} max={p.capacityHours} caption={`${formatHours(p.hoursCompleted)} of ${formatHours(p.capacityHours)}`} />,
+    render: (p) => <ProgressBar layout="inline" value={p.hoursCompleted} max={p.capacityHours} caption={formatRatio(p.hoursCompleted, p.capacityHours)} />,
   },
   {
     key: 'budgetRemaining',
@@ -89,8 +90,8 @@ const ACTIVITY_COLUMNS = [
         </Typography>
       ),
   },
-  // a normal action is plain text; only a failure earns a tag
-  { key: 'action', label: 'Action', nowrap: true, render: (e) => (e.statusCode < 400 ? actionLabel(e.action) : <Tag label={actionLabel(e.action)} tone="error" />) },
+  // a normal action is plain text; a failed one keeps the same grammar with a red dot
+  { key: 'action', label: 'Action', nowrap: true, render: (e) => (e.statusCode < 400 ? actionLabel(e.action) : <Tag label={actionLabel(e.action)} tone="error" variant="quiet" />) },
   { key: 'summary', label: 'Summary', muted: true },
 ]
 
@@ -110,7 +111,7 @@ export default function AdminDashboard({ data }) {
           label="Hours logged"
           value={formatHours(summary.hoursCompleted)}
           hint={`of ${formatHours(summary.capacityHours)} capacity on active projects`}
-          progress={{ value: summary.hoursCompleted, max: summary.capacityHours, caption: `${formatHours(summary.hoursCompleted)} of ${formatHours(summary.capacityHours)}` }}
+          progress={{ value: summary.hoursCompleted, max: summary.capacityHours, caption: formatRatio(summary.hoursCompleted, summary.capacityHours) }}
         />
         <StatCard
           icon={<AccountBalanceWalletOutlinedIcon />}
@@ -129,7 +130,16 @@ export default function AdminDashboard({ data }) {
         />
       </Box>
       <Box>
-        <SectionHeading icon={<MonitorHeartOutlinedIcon />} title="Project health" description={summarizeHealth(summary.projects)} />
+        <SectionHeading
+          icon={<MonitorHeartOutlinedIcon />}
+          title="Project health"
+          description={
+            <SummaryRow
+              aria-label="Projects by health"
+              items={healthCounts(summary.projects).map(([code, count]) => ({ key: code, value: count, label: HEALTH[code].label, tone: HEALTH[code].tone }))}
+            />
+          }
+        />
         <DataTable columns={BOARD_COLUMNS} rows={projects} getRowKey={(p) => p.id} emptyMessage="No projects yet. Create one to start the board." onRowClick={(p) => navigate(`/projects/${p.id}`)} />
       </Box>
       <Box>

@@ -135,7 +135,7 @@ def test_list_scoping(repo):
     assert {u["id"] for u in everyone["items"]} == set(repo.rows) and everyone["total"] == len(repo.rows)
     assert everyone["summary"] == {"admins": 1, "managers": 2, "employees": 3, "available": 3}
     mine = service.list_users(MGR1, repo=repo)
-    assert {u["id"] for u in mine["items"]} == {"MGR001", "EMP001", "EMP002"} and mine["summary"] is None
+    assert {u["id"] for u in mine["items"]} == {"EMP001", "EMP002"} and mine["summary"] is None  # reports only
     assert {u["id"] for u in service.list_users(ADMIN, role="manager", repo=repo)["items"]} == {"MGR001", "MGR002"}
     with pytest.raises(Forbidden):
         service.list_users(EMP1, repo=repo)
@@ -150,13 +150,14 @@ def test_list_paging_and_search(repo):
     # a manager's list is filtered and paged in Python over their own people
     assert [u["id"] for u in service.list_users(MGR1, available_only=True, repo=repo)["items"]] == ["EMP002"]
     second = service.list_users(MGR1, limit=1, offset=1, repo=repo)
-    assert second["total"] == 3 and len(second["items"]) == 1
+    assert second["total"] == 2 and len(second["items"]) == 1  # reports only, never the manager themself
 
 
 def test_salary_visibility(repo):
     repo.active_projects["EMP001"] = {"id": "PRJ001", "name": "Decom"}
     by_id = {u["id"]: u for u in service.list_users(MGR1, repo=repo)["items"]}
-    assert "salary" in by_id["EMP001"] and "salary" in by_id["MGR001"]
+    assert "MGR001" not in by_id  # a manager's list is their reports, not themself
+    assert "salary" in by_id["EMP001"] and "salary" in service.get_user(MGR1, "MGR001", repo=repo)
     assert by_id["EMP001"]["currentProject"] == {"id": "PRJ001", "name": "Decom"}
     assert by_id["EMP002"]["currentProject"] is None
 

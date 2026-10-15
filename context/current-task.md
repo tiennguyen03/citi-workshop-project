@@ -2,7 +2,7 @@
 
 > Only one feature is "current" at a time. Update this file when starting, progressing or finishing.
 
-## Status: 🔍 Slice 14 (visual consistency, D24) built on `slice-14-consistency`; awaiting the user's review of before/after screenshots before push/deploy
+## Status: 🔍 Slice 15 (final polish, D25) built on `slice-15-final-polish` (stacked on slice 14); awaiting the user's review before push/deploy
 
 ## Plan (3 days) — each item is a thin vertical slice
 
@@ -22,6 +22,7 @@
 | 11 | Polish from a role-by-role walkthrough: goal-assignee hint, "not your project" message, one people page per role, Manager column for admins, non-assignee hint on milestones, milestone start defaults to today, empty hours on add member, project name in Log time, fixed back links, readable audit actions; "who is on what" moved to the Members tab; New project is a dialog; icons; role as a fact | pre-demo | **done** |
 | 12 | Admin dashboard rebuilt around project health (D21): pillar tiles, health board worst-first, recent activity; manager cards get the health word and a team weekly total; seed keeps one finished unarchived project | pre-demo | **done** |
 | 13 | Server-side paging and search (D23): `limit`/`offset`/`q` on users, projects and time entries, `Page<T>` shape, Users subtitle from an API `summary`; `DataTable` paging footer with the page in the URL, debounced search, audit log loses "Load more" | pre-demo | **done** |
+| 15 | Final polish (D25): one status grammar (quiet dot + text for every normal and result state, tinted only for urgency), role contrast through the dot, compact table progress (percentage primary, raw secondary, visible minimum), overview Progress section folded into tiles, paging 10/25/50 with the footer only past one page, icon actions with tooltips, toolbars without a stretched box, structured section summaries, manager-only Projects/My team fixes, employee dashboard recomposed, seed writes a realistic audit trail | pre-demo | **built, in review** |
 | 14 | Visual consistency (D24): quiet/tinted tag weights, inline table progress with percentage, stronger StatCard figure, DataTable small + numeric/muted + TitleCell, SectionHeading description, HealthSummary on board and cards, sidebar name wraps | pre-demo | **built, in review** |
 
 ## Current slice: 13 — Pagination (agreed 2026-10-14: server-side, user said "go")
@@ -33,6 +34,33 @@ SQL with `q` search, users `summary` counts, audit log on the shared parser; con
 133 backend tests (97 %), 93 frontend, 13 e2e; screenshot pass with 144 users / 333 audit rows, no console errors.
 **Remaining**: nothing; hosted site redeployed (backend + frontend) and smoke-tested.
 **Blockers**: none.
+
+## Slice 15 — Final polish (user brief 2026-10-14; not a redesign; nothing pushed or deployed until approved)
+
+**Acceptance criteria**
+1. Equivalent statuses share one grammar: Active/Open/Complete, 200/401, all quiet dot + text with the semantic colour in the
+   dot; Overdue, At risk, Available, Archived, Deactivated stay tinted. No legacy pill for a negative result.
+2. Role labels read at full text contrast; roles differ by dot colour only (admin purple, manager blue, employee blue-grey).
+3. One compact table progress: percentage first (600), raw figures muted beside it, bar under; non-zero progress never
+   invisible; goals at 100 % read as success. Applied through `ProgressBar` to the admin board, projects list, members,
+   milestones, user history, manager cards.
+4. Project Overview has no standalone Progress section; the Hours tiles carry the bar and percentage.
+5. Paged lists default to 10 with 10/25/50 options; the footer appears only when total > page size; page and size in
+   the URL where the page already keeps filters there; dashboard tables untouched.
+6. Every icon-only action has a tooltip, an accessible label and the same hover/focus treatment (`ActionIconButton`).
+7. Filter rows are compact groups, not a bordered band across the page; controls share one height.
+8. Sidebar: name on up to two lines, role once, full name as a tooltip.
+9. Admin: one `ResultCode` treatment (2xx green, 3xx amber, 4xx red, 5xx tinted red); health summary as a structured row
+   (count emphasised, label muted, semantic dot) under the section title; board health = tag over muted reason; recent
+   activity lighter than the board; demo audit trail shows business events, not only logins.
+10. Manager: Projects hides the Manager column and searches by project name; My team lists reports only (self excluded,
+    backend); team summary structured under the heading; Time tab labels distinguish the filtered view from the project
+    total.
+11. Employee: dashboard top is Current project / My progress / This week with structured facts and clear actions; goals
+    summary structured; "All my time" is a button; Members tab marks the signed-in person's row with a quiet "You".
+12. Profile: salary row hidden for admins (no $0). Milestone detail: shared status/progress, quieter assignee labels.
+13. Validation: backend + frontend tests, lint, e2e; screenshot matrix for the listed screens at 1440 and 390, light and
+    dark, with no overflow and no console errors; demo data reseeded before the final screenshots.
 
 ## Slice 14 — visual consistency pass (approved 2026-10-14 with two constraints: roles/important statuses stay distinguishable; table progress shows percentage + raw figures). Built, not pushed.
 
@@ -142,6 +170,7 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-14 · **Slice 15 built** (branch `slice-15-final-polish`, D25; not pushed). One status grammar (quiet dot + text for Active/Open/Complete/200/401; tinted only for urgency), roles at full contrast told apart by the dot, compact table progress (percentage first, raw figures muted, 3 % minimum, green at 100 % for goals), Overview Progress panel folded into the Hours tiles, paging 10/25/50 with the footer only past one page, `ActionIconButton` for every icon action, bare toolbars, `SummaryRow` section summaries, manager Projects without the Manager column, `GET /users` for managers returns reports only, employee dashboard recomposed (Current project / My progress / This week), quiet "You" on the members tab, admin profile without $0, seed writes a dated business audit trail. 103 backend tests (97 %), 103 frontend, 13 e2e; 88-shot matrix clean (1440/390, light/dark).
 - 2026-10-14 · **Login composition**: both halves now hug the centre line (statement right-aligned at 560 px, form left-aligned at 440 px), pillars in one grid sized to the widest term, footer line anchored under the pillars, medium inputs with firmer borders and a 2 px focus ring. Identity (split, serif headline, three pillars) unchanged.
 - 2026-10-14 · **Manager dashboard**: a manager with one project saw the card at two-thirds width with an empty slot beside it; a lone card now takes the whole row.
 - 2026-10-14 · **Slice 13 built** (branch `slice-13-pagination`, D23). Users, projects and time entries page on the server (`limit` ≤ 100, `offset`, `q` search in SQL, `Page<T>` shape, admin `summary` counts); the audit log shares the parser. `DataTable` gained a paging footer, the page number sits in the URL with the filters, search is debounced, "Load more" is gone, `utils/listFilters.js` deleted. 133 backend tests (97 %), 93 frontend, 13 e2e.

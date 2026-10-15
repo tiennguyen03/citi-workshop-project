@@ -7,7 +7,7 @@ Every seeded account signs in with the password `Password1!`.
 """
 
 import logging
-from datetime import date
+from datetime import UTC, date, datetime, time, timedelta
 
 from app.core import db
 from app.core.config import get_settings
@@ -368,9 +368,139 @@ def load(conn=None) -> None:
                 (tid, pid, uid, entry_date, hours, note),
                 conn=connection,
             )
+        for row in _audit_trail(connection):
+            db.execute(
+                "INSERT INTO audit_log (occurred_at, actor_id, actor_role, action, entity_type, entity_id, "
+                "project_id, summary, status_code) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                row,
+                conn=connection,
+            )
     logger.info(
         "Demo data loaded: %d managers, %d employees, %d projects", len(MANAGERS), len(EMPLOYEES), len(PROJECTS)
     )
+
+
+def _audit_trail(connection) -> list[tuple]:
+    """
+    The audit rows the seeded facts would have produced had they happened through the API, dated when they
+    would have happened, so the admin's "Recent activity" shows business events rather than a wall of
+    sign-ins (D25). Same action names and summary shapes as the services write.
+    """
+    admin = db.query_one("SELECT id FROM users WHERE role = 'admin' ORDER BY created_at LIMIT 1", conn=connection)
+    admin_id = admin["id"] if admin else None
+    names = {uid: f"{first} {last}" for uid, _u, first, last, *_rest in MANAGERS}
+    names.update({uid: f"{first} {last}" for uid, _u, first, last, *_rest in EMPLOYEES})
+    project_manager = {pid: manager_id for pid, _n, _d, _b, _s, _e, manager_id, _st, _a in PROJECTS}
+    project_name = {pid: name for pid, name, *_rest in PROJECTS}
+    milestone_project = {mid: pid for mid, pid, *_rest in MILESTONES}
+    milestone_name = {mid: name for mid, _pid, name, *_rest in MILESTONES}
+    assignee_count = {}
+    for mid, _uid in ASSIGNEES:
+        assignee_count[mid] = assignee_count.get(mid, 0) + 1
+
+    def at(day, hour, minute=0):
+        return datetime.combine(day, time(hour, minute), tzinfo=UTC)
+
+    rows: list[tuple] = []
+    for pid, name, _d, _b, start, _end, manager_id, _status, _archived in PROJECTS:
+        rows.append(
+            (
+                at(start - timedelta(days=10), 9),
+                admin_id,
+                "admin",
+                "project.create",
+                "project",
+                pid,
+                pid,
+                f"Created project '{name}' (manager {names[manager_id]})",
+                201,
+            )
+        )
+    for pid, uid, hours, _active, _reason in MEMBERS:
+        start = next(p[4] for p in PROJECTS if p[0] == pid)
+        rows.append(
+            (
+                at(start - timedelta(days=7), 10, 30),
+                project_manager[pid],
+                "manager",
+                "project.member_add",
+                "project",
+                pid,
+                pid,
+                f"Added {names[uid]} to the project ({hours:.2f} h assigned)",
+                201,
+            )
+        )
+    for mid, pid, name, _d, start, due, status, _order in MILESTONES:
+        rows.append(
+            (
+                at(start - timedelta(days=3), 11),
+                project_manager[pid],
+                "manager",
+                "milestone.create",
+                "milestone",
+                mid,
+                pid,
+                f"Created milestone '{name}' ({assignee_count.get(mid, 0)} assignees)",
+                201,
+            )
+        )
+        if status == "complete":
+            rows.append(
+                (
+                    at(due, 16, 45),
+                    project_manager[pid],
+                    "manager",
+                    "milestone.complete",
+                    "milestone",
+                    mid,
+                    pid,
+                    f"Completed milestone '{name}'",
+                    200,
+                )
+            )
+    for tid, pid, uid, entry_date, hours, _note in TIME_ENTRIES:
+        rows.append(
+            (
+                at(entry_date, 17, 30),
+                uid,
+                "employee",
+                "time_entry.create",
+                "time_entry",
+                tid,
+                pid,
+                f"{names[uid]} logged {hours:g} h on {entry_date.isoformat()}",
+                201,
+            )
+        )
+    for gid, mid, title, assignee, done in GOALS:
+        if done and assignee:
+            pid = milestone_project[mid]
+            rows.append(
+                (
+                    at(date(2026, 10, 9), 15, 10),
+                    assignee,
+                    "employee",
+                    "goal.update",
+                    "goal",
+                    gid,
+                    pid,
+                    f"Completed goal '{title}' on {milestone_name[mid]} ({project_name[pid]})",
+                    200,
+                )
+            )
+    # a milestone planned for next month was still *created* around kickoff, and nothing is dated in the future
+    cap = datetime.now(UTC) - timedelta(hours=3)
+    project_start = {pid: start for pid, _n, _d, _b, start, *_rest in PROJECTS}
+    fixed = []
+    for row in rows:
+        when = row[0]
+        if when > cap:
+            kickoff = at(project_start[row[6]] - timedelta(days=2), 9) + timedelta(minutes=15 * len(fixed))
+            when = min(kickoff, cap)
+        fixed.append((when, *row[1:]))
+    fixed.sort(key=lambda r: r[0])
+    return fixed
 
 
 def ensure_demo_data(conn=None) -> bool:

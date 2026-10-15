@@ -17,7 +17,7 @@ import StatusChip from '../../components/StatusChip/StatusChip.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
 import useApi from '../../hooks/useApi.js'
 import * as milestonesApi from '../../services/milestones.js'
-import { formatDate } from '../../utils/format.js'
+import { formatDate, formatRatio } from '../../utils/format.js'
 import { nextDueId, sortMilestones } from '../../utils/milestones.js'
 import { fullName, initials } from '../../utils/roles.js'
 import MilestoneDialog from './MilestoneDialog.jsx'
@@ -49,7 +49,7 @@ const buildColumns = (nextDue) => [
           No goals yet
         </Typography>
       ) : (
-        <ProgressBar layout="inline" value={m.goalsDone} max={m.goalsTotal} caption={`${m.goalsDone} of ${m.goalsTotal} done`} />
+        <ProgressBar layout="inline" kind="completion" value={m.goalsDone} max={m.goalsTotal} caption={`${formatRatio(m.goalsDone, m.goalsTotal, '')} done`} />
       ),
   },
   {

@@ -7,6 +7,7 @@ import Switch from '@mui/material/Switch'
 import TextField from '@mui/material/TextField'
 import AddIcon from '@mui/icons-material/Add'
 import DataTable from '../../components/DataTable/DataTable.jsx'
+import { PAGE_SIZE, PAGE_SIZE_OPTIONS } from '../../components/DataTable/paging.js'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import ListToolbar from '../../components/ListToolbar/ListToolbar.jsx'
 import NoticeSnackbar from '../../components/NoticeSnackbar/NoticeSnackbar.jsx'
@@ -22,9 +23,8 @@ import * as usersApi from '../../services/users.js'
 import { ROLES, ROLE_LABELS, fullName } from '../../utils/roles.js'
 import UserCreateDialog from './UserCreateDialog.jsx'
 
-const PAGE_SIZE = 25
-/** Filters and the page live in the URL, so a filtered page is a link (`/users?available=true&page=2`). */
-const FILTER_DEFAULTS = { q: '', role: '', available: '', inactive: '', page: '1' }
+/** Filters, the page and the page size live in the URL, so a filtered page is a link (`/users?available=true&page=2`). */
+const FILTER_DEFAULTS = { q: '', role: '', available: '', inactive: '', page: '1', size: String(PAGE_SIZE) }
 
 const COLUMNS = [
   { key: 'name', label: 'Name', nowrap: true, render: (u) => fullName(u) },
@@ -65,6 +65,7 @@ export default function UsersPage() {
   const isAdmin = me.role === ROLES.ADMIN
   const { filters, setFilters } = useUrlFilters(FILTER_DEFAULTS)
   const page = Math.max(1, Number(filters.page) || 1)
+  const pageSize = PAGE_SIZE_OPTIONS.includes(Number(filters.size)) ? Number(filters.size) : PAGE_SIZE
   const isFiltered = Boolean(filters.q || filters.role || filters.available || filters.inactive)
 
   // the search box is typed into locally and reaches the URL (and the API) once typing pauses
@@ -82,10 +83,10 @@ export default function UsersPage() {
         role: filters.role || undefined,
         available: filters.available || undefined,
         inactive: filters.inactive || undefined,
-        limit: PAGE_SIZE,
-        offset: (page - 1) * PAGE_SIZE,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
       }),
-    [filters.q, filters.role, filters.available, filters.inactive, page],
+    [filters.q, filters.role, filters.available, filters.inactive, page, pageSize],
   )
   // managers by name: the Manager column and the create dialog need them even when they are not on this page
   const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER, limit: 100 }) : Promise.resolve(null)), [isAdmin])
@@ -153,7 +154,13 @@ export default function UsersPage() {
         emptyMessage={isFiltered ? 'No one matches your filters.' : 'No users yet.'}
         onRowClick={(u) => navigate(`/users/${u.id}`)}
         size="small"
-        pagination={{ page: page - 1, pageSize: PAGE_SIZE, total, onPageChange: (p) => setFilters({ page: String(p + 1) }) }}
+        pagination={{
+          page: page - 1,
+          pageSize,
+          total,
+          onPageChange: (p) => setFilters({ page: String(p + 1) }),
+          onPageSizeChange: (size) => setFilters({ size: String(size), page: '' }),
+        }}
       />
       {isAdmin && (
         <UserCreateDialog

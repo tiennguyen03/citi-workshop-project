@@ -21,7 +21,7 @@ const EMPLOYEE = {
   currentProject: null,
 }
 const SUMMARY = { admins: 0, managers: 1, employees: 1, available: 1 }
-const pageOf = (items, extra = {}) => ({ items, total: items.length, limit: 25, offset: 0, summary: SUMMARY, ...extra })
+const pageOf = (items, extra = {}) => ({ items, total: items.length, limit: 10, offset: 0, summary: SUMMARY, ...extra })
 const lastQuery = () => usersApi.list.mock.calls.at(-1)[0]
 
 function renderPage(role = 'admin', url = '/users') {
@@ -51,7 +51,7 @@ describe('UsersPage', () => {
     expect(screen.getByRole('columnheader', { name: 'Manager' })).toBeInTheDocument()
     expect(screen.getByText('Available')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /new user/i })).toBeInTheDocument()
-    expect(usersApi.list).toHaveBeenCalledWith(expect.objectContaining({ limit: 25, offset: 0 }))
+    expect(usersApi.list).toHaveBeenCalledWith(expect.objectContaining({ limit: 10, offset: 0 }))
   })
 
   it('hides the create button and the manager column for managers', async () => {
@@ -75,21 +75,21 @@ describe('UsersPage', () => {
   })
 
   it('reads ?available=true and the page from the URL', async () => {
-    usersApi.list.mockResolvedValue(pageOf([EMPLOYEE], { total: 30, offset: 25 }))
+    usersApi.list.mockResolvedValue(pageOf([EMPLOYEE], { total: 30, offset: 10 }))
     renderPage('admin', '/users?available=true&page=2')
     expect(await screen.findByText('Eve Employee')).toBeInTheDocument()
-    expect(usersApi.list).toHaveBeenCalledWith(expect.objectContaining({ available: 'true', limit: 25, offset: 25 }))
+    expect(usersApi.list).toHaveBeenCalledWith(expect.objectContaining({ available: 'true', limit: 10, offset: 10 }))
     expect(screen.getByLabelText(/available only/i)).toBeChecked()
-    expect(screen.getByText('26–30 of 30')).toBeInTheDocument()
+    expect(screen.getByText('11–20 of 30')).toBeInTheDocument()
   })
 
   it('pages with the footer', async () => {
     const user = userEvent.setup()
     usersApi.list.mockResolvedValue(pageOf([MANAGER, EMPLOYEE], { total: 40 }))
     renderPage('admin')
-    expect(await screen.findByText('1–25 of 40')).toBeInTheDocument()
+    expect(await screen.findByText('1–10 of 40')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /next page/i }))
-    await waitFor(() => expect(lastQuery()).toEqual(expect.objectContaining({ offset: 25 })))
+    await waitFor(() => expect(lastQuery()).toEqual(expect.objectContaining({ offset: 10 })))
   })
 
   it('shows the empty state and the error state', async () => {
