@@ -12,12 +12,10 @@ import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
-import HealthSummary from '../../components/HealthSummary/HealthSummary.jsx'
-import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
-import StatusChip from '../../components/StatusChip/StatusChip.jsx'
+import ProjectCard from '../../components/ProjectCard/ProjectCard.jsx'
 import SummaryRow from '../../components/SummaryRow/SummaryRow.jsx'
 import Tag from '../../components/Tag/Tag.jsx'
-import { formatDate, formatHours, formatMoney, formatRatio } from '../../utils/format.js'
+import { formatDate, formatHours } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 
 /** The 40-hour week each report is measured against (requirements.md). */
@@ -115,65 +113,7 @@ export default function ManagerDashboard({ data }) {
         ) : (
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: projects.length > 1 ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)' } }}>
             {projects.map((p) => (
-              <Paper
-                key={p.id}
-                onClick={() => navigate(`/projects/${p.id}`)}
-                sx={{ p: 2.5, display: 'block', cursor: 'pointer', '&:hover': { borderColor: 'text.secondary' } }}
-              >
-                <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Link component={RouterLink} to={`/projects/${p.id}`} underline="hover" color="inherit" sx={{ fontWeight: 600, display: 'block', overflowWrap: 'anywhere' }} onClick={stop}>
-                      {p.name}
-                    </Link>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatDate(p.startDate)} – {formatDate(p.endDate)} ·{' '}
-                      <Link component={RouterLink} to={`/projects/${p.id}?tab=members`} underline="hover" color="inherit" onClick={stop}>
-                        {p.memberCount} member{p.memberCount === 1 ? '' : 's'}
-                      </Link>
-                    </Typography>
-                  </Box>
-                  <Stack direction="row" useFlexGap spacing={1.5} sx={{ flexShrink: 0, alignItems: 'flex-start', justifyContent: 'flex-end', maxWidth: '55%' }}>
-                    <StatusChip status={p.status} />
-                    {/* a complete project's status already says it; the reasons still read (e.g. over budget) */}
-                    {p.health && <HealthSummary health={p.health} reasons={p.reasons} hideTag={p.health === 'to_close'} align="right" />}
-                  </Stack>
-                </Stack>
-                <ProgressBar layout="inline" value={p.hoursCompleted} max={p.capacityHours} caption={`${formatRatio(p.hoursCompleted, p.capacityHours)} capacity`} />
-                <Stack direction="row" useFlexGap spacing={3} sx={{ mt: 1.5, flexWrap: 'wrap' }}>
-                  <Box>
-                    <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
-                      Budget remaining
-                    </Typography>
-                    <Typography sx={{ fontWeight: 600, color: Number(p.budgetRemaining) < 0 ? 'error.main' : 'text.primary', fontVariantNumeric: 'tabular-nums' }}>
-                      {formatMoney(p.budgetRemaining)}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
-                      Open milestones
-                    </Typography>
-                    <Typography sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                      <Link component={RouterLink} to={`/projects/${p.id}?tab=milestones`} underline="hover" color="inherit" onClick={stop} aria-label={`${p.milestoneCounts.open} open milestones`}>
-                        {p.milestoneCounts.open}
-                      </Link>
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                      {p.milestoneCounts.complete} complete
-                    </Typography>
-                  </Box>
-                  {p.nextDueDate && (
-                    <Box>
-                      <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
-                        Next due
-                      </Typography>
-                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                        <Typography sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatDate(p.nextDueDate)}</Typography>
-                        <DueTag dueDate={p.nextDueDate} />
-                      </Stack>
-                    </Box>
-                  )}
-                </Stack>
-              </Paper>
+              <ProjectCard key={p.id} project={p} />
             ))}
           </Box>
         )}

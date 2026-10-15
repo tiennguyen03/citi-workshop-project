@@ -326,3 +326,8 @@ primitive and every page follows.
 percentage; a list pages at 10 through `paging.js`; a summary is a `SummaryRow`; an icon action is an
 `ActionIconButton`. The only page-local presentation is the admin health summary's dots, which reuse the
 health tones.
+
+**Addendum (project card)**: `components/ProjectCard` is the one project summary. Reading order is name, health, reason,
+progress, metrics; the only tinted element is the health tag; the due cue under "Next due" is quiet text; lifecycle
+status appears only when it is the whole story (Complete). `ProgressBar layout="block"` and `DueTag variant="quiet"`
+exist for it and for any future card.

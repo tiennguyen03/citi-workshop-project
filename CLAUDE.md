@@ -65,7 +65,9 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
   cells use `components/TitleCell`; health in a row or card uses `components/HealthSummary`. `SectionHeading`
   takes `description` (a `components/SummaryRow`, never a sentence) and `aside` for an action only. `StatCard`
   takes `progress={{ value, max, kind }}` and `action` (one button). Icon-only actions use
-  `components/ActionIconButton` (tooltip + aria-label + stopPropagation). Lists page at 10 via
+  `components/ActionIconButton` (tooltip + aria-label + stopPropagation). A project summary card is
+  `components/ProjectCard` (name, health tag + muted reason, `ProgressBar layout="block"`, three `FieldList` metrics,
+  `DueTag variant="quiet"`; no lifecycle status unless it is the whole story). Lists page at 10 via
   `components/DataTable/paging.js` (`PAGE_SIZE`, `PAGE_SIZE_OPTIONS`); the footer shows only past one page; `page`
   and `size` live in the URL. `ListToolbar` is a bare control row, not a Paper band. Read-only label/value groups use `components/FieldList`. Page titles use
   `PageHeader` (`back={{ label, to|onClick }}` for the back link). Brand = `components/BrandMark`.

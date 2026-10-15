@@ -13,15 +13,34 @@ const MIN_VISIBLE = 3
  * `layout="stacked"` (default) is a tile or panel: bar, caption under it.
  * `layout="inline"` is the one table treatment (D25): the percentage first (the figure to scan), the raw figures
  * muted beside it, the bar under both; compact enough for a small row.
+ * `layout="block"` is a card's progress unit (D25): "3% complete" on the left, the raw figures muted on the right, a
+ * full-width bar beneath. `suffix` is the word after the percentage ("complete").
  * `showCaption={false}` keeps just the bar (a StatCard's hint already says the numbers).
  */
-export default function ProgressBar({ value, max, caption, color = 'auto', kind = 'capacity', layout = 'stacked', showCaption = true }) {
+export default function ProgressBar({ value, max, caption, color = 'auto', kind = 'capacity', layout = 'stacked', showCaption = true, suffix }) {
   const pct = max > 0 ? Math.round((Number(value) / Number(max)) * 100) : 0
   const drawn = pct <= 0 ? 0 : Math.min(Math.max(pct, MIN_VISIBLE), 100)
   const auto = kind === 'completion' ? (pct >= 100 ? 'success' : 'primary') : pct > 100 ? 'error' : pct >= 90 ? 'warning' : 'primary'
   const barColor = color !== 'auto' ? color : auto
   const label = caption ?? `${pct}%`
   const bar = <LinearProgress variant="determinate" value={drawn} color={barColor} aria-label={caption ? `${caption}, ${pct}%` : `${pct}%`} />
+  if (layout === 'block') {
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 2, mb: 0.75, fontVariantNumeric: 'tabular-nums' }}>
+          <Typography variant="body2" component="span" sx={{ fontWeight: 600, color: barColor === 'primary' ? 'text.primary' : `${barColor}.main` }}>
+            {pct}%{suffix ? ` ${suffix}` : ''}
+          </Typography>
+          {showCaption && caption && (
+            <Typography variant="caption" component="span" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+              {caption}
+            </Typography>
+          )}
+        </Box>
+        {bar}
+      </Box>
+    )
+  }
   if (layout === 'inline') {
     return (
       <Box sx={{ minWidth: 150, maxWidth: 260 }}>
@@ -57,6 +76,7 @@ ProgressBar.propTypes = {
   caption: PropTypes.node,
   color: PropTypes.oneOf(['auto', 'primary', 'warning', 'error', 'success']),
   kind: PropTypes.oneOf(['capacity', 'completion']),
-  layout: PropTypes.oneOf(['stacked', 'inline']),
+  layout: PropTypes.oneOf(['stacked', 'inline', 'block']),
   showCaption: PropTypes.bool,
+  suffix: PropTypes.string,
 }

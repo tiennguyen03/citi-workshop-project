@@ -113,8 +113,9 @@ describe('DashboardPage', () => {
     })
     renderPage({ id: 'MGR001', role: 'manager', firstName: 'Mia' })
     expect(await screen.findByText('$800')).toBeInTheDocument()
-    expect(screen.getByText('40 / 160 h capacity')).toBeInTheDocument()
-    expect(screen.getByText('25%')).toBeInTheDocument()
+    expect(screen.getByText('40 h / 160 h')).toBeInTheDocument()
+    expect(screen.getByText('25% complete')).toBeInTheDocument()
+    expect(screen.queryByText('Active')).not.toBeInTheDocument() // the card leads with health, not lifecycle
     expect(screen.getByText('Available')).toBeInTheDocument()
     expect(screen.getAllByText('16 h')).toHaveLength(2) // the team summary and Quiet's row
     expect(screen.getByText('On track')).toBeInTheDocument()
