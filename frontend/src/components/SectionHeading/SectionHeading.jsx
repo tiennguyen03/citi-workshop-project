@@ -19,7 +19,7 @@ export default function SectionHeading({ icon, title, description, aside, sx }) 
           </Typography>
         </Stack>
         {description && (
-          <Typography component="div" variant="body2" color="text.secondary" sx={{ mt: 0.25, pl: icon ? 3.5 : 0 }}>
+          <Typography component="div" variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {description}
           </Typography>
         )}
