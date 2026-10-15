@@ -24,6 +24,7 @@ ACTIONS: tuple[str, ...] = (
     "auth.password_change",
     "user.create",
     "user.update",
+    "user.import",
     "project.create",
     "project.update",
     "project.complete",

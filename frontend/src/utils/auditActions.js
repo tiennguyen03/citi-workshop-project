@@ -5,6 +5,7 @@ export const ACTION_LABELS = {
   'auth.password_change': 'Changed password',
   'user.create': 'Created a user',
   'user.update': 'Updated a user',
+  'user.import': 'Imported users',
   'project.create': 'Created a project',
   'project.update': 'Updated a project',
   'project.complete': 'Completed a project',

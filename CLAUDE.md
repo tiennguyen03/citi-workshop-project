@@ -75,6 +75,8 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 - In browser scripts, click nav links inside `getByRole('navigation', { name: 'Main navigation' })` —
   the dashboard shortcut cards are links with the same names. Nav has one people entry per role:
   employees "My team" → `/team`, managers "My team" → `/users` (searchable), admins "Users" → `/users`.
+- Bulk user creation is `POST /users/import` (D26): preview with `dryRun`, then all-or-nothing; `UserImportDialog`
+  on the Users page. Handlers may set `audit_details` (replace the audited body) or `audit_skip` (a preview).
 - Audit action codes are shown through `utils/auditActions.js` (`actionLabel`); add a label there whenever a
   route gains a new `audit=` name, and keep the code visible as a caption so tests/e2e can still match it.
 - Urgency cues come from `components/DueTag` (`dueDate`, `isOpen`, `soonDays` — `null` for overdue-only,

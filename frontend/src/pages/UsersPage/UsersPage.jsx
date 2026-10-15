@@ -6,6 +6,7 @@ import MenuItem from '@mui/material/MenuItem'
 import Switch from '@mui/material/Switch'
 import TextField from '@mui/material/TextField'
 import AddIcon from '@mui/icons-material/Add'
+import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import { PAGE_SIZE, PAGE_SIZE_OPTIONS } from '../../components/DataTable/paging.js'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
@@ -22,6 +23,7 @@ import useUrlFilters from '../../hooks/useUrlFilters.js'
 import * as usersApi from '../../services/users.js'
 import { ROLES, ROLE_LABELS, fullName } from '../../utils/roles.js'
 import UserCreateDialog from './UserCreateDialog.jsx'
+import UserImportDialog from './UserImportDialog.jsx'
 
 /** Filters, the page and the page size live in the URL, so a filtered page is a link (`/users?available=true&page=2`). */
 const FILTER_DEFAULTS = { q: '', role: '', available: '', inactive: '', page: '1', size: String(PAGE_SIZE) }
@@ -62,6 +64,7 @@ export default function UsersPage() {
   const navigate = useNavigate()
   const { notice, notify, clear } = useNotice()
   const [createOpen, setCreateOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const isAdmin = me.role === ROLES.ADMIN
   const { filters, setFilters } = useUrlFilters(FILTER_DEFAULTS)
   const page = Math.max(1, Number(filters.page) || 1)
@@ -89,7 +92,11 @@ export default function UsersPage() {
     [filters.q, filters.role, filters.available, filters.inactive, page, pageSize],
   )
   // managers by name: the Manager column and the create dialog need them even when they are not on this page
-  const { data: managersData } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER, limit: 100 }) : Promise.resolve(null)), [isAdmin])
+  const { data: managersData, refetch: refetchManagers } = useApi(() => (isAdmin ? usersApi.list({ role: ROLES.MANAGER, limit: 100 }) : Promise.resolve(null)), [isAdmin])
+  const reload = () => {
+    refetch()
+    refetchManagers() // a new manager must show up in the Manager column and the create dialog
+  }
   const managers = (managersData?.items ?? []).filter((u) => u.isActive !== false)
   const managerById = new Map((managersData?.items ?? []).map((u) => [u.id, u]))
 
@@ -119,9 +126,14 @@ export default function UsersPage() {
         subtitle={subtitle}
         actions={
           isAdmin ? (
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-              New user
-            </Button>
+            <>
+              <Button variant="outlined" startIcon={<UploadFileOutlinedIcon />} onClick={() => setImportOpen(true)}>
+                Import CSV
+              </Button>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+                New user
+              </Button>
+            </>
           ) : null
         }
       />
@@ -170,7 +182,17 @@ export default function UsersPage() {
           onCreated={(created) => {
             setCreateOpen(false)
             notify(`Created ${fullName(created)}`)
-            refetch()
+            reload()
+          }}
+        />
+      )}
+      {isAdmin && (
+        <UserImportDialog
+          open={importOpen}
+          onClose={() => setImportOpen(false)}
+          onImported={(count) => {
+            notify(`Created ${count} user${count === 1 ? '' : 's'}`)
+            reload()
           }}
         />
       )}

@@ -2,7 +2,7 @@
 
 > Only one feature is "current" at a time. Update this file when starting, progressing or finishing.
 
-## Status: 🔍 Slice 15 (final polish, D25) built on `slice-15-final-polish` (stacked on slice 14); awaiting the user's review before push/deploy
+## Status: 🔍 Slice 16 (CSV import of users, D26) built on `slice-16-user-import`; awaiting review before push/deploy. Slices 14–15 pushed and deployed 2026-10-14.
 
 ## Plan (3 days) — each item is a thin vertical slice
 
@@ -22,6 +22,7 @@
 | 11 | Polish from a role-by-role walkthrough: goal-assignee hint, "not your project" message, one people page per role, Manager column for admins, non-assignee hint on milestones, milestone start defaults to today, empty hours on add member, project name in Log time, fixed back links, readable audit actions; "who is on what" moved to the Members tab; New project is a dialog; icons; role as a fact | pre-demo | **done** |
 | 12 | Admin dashboard rebuilt around project health (D21): pillar tiles, health board worst-first, recent activity; manager cards get the health word and a team weekly total; seed keeps one finished unarchived project | pre-demo | **done** |
 | 13 | Server-side paging and search (D23): `limit`/`offset`/`q` on users, projects and time entries, `Page<T>` shape, Users subtitle from an API `summary`; `DataTable` paging footer with the page in the URL, debounced search, audit log loses "Load more" | pre-demo | **done** |
+| 16 | CSV import of users (D26): `POST /users/import` with preview (`dryRun`) and all-or-nothing commit, in-file managers, generated passwords shown once, `UserImportDialog` on the Users page | stretch | **built, in review** |
 | 15 | Final polish (D25): one status grammar (quiet dot + text for every normal and result state, tinted only for urgency), role contrast through the dot, compact table progress (percentage primary, raw secondary, visible minimum), overview Progress section folded into tiles, paging 10/25/50 with the footer only past one page, icon actions with tooltips, toolbars without a stretched box, structured section summaries, manager-only Projects/My team fixes, employee dashboard recomposed, seed writes a realistic audit trail | pre-demo | **built, in review** |
 | 14 | Visual consistency (D24): quiet/tinted tag weights, inline table progress with percentage, stronger StatCard figure, DataTable small + numeric/muted + TitleCell, SectionHeading description, HealthSummary on board and cards, sidebar name wraps | pre-demo | **built, in review** |
 
@@ -35,7 +36,7 @@ SQL with `q` search, users `summary` counts, audit log on the shared parser; con
 **Remaining**: nothing; hosted site redeployed (backend + frontend) and smoke-tested.
 **Blockers**: none.
 
-## Proposed slice 16 — CSV import of users (admin), plan for approval 2026-10-14
+## Slice 16 — CSV import of users (admin), approved and built 2026-10-14
 
 **What**: an admin uploads one CSV and creates many users at once, with a preview that names every problem row
 before anything is written. Replaces adding people one at a time. (The audit CSV export idea is dropped.)
@@ -233,6 +234,7 @@ Q6 admin sets a temporary password · Q7 project completion blocked while any mi
 (milestone completion with open goals only warns) · Q8 managers may manage several projects.
 
 ## Done log
+- 2026-10-14 · **Slice 16 built** (branch `slice-16-user-import`, D26). `POST /users/import` (admin): header-by-name CSV, every row checked with the `POST /users` rules plus in-file uniqueness, preview with `dryRun` (no write, no audit), all-or-nothing commit in one transaction with managers created before the employees that name them, blank passwords generated and returned once, one `user.import` audit row with usernames only (`Response.audit_details` / `audit_skip` added). `UserImportDialog`: choose or paste, template download, preview table with Ready/Error tags and a summary row, Import enabled only when every row is ready, generated passwords with copy buttons. Tests: 6 unit, 2 integration, dialog test, one e2e. Backend suite at 97 %, 107 frontend tests, 14 e2e.
 - 2026-10-14 · **README (N7)** written as `PROJECT_TRACKER.md` at the repo root: walkthrough accounts, architecture picture, backend/frontend layers, run and deploy commands, test commands and counts, enforced rules, trade-offs, known gaps. One approved pointer line in the boilerplate `README.md`. Slices 14 and 15 pushed; hosted API rebuilt with the workshop scripts.
 - 2026-10-14 · **Project card refinement** (on `slice-15-final-polish`). The manager's project summary is a shared `components/ProjectCard`: name, one health tag with the reason as muted text beneath (Complete takes the slot on a finished project), progress as one unit ("3% complete", raw hours, full bar via `ProgressBar layout="block"`), and a three-column metric row (Budget remaining, Open milestones, Next due) with the due cue as quiet supporting text (`DueTag variant="quiet"`). Lifecycle `Active` left the card.
 - 2026-10-14 · **Slice 15 built** (branch `slice-15-final-polish`, D25; not pushed). One status grammar (quiet dot + text for Active/Open/Complete/200/401; tinted only for urgency), roles at full contrast told apart by the dot, compact table progress (percentage first, raw figures muted, 3 % minimum, green at 100 % for goals), Overview Progress panel folded into the Hours tiles, paging 10/25/50 with the footer only past one page, `ActionIconButton` for every icon action, bare toolbars, `SummaryRow` section summaries, manager Projects without the Manager column, `GET /users` for managers returns reports only, employee dashboard recomposed (Current project / My progress / This week), quiet "You" on the members tab, admin profile without $0, seed writes a dated business audit trail. 103 backend tests (97 %), 103 frontend, 13 e2e; 88-shot matrix clean (1440/390, light/dark).

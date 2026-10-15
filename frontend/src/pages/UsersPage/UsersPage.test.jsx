@@ -143,7 +143,7 @@ describe('UsersPage', () => {
       managerId: 'MGR001',
     })
     expect(await screen.findByText('Created Eve Employee')).toBeInTheDocument()
-    await waitFor(() => expect(usersApi.list).toHaveBeenCalledTimes(3)) // page + managers, then the page again
+    await waitFor(() => expect(usersApi.list).toHaveBeenCalledTimes(4)) // page + managers, then both again (a new manager must appear)
   })
 
   it('shows client-side validation errors before calling the API', async () => {

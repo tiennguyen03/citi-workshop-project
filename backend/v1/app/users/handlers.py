@@ -4,7 +4,7 @@ from app.core.dto import parse
 from app.core.paging import parse_page
 from app.http import Request, Response, created, ok
 from app.users import service
-from app.users.schemas import CreateUserRequest, UpdateUserRequest
+from app.users.schemas import CreateUserRequest, ImportUsersRequest, UpdateUserRequest
 
 
 def list_users(request: Request) -> Response:
@@ -30,6 +30,20 @@ def create_user(request: Request) -> Response:
         user,
         audit_summary=f"Created {user['role']} '{user['username']}' ({user['firstName']} {user['lastName']})",
         audit_entity_id=user["id"],
+    )
+
+
+def import_users(request: Request) -> Response:
+    dto = parse(ImportUsersRequest, request.json())
+    report = service.import_users(request.require_actor, dto)
+    summary = report["summary"]
+    if dto.dry_run:
+        return ok(report, audit_skip=True)
+    usernames = [row["username"] for row in report["rows"]]
+    return ok(
+        report,
+        audit_summary=f"Imported {summary['created']} user{'s' if summary['created'] != 1 else ''} from a CSV file",
+        audit_details={"created": summary["created"], "usernames": usernames},
     )
 
 

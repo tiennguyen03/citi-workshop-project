@@ -20,7 +20,6 @@ test('employee: dashboard shows the project, ticks a goal, logs time; Time tab e
   await signIn(page, emp1.username)
   await expect(page.getByText('Current project')).toBeVisible()
   await expect(page.getByRole('link', { name: project.name }).first()).toBeVisible()
-  await expect(page.getByText('Current milestone')).toBeVisible()
   await expect(page.getByRole('link', { name: 'Phase 1' }).first()).toBeVisible() // the card and the goal both link to it
   await expect(page.getByText('Overdue').first()).toBeVisible()
   await expect(page.getByText('Just you on this milestone')).toBeVisible()

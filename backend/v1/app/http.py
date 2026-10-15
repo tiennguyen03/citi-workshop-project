@@ -86,6 +86,10 @@ class Response:
     audit_project_id: str | None = None
     # Only login sets this: the request had no actor yet, but the audit row should name the user.
     audit_actor: Actor | None = None
+    # Replaces the sanitised request body in the audit row (an import must not store its CSV); None keeps the body.
+    audit_details: Any = None
+    # A dry run changes nothing, so it leaves no audit row even on an audited route.
+    audit_skip: bool = False
 
     def to_lambda(self) -> dict[str, Any]:
         headers = {"Content-Type": "application/json", **self.headers}
@@ -111,7 +115,7 @@ def error_response(err: AppError) -> Response:
 
 
 def _audit_kwargs(audit: dict[str, Any]) -> dict[str, Any]:
-    allowed = {"audit_summary", "audit_entity_id", "audit_project_id", "audit_actor"}
+    allowed = {"audit_summary", "audit_entity_id", "audit_project_id", "audit_actor", "audit_details", "audit_skip"}
     unknown = set(audit) - allowed
     if unknown:
         raise TypeError(f"Unknown response options: {sorted(unknown)}")

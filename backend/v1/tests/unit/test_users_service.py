@@ -58,6 +58,9 @@ class FakeRepo:
             dict(r) for r in self.rows.values() if r["manager_id"] == manager_id and (r["is_active"] or not active_only)
         ]
 
+    def find_by_username(self, username):
+        return next((dict(r) for r in self.rows.values() if r["username"] == username), None)
+
     def username_exists(self, username):
         return any(r["username"] == username for r in self.rows.values())
 

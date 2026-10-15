@@ -331,3 +331,18 @@ health tones.
 progress, metrics; the only tinted element is the health tag; the due cue under "Next due" is quiet text; lifecycle
 status appears only when it is the whole story (Complete). `ProgressBar layout="block"` and `DueTag variant="quiet"`
 exist for it and for any future card.
+
+## D26 · 2026-10-14 · CSV import of users: preview first, then all or nothing
+**Decision**: `POST /users/import` takes the text of one CSV (header row, columns by name in any order) and a `dryRun`
+flag. Every row is checked with exactly the rules of `POST /users` plus uniqueness inside the file, and every problem
+is collected per row rather than stopping at the first. A dry run returns the report and writes nothing (and leaves no
+audit row). A real import creates everybody in one transaction or nobody, returning `400` with the same report when a
+row is invalid. The `manager` column is the manager's username and may point at a manager row earlier in the same
+file, so a whole team imports at once; managers are created before the employees that name them. A blank password is
+generated (12 URL-safe characters) and returned once in the report. The audit row stores the count and usernames,
+never the file (a handler can now replace the audited details with `audit_details`, and skip the audit with
+`audit_skip` for a preview).
+**Why**: A recruiter asked for it: adding people one at a time does not scale to onboarding a team. Preview-then-commit
+keeps the admin in control, and all-or-nothing means a half-imported file can never exist.
+**Consequences**: The UI (`UserImportDialog`) always previews before it can import. Updating existing users from a file,
+importing projects and Excel files are out of scope. `user.import` joins `core.audit.ACTIONS` and the action labels.

@@ -24,3 +24,8 @@ export function update(id, body) {
 export function team(id) {
   return api.get(`/users/${id}/team`)
 }
+
+/** POST /users/import { csv, dryRun } → { rows: [{ line, username, status, errors, generatedPassword?, id? }], summary } */
+export function importCsv(csv, { dryRun = false } = {}) {
+  return api.post('/users/import', { csv, dryRun })
+}

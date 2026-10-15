@@ -37,11 +37,14 @@ Milestones, goals and members are returned whole: they are bounded by one projec
 |---|---|---|---|---|
 | GET | `/users?role=&managerId=&q=&available=&inactive=&limit=25&offset=0` | — | `200 Page<UserFull> & {summary: {admins, managers, employees, available}\|null}` (`q` searches name/email/username; `available=true` = employees on no project; deactivated people only with `inactive=true`; `summary` counts every active person, admins only) | admin: all. manager: own reports (+self), filtered and paged the same way. employee: `403`. |
 | POST | `/users` | `{username, password, firstName, lastName, email, jobTitle, salary, role, managerId?}` | `201 UserFull` · `400` · `409` username/email taken | admin |
+| POST | `/users/import` | `{csv, dryRun?}` — the text of one CSV (≤ 1 MB, ≤ 500 rows; header `username, firstName, lastName, email, jobTitle, salary, role, manager, password` in any order; `manager` = manager's username, existing or earlier in the file; blank password generated) | `200 ImportReport` (dry run: nothing written, no audit; otherwise all rows created in one transaction, managers first) · `400 VALIDATION_ERROR` with `details = ImportReport` when any row is invalid (nobody created) or a message for a whole-file problem | admin |
 | GET | `/users/{id}` | — | `200 UserFull & {manager: {id, firstName, lastName}\|null, projects: MembershipHistory[]}` (salary only for admin / own manager / self; archived projects only for admins) · `403` not allowed to view · `404` | admin; manager for self + reports; employee for self, teammates (same manager) and own manager |
 | PATCH | `/users/{id}` | any of `{firstName, lastName, email}`; admin additionally `{jobTitle, salary, role, managerId, isActive}` | `200 UserFull` | admin; manager (name/email of reports); employee (name/email of self) | `password` (≥ 8 chars) is admin-only and sets a new temporary password (hash stored, never returned).
 | GET | `/users/{id}/team` | — | `200 {manager: UserSummary, members: UserSummary[]}` | admin; the manager (`id` = self); employee (`id` = self → their manager's team) |
 
 ```
+ImportReport {rows: [{line, username|null, status: "ok"|"error", errors: string[], generatedPassword?, id?}],
+              summary: {total, valid, invalid, created}}     (D26; `generatedPassword` only on a valid row with a blank password, shown once)
 MembershipHistory {id, name, status, archived, hoursAssigned, hoursCompleted, isActive, releasedReason|null,
                    addedAt, releasedAt|null}     (one per project the user has ever been on; active first, then newest)
 ```

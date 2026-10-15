@@ -104,7 +104,7 @@ class Router:
                 return route.handler(request)
             with db.transaction() as conn:
                 response = route.handler(request)
-                if route.audit:
+                if route.audit and not response.audit_skip:
                     self._record_audit(conn, route.audit, request, response)
                 return response
         except AppError as err:
@@ -119,7 +119,7 @@ class Router:
     def _record_audit(conn, action: str, request: Request, response: Response) -> None:
         entity_id = response.audit_entity_id or next(iter(request.path_params.values()), None)
         summary = response.audit_summary or f"{action} {entity_id or ''}".strip()
-        details = _safe_json(request)
+        details = response.audit_details if response.audit_details is not None else _safe_json(request)
         audit.record(
             conn,
             action=action,

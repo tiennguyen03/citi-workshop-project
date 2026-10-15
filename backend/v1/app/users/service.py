@@ -1,6 +1,11 @@
 """User business rules (requirements M1–M3, security.md role matrix)."""
 
+import csv
+import io
+import secrets
 from typing import Any
+
+from pydantic import ValidationError as PydanticValidationError
 
 from app.core import permissions, security
 from app.core.actor import ROLE_ADMIN, ROLE_EMPLOYEE, ROLE_MANAGER, Actor
@@ -8,7 +13,14 @@ from app.core.errors import Conflict, Forbidden, NotFound, ValidationError
 from app.core.ids import new_id
 from app.core.paging import DEFAULT_LIMIT, page
 from app.users import repository as default_repo
-from app.users.schemas import CreateUserRequest, UpdateUserRequest, membership_history_item, user_full, user_summary
+from app.users.schemas import (
+    CreateUserRequest,
+    ImportUsersRequest,
+    UpdateUserRequest,
+    membership_history_item,
+    user_full,
+    user_summary,
+)
 
 ID_COLLISION_RETRIES = 5
 
@@ -130,6 +142,214 @@ def create_user(actor: Actor, dto: CreateUserRequest, repo=default_repo) -> dict
             created = repo.insert({**row, "id": candidate})
             return user_full(created, include_salary=True)
     raise Conflict("Could not allocate a unique user ID, please retry")  # pragma: no cover
+
+
+IMPORT_MAX_ROWS = 500
+IMPORT_COLUMNS = ("username", "firstname", "lastname", "email", "jobtitle", "salary", "role", "manager", "password")
+IMPORT_REQUIRED = ("username", "firstname", "lastname", "email", "jobtitle", "salary", "role")
+_HEADER_ALIASES = {
+    "first name": "firstname",
+    "first_name": "firstname",
+    "last name": "lastname",
+    "last_name": "lastname",
+    "job title": "jobtitle",
+    "job_title": "jobtitle",
+    "manager username": "manager",
+    "manager_username": "manager",
+    "managerusername": "manager",
+    "temporary password": "password",
+    "temp password": "password",
+}
+
+
+def _header_key(raw: str) -> str:
+    key = raw.strip().lstrip("\ufeff").lower()
+    return _HEADER_ALIASES.get(key, key.replace(" ", "").replace("_", ""))
+
+
+def parse_import_csv(text: str) -> list[dict[str, str]]:
+    """Rows of a user CSV keyed by canonical column, header matched by name in any order. Whole-file errors raise."""
+    reader = csv.reader(io.StringIO(text.lstrip("\ufeff")))
+    try:
+        header = next(reader)
+    except StopIteration as exc:
+        raise ValidationError("The file is empty") from exc
+    keys = [_header_key(h) for h in header]
+    missing = [c for c in IMPORT_REQUIRED if c not in keys]
+    if missing:
+        raise ValidationError(
+            "Missing columns: " + ", ".join(_PRETTY[c] for c in missing),
+            details={"missingColumns": [_PRETTY[c] for c in missing]},
+        )
+    rows: list[dict[str, str]] = []
+    for line_no, values in enumerate(reader, start=2):
+        if not any(v.strip() for v in values):
+            continue
+        row = {
+            key: (values[i].strip() if i < len(values) else "") for i, key in enumerate(keys) if key in IMPORT_COLUMNS
+        }
+        row["_line"] = str(line_no)
+        rows.append(row)
+        if len(rows) > IMPORT_MAX_ROWS:
+            raise ValidationError(f"At most {IMPORT_MAX_ROWS} users per file")
+    if not rows:
+        raise ValidationError("The file has a header but no users")
+    return rows
+
+
+_PRETTY = {
+    "username": "username",
+    "firstname": "firstName",
+    "lastname": "lastName",
+    "email": "email",
+    "jobtitle": "jobTitle",
+    "salary": "salary",
+    "role": "role",
+    "manager": "manager",
+    "password": "password",
+}
+
+
+_PLAIN_MESSAGES = {
+    "string_too_short": "too short (at least {min_length} characters)",
+    "string_too_long": "too long (at most {max_length} characters)",
+    "missing": "required",
+    "literal_error": "must be admin, manager or employee",
+    "decimal_parsing": "must be a number",
+    "decimal_type": "must be a number",
+    "greater_than_equal": "must be 0 or more",
+    "decimal_max_digits": "has too many digits",
+    "decimal_max_places": "has too many decimal places",
+}
+
+
+def _plain(err: dict[str, Any]) -> str:
+    """A row problem in plain words instead of pydantic's phrasing ("Input should be a valid decimal")."""
+    template = _PLAIN_MESSAGES.get(err["type"])
+    if template:
+        return template.format(**err.get("ctx", {}))
+    msg = str(err["msg"])
+    return msg.removeprefix("Value error, ")
+
+
+def _generate_password() -> str:
+    """A temporary password the admin hands over once: 12 URL-safe characters, always past the 8-character floor."""
+    return secrets.token_urlsafe(9)
+
+
+def import_users(actor: Actor, dto: ImportUsersRequest, repo=default_repo) -> dict[str, Any]:
+    """
+    Check every row with the rules of `create_user` (plus uniqueness inside the file) and report per row.
+    `dry_run` writes nothing. Otherwise the import is all-or-nothing: any invalid row means nobody is created
+    and the report comes back as a 400. A `manager` may be an existing manager's username or a manager row
+    earlier in the same file, so a whole team imports in one go. A blank password is generated and returned once.
+    """
+    permissions.assert_admin(actor)
+    rows = parse_import_csv(dto.csv)
+    seen_usernames: set[str] = set()
+    seen_emails: set[str] = set()
+    file_managers: dict[str, int] = {}  # username -> index of the row that creates that manager
+    prepared: list[dict[str, Any]] = []
+    report: list[dict[str, Any]] = []
+
+    for index, raw in enumerate(rows):
+        errors: list[str] = []
+        generated = None
+        password = raw.get("password", "")
+        if not password:
+            password = generated = _generate_password()
+        data = {
+            "username": raw.get("username", ""),
+            "password": password,
+            "firstName": raw.get("firstname", ""),
+            "lastName": raw.get("lastname", ""),
+            "email": raw.get("email", ""),
+            "jobTitle": raw.get("jobtitle", ""),
+            "salary": raw.get("salary", ""),
+            "role": raw.get("role", "").strip().lower(),
+            "managerId": None,
+        }
+        parsed: CreateUserRequest | None = None
+        try:
+            parsed = CreateUserRequest.model_validate(data)
+        except PydanticValidationError as exc:
+            for err in exc.errors():
+                field = ".".join(str(part) for part in err["loc"]) or "row"
+                errors.append(f"{field}: {_plain(err)}")
+
+        manager_username = raw.get("manager", "").strip().lower()
+        manager_id: str | None = None
+        manager_from_file: str | None = None
+        role = data["role"]
+        if role == ROLE_EMPLOYEE:
+            if not manager_username:
+                errors.append("manager: employees need a manager (the manager's username)")
+            else:
+                existing = repo.find_by_username(manager_username)
+                if existing and existing["role"] == ROLE_MANAGER and existing["is_active"]:
+                    manager_id = existing["id"]
+                elif manager_username in file_managers:
+                    manager_from_file = manager_username
+                else:
+                    errors.append(
+                        f"manager: '{manager_username}' is not an active manager (existing or earlier in this file)"
+                    )
+        elif manager_username and role in (ROLE_MANAGER, ROLE_ADMIN):
+            errors.append("manager: only employees can have a manager")
+
+        username = parsed.username if parsed else data["username"].strip().lower()
+        email = parsed.email if parsed else data["email"].strip().lower()
+        if username:
+            if username in seen_usernames:
+                errors.append("username: appears more than once in this file")
+            elif repo.username_exists(username):
+                errors.append("username: already taken")
+            seen_usernames.add(username)
+        if email:
+            if email in seen_emails:
+                errors.append("email: appears more than once in this file")
+            elif repo.email_exists(email):
+                errors.append("email: already in use")
+            seen_emails.add(email)
+        if parsed and parsed.role == ROLE_MANAGER and not errors:
+            file_managers[username] = index
+
+        report.append(
+            {
+                "line": int(raw["_line"]),
+                "username": username or None,
+                "status": "ok" if not errors else "error",
+                "errors": errors,
+                **({"generatedPassword": generated} if generated and not errors else {}),
+            }
+        )
+        prepared.append(
+            {"parsed": parsed, "manager_id": manager_id, "manager_from_file": manager_from_file, "index": index}
+        )
+
+    invalid = sum(1 for r in report if r["status"] == "error")
+    summary = {"total": len(report), "valid": len(report) - invalid, "invalid": invalid, "created": 0}
+    if dto.dry_run:
+        return {"rows": report, "summary": summary}
+    if invalid:
+        raise ValidationError(
+            f"{invalid} row{'s' if invalid != 1 else ''} need{'s' if invalid == 1 else ''} fixing; nobody was created",
+            details={"rows": report, "summary": summary},
+        )
+
+    # managers first, so employees that point at them can be created in the same file
+    created_ids: dict[str, str] = {}
+    order = sorted(prepared, key=lambda p: (0 if p["parsed"].role == ROLE_MANAGER else 1, p["index"]))
+    for item in order:
+        parsed = item["parsed"]
+        manager_id = item["manager_id"]
+        if item["manager_from_file"]:
+            manager_id = created_ids[item["manager_from_file"]]
+        created = create_user(actor, parsed.model_copy(update={"manager_id": manager_id}), repo=repo)
+        created_ids[parsed.username] = created["id"]
+        report[item["index"]]["id"] = created["id"]
+    summary["created"] = len(created_ids)
+    return {"rows": report, "summary": summary}
 
 
 def _check_admin_invariants(actor: Actor, target: dict[str, Any], fields: dict[str, Any], repo) -> None:

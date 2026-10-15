@@ -52,6 +52,13 @@ class CreateUserRequest(RequestModel):
         return _normalise_email(value)
 
 
+class ImportUsersRequest(RequestModel):
+    """The text of one CSV file (header row + one user per line) and whether to only check it."""
+
+    csv: str = Field(min_length=1, max_length=1_000_000)
+    dry_run: bool = False
+
+
 class UpdateUserRequest(RequestModel):
     """All optional; `provided()` tells the service which fields the client actually sent."""
 

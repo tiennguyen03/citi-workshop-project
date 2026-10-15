@@ -37,6 +37,7 @@ def build_router() -> Router:
     # Users
     router.add("GET", "/users", users.list_users)
     router.add("POST", "/users", users.create_user, audit="user.create")
+    router.add("POST", "/users/import", users.import_users, audit="user.import")
     router.add("GET", "/users/{id}", users.get_user)
     router.add("PATCH", "/users/{id}", users.update_user, audit="user.update")
     router.add("GET", "/users/{id}/team", users.get_team)

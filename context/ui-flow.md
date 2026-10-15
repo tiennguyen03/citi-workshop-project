@@ -40,6 +40,8 @@ employee milestone line shows due date + `DueTag` + teammates, and a **Recent en
 LoginPage form (username, password) → `POST /auth/login` → store token + user → redirect `/`. Error: inline alert "Invalid username or password".
 
 ### F2 Admin creates a user
+UsersPage → "Import CSV" (admin): a dialog to choose or paste a CSV (template download), **Preview** shows every row with a quiet "Ready" or a tinted "Error" and the reasons plus a "12 ready, 2 need fixing" summary; **Import** is enabled only when every row is ready and creates all of them at once (`POST /users/import`, D26); generated temporary passwords are shown once with a copy button.
+
 UsersPage → "New user" `FormDialog`: username, temp password, first/last name, email, job title, salary, role (select), manager (select, shown only when role = employee, options from `GET /users?role=manager`) → `POST /users` → row appended, snackbar. 409 → field error on username/email.
 
 ### F3 Admin creates a project
