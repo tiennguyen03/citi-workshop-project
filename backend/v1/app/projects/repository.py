@@ -48,7 +48,11 @@ SUMMARY_SELECT = sql.SQL(
            (SELECT COUNT(*) FROM milestones m
              WHERE m.project_id = p.id AND m.status = 'complete') AS milestones_complete,
            (SELECT MIN(m.due_date) FROM milestones m
-             WHERE m.project_id = p.id AND m.status = 'open') AS next_due_date
+             WHERE m.project_id = p.id AND m.status = 'open') AS next_due_date,
+           (SELECT COUNT(*) FROM goals g JOIN milestones m ON m.id = g.milestone_id
+             WHERE m.project_id = p.id) AS goals_total,
+           (SELECT COUNT(*) FROM goals g JOIN milestones m ON m.id = g.milestone_id
+             WHERE m.project_id = p.id AND g.is_done) AS goals_done
     FROM projects p JOIN users u ON u.id = p.manager_id
     {where}
     ORDER BY p.archived, p.status, p.start_date DESC, p.name

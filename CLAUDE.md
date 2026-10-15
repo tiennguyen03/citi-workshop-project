@@ -76,6 +76,10 @@ explicit yes.** Explain what, why, and the exact diff. This includes "small" one
 - In browser scripts, click nav links inside `getByRole('navigation', { name: 'Main navigation' })` —
   the dashboard shortcut cards are links with the same names. Nav has one people entry per role:
   employees "My team" → `/team`, managers "My team" → `/users` (searchable), admins "Users" → `/users`.
+- Progress means goals (D27): `components/GoalProgress` is the only way to show project completion
+  (`completedGoals`/`totalGoals` from the API, neutral "No goals configured" when there are none). Every hours bar is
+  `ProgressBar kind="capacity"` and is labelled as hours ("Capacity used", "Assigned hours used", "Hours logged"),
+  never as progress or completion. Cost is logged hours × salary / 2,080; assigned hours never feed cost.
 - Bulk user creation is `POST /users/import` (D26): preview with `dryRun`, then all-or-nothing; `UserImportDialog`
   on the Users page. Handlers may set `audit_details` (replace the audited body) or `audit_skip` (a preview).
 - Audit action codes are shown through `utils/auditActions.js` (`actionLabel`); add a label there whenever a

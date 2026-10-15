@@ -15,6 +15,8 @@ const BASE = {
   budgetRemaining: 317179,
   milestoneCounts: { open: 2, complete: 1 },
   nextDueDate: '2020-01-01',
+  completedGoals: 4,
+  totalGoals: 10,
 }
 const renderCard = (project) => render(<MemoryRouter><ProjectCard project={project} /></MemoryRouter>)
 
@@ -24,8 +26,9 @@ describe('ProjectCard (D25)', () => {
     expect(screen.getByText('At risk')).toBeInTheDocument()
     expect(screen.getByText('Overdue milestone')).toBeInTheDocument()
     expect(screen.queryByText('Active')).not.toBeInTheDocument()
-    expect(screen.getByText('3% complete')).toBeInTheDocument()
-    expect(screen.getByText('53 h / 1,560 h')).toBeInTheDocument()
+    expect(screen.getByText('40% complete')).toBeInTheDocument() // goals, not hours
+    expect(screen.getByText('4 of 10 goals complete')).toBeInTheDocument()
+    expect(screen.getByText('Capacity used 3%, 53 h / 1,560 h')).toBeInTheDocument()
     expect(screen.getByText('$317,179')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '2 open milestones' })).toHaveTextContent('2 open')
     expect(screen.getByText('1 complete')).toBeInTheDocument()
@@ -38,5 +41,13 @@ describe('ProjectCard (D25)', () => {
     expect(screen.queryByText('Done, not archived')).not.toBeInTheDocument()
     expect(screen.queryByText('Overdue')).not.toBeInTheDocument()
     expect(screen.getByText('—')).toBeInTheDocument()
+  })
+})
+
+describe('ProjectCard without goals', () => {
+  it('shows the unconfigured state instead of 0 %', () => {
+    renderCard({ ...BASE, completedGoals: 0, totalGoals: 0, nextDueDate: '2099-01-01' })
+    expect(screen.getByText('No goals configured')).toBeInTheDocument()
+    expect(screen.queryByText(/0% complete/)).not.toBeInTheDocument()
   })
 })

@@ -27,6 +27,8 @@ const CARD = {
   hoursCompleted: 40,
   capacityHours: 160,
   milestoneCounts: { open: 2, complete: 1 },
+  completedGoals: 4,
+  totalGoals: 10, // 40 %: deliberately not the hours share (25 %) so the two never collide in a query
 }
 const WEEK = { start: '2026-10-12', end: '2026-10-18' }
 const EVE = { id: 'EMP001', firstName: 'Eve', lastName: 'Employee', jobTitle: 'Engineer', role: 'employee' }
@@ -59,7 +61,7 @@ describe('DashboardPage', () => {
       role: 'admin',
       projects: [
         { ...CARD, manager: MGR, nextDueDate: '2020-01-01', budget: 100, costConsumed: 250, budgetRemaining: -150, reasons: ['over_budget', 'overdue_milestone'], health: 'at_risk' },
-        { ...CARD, id: 'PRJ002', name: 'Empty shell', manager: MGR, nextDueDate: null, budget: 1000, costConsumed: 0, budgetRemaining: 1000, reasons: ['no_members', 'no_milestones'], health: 'needs_setup' },
+        { ...CARD, id: 'PRJ002', name: 'Empty shell', manager: MGR, nextDueDate: null, budget: 1000, costConsumed: 0, budgetRemaining: 1000, reasons: ['no_members', 'no_milestones'], health: 'needs_setup', completedGoals: 0, totalGoals: 0 },
         { ...CARD, id: 'PRJ003', name: 'Old portal', status: 'complete', manager: MGR, nextDueDate: null, budget: 500, costConsumed: 400, budgetRemaining: 100, reasons: [], health: 'to_close' },
       ],
       summary: { projects: { late: 0, atRisk: 1, needsSetup: 1, toClose: 1, onTrack: 0 }, hoursCompleted: 140, capacityHours: 4160, budget: 1100, costConsumed: 250 },
@@ -80,6 +82,9 @@ describe('DashboardPage', () => {
     expect(screen.getAllByText('Needs setup')).toHaveLength(2) // summary row + board tag
     expect(screen.getAllByText('Done, not archived')).toHaveLength(2) // summary row + board tag
     expect(screen.getAllByText('Mia Manager')).toHaveLength(3)
+    expect(screen.getAllByText('4 / 10 goals')).toHaveLength(2) // the board's Progress column counts goals
+    expect(screen.getByText('No goals configured')).toBeInTheDocument() // the empty shell: unconfigured, not 0 %
+    expect(screen.queryByText('0%')).not.toBeInTheDocument()
     expect(screen.getByText('Overdue')).toBeInTheDocument() // next due on the at-risk row; complete rows carry no cue
     expect(screen.getByText('Over budget, overdue milestone')).toBeInTheDocument() // reasons as one muted line under the health tag
     expect(screen.getByText('No members, no milestones')).toBeInTheDocument()
@@ -113,8 +118,9 @@ describe('DashboardPage', () => {
     })
     renderPage({ id: 'MGR001', role: 'manager', firstName: 'Mia' })
     expect(await screen.findByText('$800')).toBeInTheDocument()
-    expect(screen.getByText('40 h / 160 h')).toBeInTheDocument()
-    expect(screen.getByText('25% complete')).toBeInTheDocument()
+    expect(screen.getByText('40% complete')).toBeInTheDocument() // goals done, not hours
+    expect(screen.getByText('4 of 10 goals complete')).toBeInTheDocument()
+    expect(screen.getByText('Capacity used 25%, 40 h / 160 h')).toBeInTheDocument() // time stays a separate, quieter line
     expect(screen.queryByText('Active')).not.toBeInTheDocument() // the card leads with health, not lifecycle
     expect(screen.getByText('Available')).toBeInTheDocument()
     expect(screen.getAllByText('16 h')).toHaveLength(2) // the team summary and Quiet's row
@@ -174,8 +180,11 @@ describe('DashboardPage', () => {
     timeEntriesApi.create.mockResolvedValue({ id: 'TIM001', hours: 3 })
     timeEntriesApi.update.mockResolvedValue({ ...ENTRY, hours: 7 })
     renderPage({ id: 'EMP001', role: 'employee', firstName: 'Eve' })
-    expect(await screen.findByText('20 / 80 h assigned to you')).toBeInTheDocument()
+    expect(await screen.findByText('Assigned hours used')).toBeInTheDocument() // effort, not completion
+    expect(screen.getByText('20 / 80 h logged')).toBeInTheDocument()
     expect(screen.getByText('25%')).toBeInTheDocument()
+    expect(screen.getByText('4 of 10 goals complete')).toBeInTheDocument() // the project's own completion on the card
+    expect(screen.queryByText('My progress')).not.toBeInTheDocument()
     expect(screen.getByText('Old one')).toBeInTheDocument()
     expect(screen.getByText('Working with Max New')).toBeInTheDocument()
     expect(screen.queryByText('Eve Employee')).not.toBeInTheDocument()

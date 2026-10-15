@@ -165,7 +165,7 @@ export default function MembersTab({ project, canManage, onChanged, notify }) {
     { key: 'hoursAssigned', label: 'Assigned', align: 'right', render: (m) => formatHours(m.hoursAssigned) },
     {
       key: 'hoursCompleted',
-      label: 'Completed',
+      label: 'Assigned hours used',
       render: (m) => <ProgressBar layout="inline" value={m.hoursCompleted} max={m.hoursAssigned} caption={formatRatio(m.hoursCompleted, m.hoursAssigned)} />,
     },
     ...(hasCosts ? [{ key: 'costConsumed', label: 'Cost consumed', align: 'right', render: (m) => formatMoney(m.costConsumed) }] : []),

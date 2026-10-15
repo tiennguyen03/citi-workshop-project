@@ -25,9 +25,11 @@ test('employee: dashboard shows the project, ticks a goal, logs time; Time tab e
   await expect(page.getByText('Just you on this milestone')).toBeVisible()
   await expect(page.getByText('Nothing logged yet on this project.')).toBeVisible()
 
+  await expect(page.getByText('0 of 1 goal complete')).toBeVisible() // work done, separate from hours
   await page.getByRole('checkbox', { name: 'Complete goal Ship the thing' }).click()
   await toast(page, 'Done: Ship the thing')
   await expect(page.getByRole('checkbox', { name: 'Complete goal Ship the thing' })).toHaveCount(0)
+  await expect(page.getByText('1 of 1 goal complete')).toBeVisible()
 
   await page.getByRole('button', { name: 'Log time' }).click()
   let dialog = page.getByRole('dialog')
@@ -35,7 +37,8 @@ test('employee: dashboard shows the project, ticks a goal, logs time; Time tab e
   await dialog.getByLabel('Note').fill('Rack audit')
   await dialog.getByRole('button', { name: 'Log time' }).click()
   await toast(page, `Logged 6 h on ${project.name}`)
-  await expect(page.getByText('6 / 160 h assigned to you')).toBeVisible()
+  await expect(page.getByText('6 / 160 h logged')).toBeVisible()
+  await expect(page.getByText('Assigned hours used')).toBeVisible()
   // the new entry appears under "Recent entries" and can be edited right there
   await expect(page.getByRole('cell', { name: 'Rack audit' })).toBeVisible()
   await page.getByRole('button', { name: /Edit time entry on/ }).click()

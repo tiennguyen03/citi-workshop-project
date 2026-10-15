@@ -7,19 +7,22 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import DueTag from '../DueTag/DueTag.jsx'
 import FieldList from '../FieldList/FieldList.jsx'
+import GoalProgress from '../GoalProgress/GoalProgress.jsx'
 import HealthSummary from '../HealthSummary/HealthSummary.jsx'
-import ProgressBar from '../ProgressBar/ProgressBar.jsx'
 import StatusChip from '../StatusChip/StatusChip.jsx'
 import { formatDate, formatHours, formatMoney } from '../../utils/format.js'
 
 /** Inner links on a clickable card: let the link navigate without the card also firing. */
 const stop = (e) => e.stopPropagation()
+/** Whole-number share for a caption. */
+const pctOf = (value, max) => (Number(max) > 0 ? Math.round((Number(value) / Number(max)) * 100) : 0)
 
 /**
  * A project's executive summary (D25): read top to bottom as name, health, reason, progress, then three metrics.
  * One strong signal only — the health tag — with the reason as muted text beneath it; lifecycle status appears
  * only when it is the whole story (a complete project shows "Complete" in the health slot instead of a tag).
- * Progress is one unit: "3% complete", the raw hours, one full-width bar. Next due's urgency is supporting text.
+ * Progress is work completion (goals done, D27) as one unit; capacity used is a quiet line beneath it. Next due's
+ * urgency is supporting text.
  */
 export default function ProjectCard({ project: p }) {
   const navigate = useNavigate()
@@ -57,7 +60,11 @@ export default function ProjectCard({ project: p }) {
         </Box>
       </Stack>
       <Box sx={{ mt: 2 }}>
-        <ProgressBar layout="block" suffix="complete" value={p.hoursCompleted} max={p.capacityHours} caption={`${formatHours(p.hoursCompleted)} / ${formatHours(p.capacityHours)}`} />
+        <GoalProgress layout="block" title="Project progress" completedGoals={p.completedGoals} totalGoals={p.totalGoals} />
+        {/* time is a separate measure from work done (D27): quiet, under the completion bar */}
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75, fontVariantNumeric: 'tabular-nums' }}>
+          Capacity used {pctOf(p.hoursCompleted, p.capacityHours)}%, {formatHours(p.hoursCompleted)} / {formatHours(p.capacityHours)}
+        </Typography>
       </Box>
       <Box sx={{ mt: 2.5 }}>
         <FieldList
@@ -129,6 +136,8 @@ ProjectCard.propTypes = {
     budgetRemaining: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     milestoneCounts: PropTypes.shape({ open: PropTypes.number, complete: PropTypes.number }).isRequired,
     nextDueDate: PropTypes.string,
+    completedGoals: PropTypes.number,
+    totalGoals: PropTypes.number,
     health: PropTypes.string,
     reasons: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,

@@ -8,13 +8,13 @@ import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalance
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
 import SavingsOutlinedIcon from '@mui/icons-material/SavingsOutlined'
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
-import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
 import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined'
+import GoalProgress from '../../components/GoalProgress/GoalProgress.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import { formatDate, formatHours, formatMoney, formatRatio } from '../../utils/format.js'
 import { fullName } from '../../utils/roles.js'
 
-/** The three pillars for one project: time (hours), cost (budget, if allowed), resources (team). */
+/** The three pillars for one project: time (hours), cost (budget, if allowed), resources (team), plus work done (goals). */
 /** Whole-number share of capacity for a tile hint. */
 const pctOf = (value, max) => (Number(max) > 0 ? Math.round((Number(value) / Number(max)) * 100) : 0)
 
@@ -33,10 +33,10 @@ export default function OverviewTab({ project }) {
           progress={{ value: project.hoursAssigned, max: project.capacityHours, caption: formatRatio(project.hoursAssigned, project.capacityHours) }}
         />
         <StatCard
-          icon={<TaskAltOutlinedIcon />}
-          label="Hours completed"
+          icon={<ScheduleOutlinedIcon />}
+          label="Hours logged"
           value={formatHours(project.hoursCompleted)}
-          hint={`${pctOf(project.hoursCompleted, project.capacityHours)}% of capacity logged`}
+          hint={`${pctOf(project.hoursCompleted, project.capacityHours)}% of capacity used`}
           progress={{ value: project.hoursCompleted, max: project.capacityHours, caption: formatRatio(project.hoursCompleted, project.capacityHours) }}
         />
         {hasCosts && <StatCard icon={<AccountBalanceWalletOutlinedIcon />} label="Budget" value={formatMoney(project.budget)} />}
@@ -45,6 +45,10 @@ export default function OverviewTab({ project }) {
           <StatCard icon={<SavingsOutlinedIcon />} label="Budget remaining" value={formatMoney(project.budgetRemaining)} color={overBudget ? 'error.main' : 'text.primary'} />
         )}
       </Box>
+      {/* work completion sits beside time and cost, never instead of them (D27): comparing them is the point */}
+      <Paper sx={{ p: 3 }}>
+        <GoalProgress layout="block" title="Project progress" completedGoals={project.completedGoals} totalGoals={project.totalGoals} />
+      </Paper>
       <Paper sx={{ p: 3 }}>
         <FieldList
           columns={5}

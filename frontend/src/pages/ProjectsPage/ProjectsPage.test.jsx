@@ -23,6 +23,8 @@ const PROJECT = {
   hoursAssigned: 300,
   hoursCompleted: 120,
   capacityHours: 480,
+  completedGoals: 1,
+  totalGoals: 3,
 }
 
 function renderPage(role, url = '/projects') {
@@ -44,13 +46,16 @@ describe('ProjectsPage', () => {
     usersApi.list.mockResolvedValue({ items: [{ id: 'MGR001', firstName: 'Mia', lastName: 'Manager', isActive: true }], total: 1 })
   })
 
-  it('lists projects with hours progress and opens the detail page', async () => {
+  it('lists projects with goal progress beside capacity used, and opens the detail page', async () => {
     projectsApi.list.mockResolvedValue({ items: [PROJECT], total: 1 })
     renderPage('manager')
     expect(await screen.findByText('Decommission 1,000 Servers')).toBeInTheDocument()
     expect(screen.queryByText('Mia Manager')).not.toBeInTheDocument() // a manager's own list has no Manager column
+    expect(screen.getByText('1 / 3 goals')).toBeInTheDocument()
+    expect(screen.getByText('33%')).toBeInTheDocument() // Progress = goals
     expect(screen.getByText('120 / 480 h')).toBeInTheDocument()
-    expect(screen.getByText('25%')).toBeInTheDocument()
+    expect(screen.getByText('25%')).toBeInTheDocument() // Capacity used = hours
+    expect(screen.getByRole('columnheader', { name: 'Capacity used' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /new project/i })).not.toBeInTheDocument()
     await userEvent.setup().click(screen.getByText('Decommission 1,000 Servers'))
     expect(screen.getByText('project detail')).toBeInTheDocument()

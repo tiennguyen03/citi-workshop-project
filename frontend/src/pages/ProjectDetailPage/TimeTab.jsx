@@ -159,7 +159,7 @@ export default function TimeTab({ project, canManage, onChanged, notify }) {
           hint={`${total > rows.length ? `${rows.length} of ${total}` : total} entr${total === 1 ? 'y' : 'ies'}${range !== 'all' ? ` ${RANGE_LABELS[range]}` : ''}${canManage && userId ? ' for this person' : ''}${!filtered && total <= rows.length ? ', all time' : ''}`}
         />
         {!canManage && project.myMembership && (
-          <StatCard icon={<FlagOutlinedIcon />} label="Assigned to you" value={formatHours(project.myMembership.hoursAssigned)} hint={`${formatHours(project.myMembership.hoursCompleted)} completed`} />
+          <StatCard icon={<FlagOutlinedIcon />} label="Assigned to you" value={formatHours(project.myMembership.hoursAssigned)} hint={`${formatHours(project.myMembership.hoursCompleted)} logged`} />
         )}
         {/* the lifetime figure only earns a tile when the one above is a subset of it (D25) */}
         {canManage && (filtered || total > rows.length) && (

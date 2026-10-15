@@ -314,7 +314,7 @@ not page. (4) Section summaries are `SummaryRow`s (figure emphasised, label mute
 compact control groups, not a bordered band. (7) The project Overview has no standalone Progress panel;
 the Hours tiles carry bar and percentage. (8) A manager's Projects list drops the Manager column and
 searches by name; `GET /users` for a manager returns direct reports only. (9) The employee landing is
-three answers: Current project (structured facts, Open project), My progress (percentage of assigned
+three answers: Current project (structured facts, Open project), Assigned hours used (percentage of assigned
 hours), This week (`0 / 40 h`, Log time). (10) The demo seed writes the audit trail its facts imply, dated
 when they would have happened, so Recent activity shows business events. (11) The admin profile hides the
 meaningless $0 salary; the members tab marks the signed-in person's row with a quiet "You".
@@ -346,3 +346,22 @@ never the file (a handler can now replace the audited details with `audit_detail
 keeps the admin in control, and all-or-nothing means a half-imported file can never exist.
 **Consequences**: The UI (`UserImportDialog`) always previews before it can import. Updating existing users from a file,
 importing projects and Excel files are out of scope. `user.import` joins `core.audit.ACTIONS` and the action labels.
+
+## D27 · 2026-10-15 · Goals measure work; hours measure time; salary × hours measures cost
+**Decision**: Three measures, never blended. (1) **Project progress** = completed goals ÷ total goals across every
+milestone of the project, computed once in `projects/schemas.goal_progress` from two correlated subqueries in the
+project aggregate select and spread into the list, the detail, the stats and every dashboard card, so one project
+shows one percentage everywhere; `progressPercent` is `null` when the project has no goals, and the UI's only
+renderer of it, `components/GoalProgress`, then shows "—  No goals configured" rather than 0 %. (2) **Time**:
+capacity used (project logged ÷ capacity), assigned hours used (member logged ÷ assigned) and weekly workload
+(logged this week ÷ 40 h) keep their bars with `kind="capacity"` and are labelled as hours, never as progress or
+completion. (3) **Cost**: unchanged, Σ logged hours × salary / 2,080, and budget remaining = budget − cost; assigned
+hours never feed cost. Lifecycle (active / complete / archived) and computed health stay separate: 100 % of goals
+completes nothing by itself and the open-milestone gate on completing a project is untouched. Milestone progress was
+already goals-based and is unchanged.
+**Why**: Hours spent are not work done. A team can finish in a third of its planned hours, or burn 80 % of the hours
+with 30 % of the goals done; showing hours as "progress" hid exactly the comparison a manager needs. With the two
+side by side ("Project progress 30 %, Capacity used 80 %, Budget consumed 85 %") the risk reads at a glance.
+**Consequences**: Labels: "Progress" means goals; hours columns are "Capacity used" or "Assigned hours used"; the
+employee tile is "Assigned hours used", not "My progress"; the Overview tile is "Hours logged". `hoursCompleted`
+stays on the wire for compatibility. Per-person history keeps hours only (effort, not completion).

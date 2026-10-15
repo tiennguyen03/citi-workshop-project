@@ -18,6 +18,7 @@ from app.projects.schemas import (
     CreateProjectRequest,
     UpdateMemberRequest,
     UpdateProjectRequest,
+    goal_progress,
     member_shape,
     project_detail,
     project_summary,
@@ -154,6 +155,7 @@ def get_stats(actor: Actor, project_id: str, repo=default_repo) -> dict[str, Any
         "hoursCompleted": row["hours_completed"],
         "perMember": members,
         "milestoneCounts": {"open": row["milestones_open"], "complete": row["milestones_complete"]},
+        **goal_progress(row),
     }
     if include_costs:
         stats.update(

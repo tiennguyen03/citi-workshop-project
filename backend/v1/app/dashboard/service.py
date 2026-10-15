@@ -11,7 +11,7 @@ from app.dashboard import repository as default_repo
 from app.milestones import repository as milestones_repo
 from app.projects import repository as projects_repo
 from app.projects import service as projects
-from app.projects.schemas import STATUS_ACTIVE
+from app.projects.schemas import STATUS_ACTIVE, goal_progress
 from app.time_entries import repository as time_repo
 from app.time_entries.schemas import time_entry_shape
 from app.users import repository as users_repo
@@ -44,6 +44,7 @@ def _project_card(row: dict[str, Any], *, include_costs: bool) -> dict[str, Any]
         "hoursCompleted": row["hours_completed"],
         "capacityHours": row["capacity_hours"],
         "milestoneCounts": {"open": row["milestones_open"], "complete": row["milestones_complete"]},
+        **goal_progress(row),
         "nextDueDate": row["next_due_date"],
         "manager": {
             "id": row["manager_id"],

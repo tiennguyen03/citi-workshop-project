@@ -45,7 +45,7 @@ Milestones, goals and members are returned whole: they are bounded by one projec
 ```
 ImportReport {rows: [{line, username|null, status: "ok"|"error", errors: string[], generatedPassword?, id?}],
               summary: {total, valid, invalid, created}}     (D26; `generatedPassword` only on a valid row with a blank password, shown once)
-MembershipHistory {id, name, status, archived, hoursAssigned, hoursCompleted, isActive, releasedReason|null,
+MembershipHistory {id, name, status, archived, hoursAssigned, hoursCompleted, isActive, releasedReason|null,   (hours only by design: this is the person's effort, not the project's completion)
                    addedAt, releasedAt|null}     (one per project the user has ever been on; active first, then newest)
 ```
 Rules enforced server-side: `managerId` required iff `role=employee`; `managerId` must be a `manager`; changing `role` away from `manager` fails with `409` if they still manage projects or users.
@@ -71,7 +71,9 @@ Rules enforced server-side: `managerId` required iff `role=employee`; `managerId
 Shapes:
 ```
 ProjectSummary  {id, name, status, archived, startDate, endDate, manager: UserSummary, memberCount,
-                 hoursAssigned, hoursCompleted, capacityHours, capacityHoursPerMember}
+                 hoursAssigned, hoursCompleted, capacityHours, capacityHoursPerMember,
+                 completedGoals, totalGoals, progressPercent|null}   (D27: goals across all milestones;
+                 progressPercent is null when totalGoals = 0 — "not configured", not 0 %)
 ProjectDetail   ProjectSummary + {description, milestoneCounts:{open, complete},
                  myMembership: {isActive, hoursAssigned, hoursCompleted, releasedAt, releasedReason} | null,
                  budget, costConsumed, budgetRemaining}
@@ -82,7 +84,7 @@ GET /projects/{id}: 403 for a non-member/non-manager; 404 for an archived projec
 hoursAssigned is capped at capacityHoursPerMember (400 VALIDATION_ERROR otherwise).
 UserSummary gains `currentProject: {id, name} | null` when listed via /users or /users/{id}/team (admin/manager views).
 ProjectStats    {capacityHours, hoursAssigned, hoursCompleted, budget?, costConsumed?, budgetRemaining?,
-                 perMember: Member[], perMilestone: [{milestoneId, name, status, goalsDone, goalsTotal}]}
+                 perMember: Member[], milestoneCounts, completedGoals, totalGoals, progressPercent|null}
 ```
 
 ## Milestones & goals
@@ -140,7 +142,8 @@ Employee {role:"employee", currentProject: (ProjectCard & {myHoursAssigned, myHo
           pastProjects: ProjectCard[], openGoals: [{id, title, milestone:{id,name,dueDate}, project:{id,name}}],
           recentEntries: TimeEntry[], hoursThisWeek, week:{start, end}}   (recentEntries: ≤ 5 own, newest first)
 ProjectCard {id, name, status, archived, startDate, endDate, memberCount, hoursAssigned, hoursCompleted,
-          capacityHours, milestoneCounts, nextDueDate|null, manager:{id, firstName, lastName},
+          capacityHours, milestoneCounts, completedGoals, totalGoals, progressPercent|null, nextDueDate|null,
+          manager:{id, firstName, lastName},
           budget?, costConsumed?, budgetRemaining?}
           (costs: admin/manager only; nextDueDate = earliest due date among open milestones)
 Reason   "over_budget" | "past_end" | "overdue_milestone" | "no_members" | "no_milestones"
@@ -170,3 +173,14 @@ There are no write endpoints; entries are produced automatically (D13).
 ## Health
 
 | GET | `/health` | `200 {status:"ok", db:"ok"}` | public | — used by `start-dev.sh`'s reachability check and smoke tests.
+
+## Measures (D27)
+| Measure | Definition | Where |
+|---|---|---|
+| Project progress | `completedGoals / totalGoals` across the project's milestones; null when no goals | project list, detail, stats, every dashboard card |
+| Milestone progress | `goalsDone / goalsTotal` within the milestone | milestone rows and page |
+| Capacity used | `hoursCompleted / capacityHours` (logged hours over working days × 8 h × members) | project tiles, lists |
+| Assigned hours used | member `hoursCompleted / hoursAssigned` | members, history, employee tile |
+| Cost consumed | Σ logged hours × salary / 2,080; budget remaining = budget − cost | project and dashboard |
+| Weekly workload | hours logged this week against 40 h | employee tile, manager team |
+`hoursCompleted` keeps its name on the wire for compatibility; it is the sum of logged time, never completion.

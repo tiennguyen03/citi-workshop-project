@@ -31,7 +31,7 @@ employee milestone line shows due date + `DueTag` + teammates, and a **Recent en
 
 
 - **Admin** (slice 12, D21): three pillar tiles — hours logged of capacity, budget consumed of planned (both over active projects, with bars), people available (links to `/users?available=true`); the **Project health** board: every non-archived project, worst first, with a health word (Late, At risk, Needs setup, Done not archived, On track) plus the specific reason tags, progress, budget left, next due and end date with cues; **Recent activity**. Quick links: Users, New project (dialog). People counts live on the Users page subtitle.
-- **Manager**: cards per managed project (health word beside the status chip except for finished ones, hours completed / capacity bar, budget remaining, open milestones, next due), **Due soon**, team list showing each report's current project (or "available"), current milestone, hours this week, and the team total against 40 h per person on a project.
+- **Manager**: cards per managed project (health word beside the status chip except for finished ones, project progress (goals done) block with capacity used as a quiet line, budget remaining, open milestones, next due), **Due soon**, team list showing each report's current project (or "available"), current milestone, hours this week, and the team total against 40 h per person on a project.
 - **Employee**: "My current project" card (hours assigned vs logged, current milestone) or an "Available — not assigned to a project" state; "My open goals" with checkboxes; "Log time" button (disabled when available); "Past projects" list.
 
 ## Main flows
@@ -97,3 +97,10 @@ The page number sits in the URL beside the filters, so a link to page 2 of the a
 typing in the search box waits 300 ms and then returns to page 1. The Time tab keeps its page in memory
 (it is a tab inside the project page) and its hours tile says "Hours on this page" when the list is longer
 than a page.
+
+### Progress means goals (D27)
+Every "Progress" column or block is completed goals over total goals (`components/GoalProgress`): the admin board, the
+Projects list, the manager card, the employee's Current project card and the project Overview. A project without goals
+shows "—  No goals configured". Hours keep their own bars and their own words: "Capacity used" (project logged over
+capacity), "Assigned hours used" (a person's logged over assigned), "This week" (logged over 40 h), "Hours logged" on the
+Overview. Cost stays logged hours × salary / 2,080.

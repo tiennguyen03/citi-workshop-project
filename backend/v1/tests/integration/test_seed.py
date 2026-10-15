@@ -67,6 +67,7 @@ def test_seeded_accounts_work_through_the_api():
     assert status == 200 and [p["name"] for p in body["items"]] == ["Decommission 1,000 Servers"]
     project = body["items"][0]
     assert project["memberCount"] == 3 and project["hoursCompleted"] == 65.5
+    assert (project["completedGoals"], project["totalGoals"], project["progressPercent"]) == (4, 9, 44)  # D27
     status, body = call("GET", f"/api/v1/projects/{project['id']}/available-members", token=token)
     assert [u["firstName"] for u in body["items"]] == ["Grace"]
 

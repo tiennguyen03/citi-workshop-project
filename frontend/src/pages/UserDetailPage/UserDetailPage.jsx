@@ -32,7 +32,7 @@ const HISTORY_COLUMNS = [
   { key: 'hoursAssigned', label: 'Assigned', align: 'right', render: (p) => formatHours(p.hoursAssigned) },
   {
     key: 'hoursCompleted',
-    label: 'Completed',
+    label: 'Assigned hours used',
     render: (p) => <ProgressBar layout="inline" value={p.hoursCompleted} max={p.hoursAssigned} caption={formatRatio(p.hoursCompleted, p.hoursAssigned)} />,
   },
   {

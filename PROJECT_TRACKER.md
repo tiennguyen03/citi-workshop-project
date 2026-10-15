@@ -114,6 +114,9 @@ without reseeding; reseed afterwards to clear them.
 - No hard deletes of projects: archive, admin-only visibility, unarchive. Goal and time-entry deletions
   are audited with the full payload.
 - Capacity is working days × 8 h per member for the project's dates; cost is logged hours × salary / 2080.
+- Progress means goals: completed goals over total goals, the same number on every screen. Hours are a separate
+  measure (capacity used, assigned hours used, this week's workload), so a manager can compare work done with
+  time and money spent.
 - A project cannot be completed while a milestone is open; a completed project can be archived.
 - Every action by every role is written to the audit log with actor, action, entity and a summary;
   only admins read it; nothing in it is ever edited.

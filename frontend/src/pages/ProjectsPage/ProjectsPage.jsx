@@ -10,6 +10,7 @@ import AddIcon from '@mui/icons-material/Add'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import { PAGE_SIZE, PAGE_SIZE_OPTIONS } from '../../components/DataTable/paging.js'
 import DueTag from '../../components/DueTag/DueTag.jsx'
+import GoalProgress from '../../components/GoalProgress/GoalProgress.jsx'
 import ErrorAlert from '../../components/ErrorAlert/ErrorAlert.jsx'
 import ListToolbar from '../../components/ListToolbar/ListToolbar.jsx'
 import PageHeader from '../../components/PageHeader/PageHeader.jsx'
@@ -42,9 +43,11 @@ const COLUMNS = [
   },
   { key: 'dates', label: 'Dates', nowrap: true, render: (p) => `${formatDate(p.startDate)} – ${formatDate(p.endDate)}` },
   { key: 'memberCount', label: 'Team', numeric: true },
+  // two different measures side by side (D27): work done, then time used
+  { key: 'progress', label: 'Progress', nowrap: true, render: (p) => <GoalProgress completedGoals={p.completedGoals} totalGoals={p.totalGoals} /> },
   {
     key: 'hours',
-    label: 'Hours completed',
+    label: 'Capacity used',
     render: (p) => (
       <ProgressBar layout="inline" value={p.hoursCompleted} max={p.capacityHours} caption={formatRatio(p.hoursCompleted, p.capacityHours)} />
     ),

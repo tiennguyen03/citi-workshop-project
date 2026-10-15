@@ -18,6 +18,7 @@ import useAuth from '../../auth/useAuth.js'
 import ActionIconButton from '../../components/ActionIconButton/ActionIconButton.jsx'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
+import GoalProgress from '../../components/GoalProgress/GoalProgress.jsx'
 import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
@@ -82,7 +83,7 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
 
   return (
     <Stack spacing={3}>
-      {/* Three questions, three places (D25): what am I on, how far am I, how much this week. One summary row,
+      {/* Three questions, three places (D25/D27): what am I on and how far is it, how much of my allocation is used, how much this week. One summary row,
           three cards of a height, the project card a summary rather than a miniature project page. */}
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: current ? 'minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr)' : 'minmax(0, 2fr) minmax(0, 1fr)' } }}>
         <Paper sx={{ p: 2.5, display: 'flex', flexDirection: 'column' }}>
@@ -97,7 +98,10 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
                 </Link>
                 <StatusChip status={current.status} />
               </Stack>
-              <Box sx={{ mt: 1.25, flexGrow: 1 }}>
+              <Box sx={{ mt: 1.5 }}>
+                <GoalProgress layout="block" title="Project progress" completedGoals={current.completedGoals} totalGoals={current.totalGoals} />
+              </Box>
+              <Box sx={{ mt: 1.5, flexGrow: 1 }}>
                 {milestone ? (
                   <>
                     <Link component={RouterLink} to={`/milestones/${milestone.id}`} underline="hover" color="inherit" variant="body2" sx={{ fontWeight: 600, display: 'block' }}>
@@ -141,11 +145,11 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
         </Paper>
         {current && (
           <StatCard
-            icon={<TaskAltOutlinedIcon />}
-            label="My progress"
+            icon={<ScheduleOutlinedIcon />}
+            label="Assigned hours used"
             value={`${myPct}%`}
-            hint={`${formatRatio(current.myHoursCompleted, current.myHoursAssigned)} assigned to you`}
-            progress={{ value: current.myHoursCompleted, max: current.myHoursAssigned, kind: 'completion', caption: formatRatio(current.myHoursCompleted, current.myHoursAssigned) }}
+            hint={`${formatRatio(current.myHoursCompleted, current.myHoursAssigned)} logged`}
+            progress={{ value: current.myHoursCompleted, max: current.myHoursAssigned, kind: 'capacity', caption: formatRatio(current.myHoursCompleted, current.myHoursAssigned) }}
           />
         )}
         <StatCard

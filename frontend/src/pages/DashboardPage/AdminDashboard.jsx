@@ -11,8 +11,8 @@ import MonitorHeartOutlinedIcon from '@mui/icons-material/MonitorHeartOutlined'
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
+import GoalProgress from '../../components/GoalProgress/GoalProgress.jsx'
 import HealthSummary from '../../components/HealthSummary/HealthSummary.jsx'
-import ProgressBar from '../../components/ProgressBar/ProgressBar.jsx'
 import RoleChip from '../../components/RoleChip/RoleChip.jsx'
 import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
@@ -27,12 +27,8 @@ import { fullName } from '../../utils/roles.js'
 const BOARD_COLUMNS = [
   { key: 'name', label: 'Project', render: (p) => <TitleCell title={p.name} to={`/projects/${p.id}`} caption={fullName(p.manager)} /> },
   { key: 'health', label: 'Health', render: (p) => <HealthSummary health={p.health} reasons={p.reasons} /> },
-  {
-    key: 'progress',
-    label: 'Progress',
-    nowrap: true,
-    render: (p) => <ProgressBar layout="inline" value={p.hoursCompleted} max={p.capacityHours} caption={formatRatio(p.hoursCompleted, p.capacityHours)} />,
-  },
+  // work completion (goals), never hours: time and cost have their own tiles above (D27)
+  { key: 'progress', label: 'Progress', nowrap: true, render: (p) => <GoalProgress completedGoals={p.completedGoals} totalGoals={p.totalGoals} /> },
   {
     key: 'budgetRemaining',
     label: 'Budget left',

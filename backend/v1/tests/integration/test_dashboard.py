@@ -95,6 +95,9 @@ def test_admin_dashboard():
     risky, empty = body["projects"]
     assert risky["health"] == "at_risk" and risky["reasons"] == ["over_budget"] and risky["budgetRemaining"] == -100
     assert risky["nextDueDate"] == (TODAY + timedelta(days=2)).isoformat()
+    # work completion rides on every card, identical to the project detail (D27); the empty project is unconfigured
+    assert (risky["completedGoals"], risky["totalGoals"], risky["progressPercent"]) == (0, 1, 0)
+    assert (empty["completedGoals"], empty["totalGoals"], empty["progressPercent"]) == (0, 0, None)
     assert risky["manager"] == {
         "id": org["mgr"]["id"],
         "firstName": org["mgr"]["firstName"],
@@ -133,6 +136,7 @@ def test_manager_dashboard():
     cards = {c["id"]: c for c in body["projects"]}
     card = cards[org["pid"]]
     assert card["hoursCompleted"] == 6 and card["budgetRemaining"] == -100
+    assert card["totalGoals"] == 1 and card["progressPercent"] == 0  # hours logged, no goal done: 0 %, not 6 / 160
     assert card["milestoneCounts"] == {"open": 2, "complete": 0} and card["reasons"] == ["over_budget"]
     assert card["health"] == "at_risk"
     assert cards[org["empty"]["id"]]["reasons"] == ["no_members", "no_milestones"]
@@ -173,6 +177,7 @@ def test_employee_dashboard():
         body["openGoals"][0]["milestone"]["name"] == "Phase 1" and body["openGoals"][0]["project"]["id"] == org["pid"]
     )
     assert body["hoursThisWeek"] == 6 and body["pastProjects"] == []
+    assert body["currentProject"]["totalGoals"] == 1 and body["currentProject"]["progressPercent"] == 0
     # ticking the goal removes it; completing the project moves it to past projects
     assert call("PATCH", f"/api/v1/goals/{org['goal']['id']}", {"isDone": True}, token=org["emp1_token"])[0] == 200
     assert call("POST", f"/api/v1/milestones/{org['ms']['id']}/complete", token=org["mgr_token"])[0] == 200

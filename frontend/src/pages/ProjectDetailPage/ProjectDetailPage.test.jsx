@@ -26,6 +26,8 @@ const BASE = {
   capacityHours: 160,
   capacityHoursPerMember: 160,
   milestoneCounts: { open: 0, complete: 0 },
+  completedGoals: 2,
+  totalGoals: 8, // 25 %; hours are 10 / 160 = 6 %, so the two never collide in a query
   myMembership: null,
 }
 const WITH_COSTS = { ...BASE, budget: 250000, costConsumed: 500, budgetRemaining: 249500 }
@@ -66,6 +68,13 @@ describe('ProjectDetailPage', () => {
     expect(screen.getByText('160 h')).toBeInTheDocument()
     expect(screen.getByText('$250,000')).toBeInTheDocument()
     expect(screen.getByText('$249,500')).toBeInTheDocument()
+    // work completion sits beside time and cost (D27): both visible, neither pretending to be the other
+    expect(screen.getByText('Project progress')).toBeInTheDocument()
+    expect(screen.getByText('25% complete')).toBeInTheDocument()
+    expect(screen.getByText('2 of 8 goals complete')).toBeInTheDocument()
+    expect(screen.getByText('Hours logged')).toBeInTheDocument()
+    expect(screen.getByText('6% of capacity used')).toBeInTheDocument()
+    expect(screen.queryByText('Hours completed')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Mark complete' })).toBeEnabled()
     expect(screen.queryByRole('button', { name: 'Archive' })).not.toBeInTheDocument()
@@ -183,5 +192,16 @@ describe('ProjectDetailPage', () => {
     await user.click(within(dialog).getByRole('button', { name: /add to project/i }))
     expect(await within(dialog).findByText('Enter 0 to 160 hours')).toBeInTheDocument()
     expect(projectsApi.addMember).not.toHaveBeenCalled()
+  })
+})
+
+describe('ProjectDetailPage without goals', () => {
+  it('shows the unconfigured state on the Overview instead of 0 %', async () => {
+    usersApi.list.mockResolvedValue({ items: [], total: 0 })
+    projectsApi.members.mockResolvedValue({ items: [], total: 0 })
+    projectsApi.get.mockResolvedValue({ ...BASE, completedGoals: 0, totalGoals: 0 })
+    renderPage({ id: 'EMP001', role: 'employee' })
+    expect(await screen.findByText('No goals configured')).toBeInTheDocument()
+    expect(screen.queryByText('0% complete')).not.toBeInTheDocument()
   })
 })

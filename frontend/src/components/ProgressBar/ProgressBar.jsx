@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography'
 const MIN_VISIBLE = 3
 
 /**
- * Hours-style progress: `value` of `max`.
+ * A share of something: `value` of `max`. Hours against capacity, goals against goals, cost against budget.
  * `kind="capacity"` (default) is spend against a limit: amber from 90 %, red past 100 %.
  * `kind="completion"` is work done: green at 100 %.
  * `layout="stacked"` (default) is a tile or panel: bar, caption under it.

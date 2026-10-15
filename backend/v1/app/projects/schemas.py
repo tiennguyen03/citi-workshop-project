@@ -50,6 +50,21 @@ class UpdateMemberRequest(RequestModel):
     hours_assigned: Decimal = Field(ge=0, max_digits=7, decimal_places=2)
 
 
+def goal_progress(row: dict[str, Any]) -> dict[str, Any]:
+    """
+    Work completion (D27): goals done over goals that exist, across every milestone of the project. The one
+    place the percentage is derived, so the list, the detail, the stats and every dashboard card agree.
+    `progressPercent` is None when there are no goals: "not configured" is a different state from "0 % done".
+    """
+    total = int(row["goals_total"])
+    done = int(row["goals_done"])
+    return {
+        "completedGoals": done,
+        "totalGoals": total,
+        "progressPercent": round(done * 100 / total) if total else None,
+    }
+
+
 def project_summary(row: dict[str, Any]) -> dict[str, Any]:
     """ProjectSummary: list shape. `row` is a project row joined with its manager and aggregates."""
     return {
@@ -74,6 +89,7 @@ def project_summary(row: dict[str, Any]) -> dict[str, Any]:
         "hoursCompleted": row["hours_completed"],
         "capacityHours": row["capacity_hours"],
         "capacityHoursPerMember": row["capacity_per_member"],
+        **goal_progress(row),
     }
 
 
