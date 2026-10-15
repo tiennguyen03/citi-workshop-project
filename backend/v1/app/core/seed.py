@@ -15,7 +15,8 @@ from app.core.security import hash_password
 
 logger = logging.getLogger(__name__)
 
-DEMO_PASSWORD = "Password1!"  # nosec B105 - documented demo credential, local/demo data only
+# documented demo credential, local/demo data only (B105 flags any password-looking literal)
+DEMO_PASSWORD = "Password1!"  # nosec B105
 
 # id, username, first, last, title, salary, manager_id (None for managers)
 MANAGERS = [

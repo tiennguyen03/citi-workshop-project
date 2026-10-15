@@ -125,7 +125,8 @@ stays empty (polling `SELECT count(*)` alone can wait forever). Seeded ~10 s aft
   site once a few minutes early. `ENVIRONMENT.config` holds temporary credentials and is gitignored — never commit it.
 
 ## Local tooling (not committed)
-- Backend venv: `backend/v1/.venv` → `.venv/bin/pytest`, `.venv/bin/ruff check .`; Bandit exactly as CI runs it, from the
+- Backend venv: `backend/v1/.venv` → `.venv/bin/pytest`, `.venv/bin/ruff check .`; Bandit exactly as CI runs it (CI installs the
+  latest Bandit, so keep the venv current with `.venv/bin/pip install -U bandit`; 1.9 flags any `"password": "…"` dict entry), from the
   repo root: `backend/v1/.venv/bin/bandit -r ./backend` (reads `backend/.bandit`; must exit 0)
 - Frontend: `npx vitest run`, `npm run lint` (from `frontend/`)
 - Browser checks: no system Chrome and no sudo on the VDI. Playwright's bundled Chromium is in

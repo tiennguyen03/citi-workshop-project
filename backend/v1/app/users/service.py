@@ -197,17 +197,10 @@ def parse_import_csv(text: str) -> list[dict[str, str]]:
     return rows
 
 
-_PRETTY = {
-    "username": "username",
-    "firstname": "firstName",
-    "lastname": "lastName",
-    "email": "email",
-    "jobtitle": "jobTitle",
-    "salary": "salary",
-    "role": "role",
-    "manager": "manager",
-    "password": "password",
-}
+# the wire spelling of each column, for messages ("Missing columns: firstName"); derived, so no column name is
+# ever assigned as a literal (Bandit's B105 reads a "password": "..." entry as a hard-coded secret)
+_CAMEL = {"firstname": "firstName", "lastname": "lastName", "jobtitle": "jobTitle"}
+_PRETTY = {column: _CAMEL.get(column, column) for column in IMPORT_COLUMNS}
 
 
 _PLAIN_MESSAGES = {

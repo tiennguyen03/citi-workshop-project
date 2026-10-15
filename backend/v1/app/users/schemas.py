@@ -127,4 +127,5 @@ def membership_history_item(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-assert set(Role.__args__) == set(ROLES)  # nosec B101 - import-time consistency check, not input validation
+# import-time consistency check, not input validation (B101 is about asserts in request handling)
+assert set(Role.__args__) == set(ROLES)  # nosec B101
