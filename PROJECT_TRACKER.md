@@ -98,11 +98,11 @@ the backend absorbs with a longer connect timeout and one retry.
 
 | Suite | Command | Count |
 |---|---|---|
-| Backend unit + integration (pytest, local Postgres) | `cd backend/v1 && .venv/bin/pytest -q --cov=app` | 103, 97 % coverage |
+| Backend unit + integration (pytest, local Postgres) | `cd backend/v1 && .venv/bin/pytest -q --cov=app` | 112, 97 % coverage |
 | Backend lint and security | `.venv/bin/ruff check .` · from the repo root `backend/v1/.venv/bin/bandit -r ./backend` | clean |
-| Frontend components and pages (Vitest + Testing Library) | `cd frontend && npx vitest run` | 105 |
+| Frontend components and pages (Vitest + Testing Library) | `cd frontend && npx vitest run` | 112 |
 | Frontend lint | `cd frontend && npm run lint` | clean |
-| Browser suite (Playwright, against the local stack) | `cd frontend && npm run test:e2e` | 13 |
+| Browser suite (Playwright, against the local stack) | `cd frontend && npm run test:e2e` | 14 |
 
 The browser suite creates its own managers, employees and projects through the API, so it reruns
 without reseeding; reseed afterwards to clear them.
@@ -136,7 +136,7 @@ without reseeding; reseed afterwards to clear them.
 - **Calendar dates only.** Entries and milestones are dates, not timestamps; "today" uses the server
   clock for rules and the browser clock for cues.
 - **Visual system in shared components.** Status grammar, progress treatment, paging, summaries and
-  icon actions are each one component, so pages cannot drift apart. Decisions D17–D25 record the rules.
+  icon actions are each one component, so pages cannot drift apart. Decisions D17–D29 record the rules.
 
 ## Known gaps
 
@@ -148,7 +148,6 @@ without reseeding; reseed afterwards to clear them.
 | Capacity model | Weekdays × 8 h for the whole project; join date, holidays and leave are ignored | Per-member date ranges |
 | Concurrency | Last write wins on edits; the uniqueness rules are database-enforced | `updated_at` checks |
 | Audit export | Filters and paging, no CSV | Export endpoint |
-| Dependencies between milestones | Not modelled | "Blocked by" links with completion gating |
 | RAG status | Column exists, no UI | Manager-set Red/Amber/Green with a reason |
 
 The full table, with the reasoning, is decision D18 in [`context/decisions.md`](context/decisions.md).
