@@ -35,31 +35,68 @@ SQL with `q` search, users `summary` counts, audit log on the shared parser; con
 **Remaining**: nothing; hosted site redeployed (backend + frontend) and smoke-tested.
 **Blockers**: none.
 
-## Proposed slice 16 — two differentiators (plan for approval, 2026-10-14)
+## Proposed slice 16 — CSV import of users (admin), plan for approval 2026-10-14
 
-**A. Milestone dependencies ("blocked by")** — the ACME brief asked for a dependency chain between deliverables.
-- Schema: `milestones.blocked_by_id` (nullable, same project), added by `core/schema.py` with `ADD COLUMN IF NOT EXISTS`.
-- Rules (service): the blocker must belong to the same project and must not create a cycle (walk the chain); a
-  milestone cannot be completed while its blocker is open → `409 MILESTONE_BLOCKED` naming the blocker; a blocker can
-  be reopened (its dependants keep their state).
-- API: milestones carry `blockedBy: {id, name, status} | null`; `POST`/`PATCH` accept `blockedById`. Contract + tests.
-- UI: "Blocked by" select in the milestone dialog (other milestones of the project, excluding itself and its own
-  dependants); Milestones tab shows "Blocked by <name>" as the muted caption and a quiet "Blocked" cue while the
-  blocker is open; milestone page gets a "Blocked by" fact and a disabled Mark complete with the reason. Seed:
-  "Migrate workloads — batch 2" and "Power-down — batch 1" blocked by "Migrate workloads — batch 1".
-- Health: a project whose next due milestone waits on an overdue blocker gets reason `blocked_by_overdue` (at risk).
+**What**: an admin uploads one CSV and creates many users at once, with a preview that names every problem row
+before anything is written. Replaces adding people one at a time. (The audit CSV export idea is dropped.)
 
-**B. Manager's call: Red / Amber / Green on milestones (S1)** — the one stretch item the brief named.
-- Schema: `milestones.rag_status` (`red|amber|green`, nullable) and `rag_note` (≤ 200 chars).
-- API: `PATCH /milestones/{id}/rag {status, note}` (manager of the project or admin; audited as `milestone.rag` with a
-  label in `auditActions.js`); milestone rows carry `rag: {status, note, setAt} | null`.
-- UI: on the milestone page a three-way toggle plus a note field ("Manager's call"); Milestones tab shows a
-  red/amber/green dot before the name with the note as a tooltip; the manager card and the admin board add
-  "1 flagged red" to the health reason line (computed health stays the primary signal; the call is the manager's
-  judgement beside it). Seed: "Account & billing pages" amber, note "Vendor API still returning stale balances".
+**File format**: header row required, columns matched by name (any order, case-insensitive, BOM tolerated):
+`username, firstName, lastName, email, jobTitle, salary, role, manager, password`.
+- `manager` is the manager's **username** (friendlier than an ID). It may name an existing manager or a manager
+  row earlier in the same file, so a whole team can be imported in one go.
+- `password` is the temporary password. Left blank, the system generates one and shows it once in the result.
+- Limits: 500 rows, 1 MB. Quoted fields and commas inside quotes handled by Python's `csv` module.
 
-Order: A then B. Each is a thin vertical slice with contract, tests (unit + integration + one e2e each) and a decision
-(D26/D27). Nothing starts until approved; nothing is pushed or deployed until reviewed.
+**API** (`backend/v1/app/users/`): `POST /users/import` with JSON `{ "csv": "<file text>", "dryRun": true|false }`,
+admin only.
+- Every row runs the same rules as `POST /users` (`CreateUserRequest`, manager assignment, username/email
+  uniqueness) plus uniqueness *within the file*. Errors are collected per row, never thrown on the first.
+- `dryRun: true` returns the report and writes nothing. `dryRun: false` is all-or-nothing in one transaction: if
+  any row is invalid it returns `400` with the same report and creates nobody, so a partial import can never happen.
+- Response: `{ rows: [{ line, username, status: "ok" | "error", errors: [string], generatedPassword?: string }],
+  summary: { total, valid, invalid, created } }`.
+- Audit: one `user.import` entry, summary "Imported 12 users (10 employees, 2 managers)", details carry the
+  usernames (passwords are stripped by the existing sanitiser). Label "Imported users" in `auditActions.js`.
+
+**UI** (`UsersPage`): an "Import CSV" button beside "New user" (admin only) opening a three-step dialog:
+1. Choose a `.csv` file (or paste the text) and a "Download template" link (header + two example rows).
+2. Preview: a table of every row with a quiet "Ready" or a tinted "Error" tag and the error text; a summary row
+   "12 ready, 2 need fixing". Import stays disabled while any row has an error.
+3. Import → toast "Created 12 users", the list refetches; rows with a generated password show it once with a
+   copy button and a note that it will not be shown again.
+
+**Tests**: backend unit (header missing, unknown column ignored, bad role, unknown manager, employee without
+manager, manager with manager, duplicate username in file, in-file manager resolved, blank password generated,
+over 500 rows); integration (dry run creates nothing; commit creates all and audits once; second commit → every
+row flagged as duplicate, nothing created); frontend dialog test (preview errors, disabled import, success);
+one e2e importing three realistically named users then finding them in the list (reseed afterwards).
+
+**Docs**: contract (new endpoint + report shape), decision D26, ui-flow F2 import step, CLAUDE.md audit label.
+**Not in scope**: updating existing users from a file, importing projects, Excel files.
+
+
+## Proposed slice 17 — quality of life (four items picked 2026-10-14), plan for approval
+
+1. **Sortable columns.** `DataTable` columns gain `sortKey`; the header becomes a button with an arrow; the sort lives
+   in the URL as `sort=name` / `sort=-name` beside the filters (`useUrlFilters`). Paged lists (Users, Projects,
+   Audit log, Time tab) sort on the server: the list endpoints accept `sort` from a per-list allow-list
+   (`core/paging.py` `parse_sort`), default unchanged. Small tables (members, milestones, history) sort in memory
+   with the same header control. Tests: parser allow-list, one integration per list, DataTable header test.
+2. **Copy buttons on IDs and emails.** A shared `components/CopyButton` (icon, tooltip "Copy", toast "Copied") next
+   to the ID on the user and project pages and the profile, and next to every email in `FieldList` rows that are
+   emails. Clipboard write with a fallback that selects the text. Test: click → clipboard called → toast.
+3. **Paste several goals at once.** The "New goal" box on the milestone page becomes a small multi-line field:
+   one line = one goal. Type or paste "Rack the hosts\nLabel the cables\nUpdate the CMDB", pick an assignee (or
+   none) once, press Add, and three goals appear in the list, each audited as today (`goal.create` per goal). A
+   single line keeps working exactly as now. Blank lines are ignored; a line over 200 characters is reported before
+   anything is created. Backend: `POST /milestones/{id}/goals` accepts either `{title}` or `{titles: [...]}` in one
+   transaction. Tests: service (list, blanks, too long), integration, GoalList test (three lines → three rows).
+4. **"Mine only" on the Milestones tab.** A switch (in the URL as `mine=true`) that keeps only milestones the signed-in
+   person is assigned to; shown for every role, default off, remembered in the URL like the other filters. Filtering
+   is in memory (the tab already holds every milestone of the project). Test: toggle hides the others.
+
+Docs: contract (sort params, goals batch), D28, ui-flow, CLAUDE.md (DataTable `sortKey`, CopyButton). One branch,
+reviewed before push. Order: 3, 4, 2, 1 (smallest first; sorting last because it touches four endpoints).
 
 ## Slice 15 — Final polish (user brief 2026-10-14; not a redesign; nothing pushed or deployed until approved)
 

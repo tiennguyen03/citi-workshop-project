@@ -18,7 +18,6 @@ import useAuth from '../../auth/useAuth.js'
 import ActionIconButton from '../../components/ActionIconButton/ActionIconButton.jsx'
 import DataTable from '../../components/DataTable/DataTable.jsx'
 import DueTag from '../../components/DueTag/DueTag.jsx'
-import FieldList from '../../components/FieldList/FieldList.jsx'
 import SectionHeading from '../../components/SectionHeading/SectionHeading.jsx'
 import StatCard from '../../components/StatCard/StatCard.jsx'
 import StatusChip from '../../components/StatusChip/StatusChip.jsx'
@@ -83,8 +82,9 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
 
   return (
     <Stack spacing={3}>
-      {/* Three questions, three places (D25): what am I on, how far am I, how much this week. Each has its one action. */}
-      <Box sx={{ display: 'grid', gap: 2, alignItems: 'start', gridTemplateColumns: { xs: '1fr', md: current ? 'minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr)' : 'minmax(0, 2fr) minmax(0, 1fr)' } }}>
+      {/* Three questions, three places (D25): what am I on, how far am I, how much this week. One summary row,
+          three cards of a height, the project card a summary rather than a miniature project page. */}
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: current ? 'minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr)' : 'minmax(0, 2fr) minmax(0, 1fr)' } }}>
         <Paper sx={{ p: 2.5, display: 'flex', flexDirection: 'column' }}>
           <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
             Current project
@@ -97,52 +97,35 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
                 </Link>
                 <StatusChip status={current.status} />
               </Stack>
-              <Box sx={{ mt: 2, flexGrow: 1 }}>
-                <FieldList
-                  columns={1}
-                  items={[
-                    {
-                      label: 'Current milestone',
-                      value: milestone ? (
-                        <Link component={RouterLink} to={`/milestones/${milestone.id}`} underline="hover" color="inherit">
-                          {milestone.name}
-                        </Link>
-                      ) : (
-                        'None assigned to you yet'
-                      ),
-                    },
-                    ...(milestone
-                      ? [
-                          {
-                            label: 'Due',
-                            value: (
-                              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                                <span>{milestone.dueDate ? formatDate(milestone.dueDate) : '—'}</span>
-                                <DueTag dueDate={milestone.dueDate} />
-                              </Stack>
-                            ),
-                          },
-                          {
-                            label: 'Working with',
-                            value:
-                              teammates.length === 0 ? (
-                                'Just you on this milestone'
-                              ) : (
-                                <Stack direction="row" useFlexGap spacing={1.5} sx={{ flexWrap: 'wrap' }}>
-                                  {teammates.map((a) => (
-                                    <Tag key={a.id} label={fullName(a)} variant="quiet" />
-                                  ))}
-                                </Stack>
-                              ),
-                          },
-                        ]
-                      : []),
-                    { label: 'Runs', value: `${formatDate(current.startDate)} – ${formatDate(current.endDate)}` },
-                  ]}
-                />
+              <Box sx={{ mt: 1.25, flexGrow: 1 }}>
+                {milestone ? (
+                  <>
+                    <Link component={RouterLink} to={`/milestones/${milestone.id}`} underline="hover" color="inherit" variant="body2" sx={{ fontWeight: 600, display: 'block' }}>
+                      {milestone.name}
+                    </Link>
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 0.25 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Due {milestone.dueDate ? formatDate(milestone.dueDate) : '—'}
+                      </Typography>
+                      <DueTag dueDate={milestone.dueDate} variant="quiet" />
+                    </Stack>
+                  </>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No open milestone is assigned to you yet.
+                  </Typography>
+                )}
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  {formatDate(current.startDate)} – {formatDate(current.endDate)}
+                </Typography>
+                {milestone && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                    {teammates.length === 0 ? 'Just you on this milestone' : `Working with ${teammates.map(fullName).join(', ')}`}
+                  </Typography>
+                )}
               </Box>
-              <Box sx={{ mt: 2 }}>
-                <Button variant="outlined" onClick={() => navigate(`/projects/${current.id}`)}>
+              <Box sx={{ mt: 1.75 }}>
+                <Button variant="outlined" size="small" onClick={() => navigate(`/projects/${current.id}`)}>
                   Open project
                 </Button>
               </Box>
@@ -182,11 +165,11 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
         />
       </Box>
 
-      <Paper sx={{ p: 2.5 }}>
+      <Paper sx={{ px: 2.5, py: 2 }}>
         <SectionHeading
           icon={<TaskAltOutlinedIcon />}
           title="My open goals"
-          sx={{ mb: 1 }}
+          sx={{ mb: 0.5 }}
           description={openGoals.length === 0 ? 'All clear' : <SummaryRow items={[{ key: 'open', value: openGoals.length, label: openGoals.length === 1 ? 'open goal' : 'open goals' }]} />}
         />
         {openGoals.length === 0 ? (
@@ -199,7 +182,7 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
               <Box
                 component="li"
                 key={g.id}
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5, borderTop: '1px solid', borderColor: 'divider', '&:first-of-type': { borderTop: 0 } }}
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5, py: 0.25, borderTop: '1px solid', borderColor: 'divider', '&:first-of-type': { borderTop: 0 } }}
               >
                 <Checkbox
                   size="small"
@@ -233,7 +216,7 @@ export default function EmployeeDashboard({ data, onChanged, notify }) {
             icon={<ReceiptLongOutlinedIcon />}
             title="Recent entries"
             aside={
-              <Button size="small" component={RouterLink} to={`/projects/${current.id}?tab=time`}>
+              <Button size="small" variant="outlined" component={RouterLink} to={`/projects/${current.id}?tab=time`}>
                 All my time
               </Button>
             }

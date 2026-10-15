@@ -177,8 +177,7 @@ describe('DashboardPage', () => {
     expect(await screen.findByText('20 / 80 h assigned to you')).toBeInTheDocument()
     expect(screen.getByText('25%')).toBeInTheDocument()
     expect(screen.getByText('Old one')).toBeInTheDocument()
-    expect(screen.getByText('Working with')).toBeInTheDocument()
-    expect(screen.getByText('Max New')).toBeInTheDocument() // the teammate, not me
+    expect(screen.getByText('Working with Max New')).toBeInTheDocument()
     expect(screen.queryByText('Eve Employee')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'All my time' })).toHaveAttribute('href', '/projects/PRJ001?tab=time')
     // recent entry can be edited in place

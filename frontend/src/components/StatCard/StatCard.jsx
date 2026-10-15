@@ -16,7 +16,7 @@ import ProgressBar from '../ProgressBar/ProgressBar.jsx'
 export default function StatCard({ label, value, hint, color = 'text.primary', to, footer, icon, progress, action }) {
   const linkProps = to ? { component: RouterLink, to, sx: { textDecoration: 'none', color: 'inherit', '&:hover': { bgcolor: 'action.selected' } } } : {}
   return (
-    <Paper {...linkProps} variant="elevation" elevation={0} sx={{ p: 2.5, minWidth: 0, display: 'block', bgcolor: 'background.default', ...linkProps.sx }}>
+    <Paper {...linkProps} variant="elevation" elevation={0} sx={{ p: 2.5, minWidth: 0, display: 'flex', flexDirection: 'column', bgcolor: 'background.default', ...linkProps.sx }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
         <Typography variant="overline" color="text.secondary" sx={{ display: 'block' }}>
           {label}
@@ -37,7 +37,7 @@ export default function StatCard({ label, value, hint, color = 'text.primary', t
         </Box>
       )}
       {footer && <Box sx={{ mt: 1.5 }}>{footer}</Box>}
-      {action && <Box sx={{ mt: 2 }}>{action}</Box>}
+      {action && <Box sx={{ mt: 'auto', pt: 2 }}>{action}</Box>}
     </Paper>
   )
 }
