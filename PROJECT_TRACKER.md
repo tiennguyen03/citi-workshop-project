@@ -98,7 +98,7 @@ the backend absorbs with a longer connect timeout and one retry.
 
 | Suite | Command | Count |
 |---|---|---|
-| Backend unit + integration (pytest, local Postgres) | `cd backend/v1 && .venv/bin/pytest -q --cov=app` | 112, 97 % coverage |
+| Backend unit + integration (pytest, local Postgres) | `cd backend/v1 && .venv/bin/pytest -q --cov=app` | 148, 97 % coverage |
 | Backend lint and security | `.venv/bin/ruff check .` · from the repo root `backend/v1/.venv/bin/bandit -r ./backend` | clean |
 | Frontend components and pages (Vitest + Testing Library) | `cd frontend && npx vitest run` | 112 |
 | Frontend lint | `cd frontend && npm run lint` | clean |
