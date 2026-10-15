@@ -8,6 +8,8 @@ solves a theoretical business problem.
 
 Navigate to [Coding Workshop - Main Guide](./docs/README.md) to get started.
 
+The solution built on this boilerplate, Project Tracker, is documented in [PROJECT_TRACKER.md](./PROJECT_TRACKER.md).
+
 ## Coding Workshop Example
 
 Coding workshop organizer(s) will provide instructions to follow by email. Here
