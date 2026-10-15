@@ -26,7 +26,7 @@ def test_chain_gates_completion_and_refuses_loops():
     assert call("PATCH", f"/api/v1/milestones/{move['id']}", {"blockedById": elsewhere["id"]}, token=token)[0] == 400
     assert call("PATCH", f"/api/v1/milestones/{move['id']}", {"blockedById": move["id"]}, token=token)[0] == 400
     status, err = call("PATCH", f"/api/v1/milestones/{pack['id']}", {"blockedById": move["id"]}, token=token)
-    assert status == 400 and "loop" in err["error"]["message"]
+    assert status == 400 and err["error"]["message"] == "'Move' already waits on this milestone; that would be a loop"
 
     # the list shows the link and the gate refuses completion while Pack is open
     listed = {m["name"]: m for m in call("GET", f"/api/v1/projects/{pid}/milestones", token=token)[1]["items"]}

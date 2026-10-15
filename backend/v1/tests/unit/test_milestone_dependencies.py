@@ -29,8 +29,8 @@ def test_blocker_rules():
         service._assert_blocker("P1", "M2", "X1", repo)
     with pytest.raises(ValidationError, match="same project"):
         service._assert_blocker("P1", "M2", "NOPE00", repo)
-    with pytest.raises(ValidationError, match="loop"):
-        service._assert_blocker("P1", "M1", "M3", repo)  # Pack waiting on Unpack closes the loop
+    with pytest.raises(ValidationError, match="'Unpack' already waits on this milestone"):
+        service._assert_blocker("P1", "M1", "M3", repo)  # Pack waiting on Unpack closes the loop; names the pick
 
 
 def test_completion_refused_while_the_blocker_is_open():

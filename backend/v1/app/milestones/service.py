@@ -85,13 +85,15 @@ def _assert_blocker(project_id: str, milestone_id: str | None, blocked_by_id: st
         raise ValidationError("A milestone cannot wait on itself", field="blockedById")
     seen: set[str] = set()
     current = blocked_by_id
+    chosen_name = None  # the milestone the user picked, named in the loop message (not the one being edited)
     while current is not None:
         blocker = repo.find_by_id(current)
         if blocker is None or blocker["project_id"] != project_id:
             raise ValidationError("The blocking milestone must belong to the same project", field="blockedById")
+        chosen_name = chosen_name or blocker["name"]
         if blocker["id"] == milestone_id or current in seen:
             raise ValidationError(
-                f"'{blocker['name']}' already waits on this milestone; that would be a loop", field="blockedById"
+                f"'{chosen_name}' already waits on this milestone; that would be a loop", field="blockedById"
             )
         seen.add(current)
         current = blocker.get("blocked_by_id")
